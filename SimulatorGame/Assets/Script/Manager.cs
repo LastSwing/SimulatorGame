@@ -8,13 +8,13 @@ public class Manager : SingletonMonoBehaviour<Manager>
     /// <summary>
     /// UI获取
     /// </summary>
-    public Transform ButtonRoot;
-    public Transform ItemRoot;
+    private Transform ButtonRoot;
+    private Transform ItemRoot;
 
     /// <summary>
     /// 数据
     /// </summary>
-    public Dictionary<int, string> GameDataDic = new Dictionary<int, string>()
+    private Dictionary<int, string> GameDataDic = new Dictionary<int, string>()
     {
         {0,"王星海" },
         {1,"80000" },
@@ -30,8 +30,8 @@ public class Manager : SingletonMonoBehaviour<Manager>
         {11,"10000" },//车价
         {12,"20" }//工作消耗的体力
     };
-    public List<int> NowShowID=new List<int>();
-    public List<int> NowShowButton = new List<int>();
+    private List<int> NowShowID=new List<int>();
+    private List<int> NowShowButton = new List<int>();
 
     protected override void Awake()
     {
