@@ -16,15 +16,15 @@ public class Manager : SingletonMonoBehaviour<Manager>
     /// </summary>
     private Dictionary<int, string> GameDataDic = new Dictionary<int, string>()
     {
-        {0,"王星海" },
-        {1,"80000" },
-        {2,"50" },
-        {3,"776" },
-        {4,"824" },
-        {5,"0" },
-        {6,"-19999" },
-        {7,"我又还了8.44k房贷，还剩160k就还清啦" },
-        {8,"35" },
+        {0,"王星海" },//名字
+        {1,"80000" },//钱
+        {2,"50" },//体力
+        {3,"776" },//健康
+        {4,"824" },//心情
+        {5,"0" },//钻石
+        {6,"-19999" },//回合流水
+        {7,"" },//回合日志
+        {8,"35" },//岁数
         {9,"10000"},//薪资
         {10,"10000"},//房价
         {11,"10000" },//车价
@@ -87,6 +87,7 @@ public class Manager : SingletonMonoBehaviour<Manager>
             case 5:
                 GameDataDic[2] = "50";
                 GameDataDic[6] = "0";
+                GameDataDic[7] = "";
                 GameDataDic[8] = (int.Parse(GameDataDic[8]) + 1).ToString();
                 break;
             case 9:
@@ -100,16 +101,19 @@ public class Manager : SingletonMonoBehaviour<Manager>
             case 11:
                 GameDataDic[1] = (int.Parse(GameDataDic[1]) - int.Parse(GameDataDic[10])).ToString();
                 GameDataDic[6] = (int.Parse(GameDataDic[6]) - int.Parse(GameDataDic[10])).ToString();
+                GameDataDic[7] += "买房支出" + int.Parse(GameDataDic[10])+",";
                 break;
             case 12:
                 GameDataDic[1] = (int.Parse(GameDataDic[1]) - int.Parse(GameDataDic[11])).ToString();
                 GameDataDic[6] = (int.Parse(GameDataDic[6]) - int.Parse(GameDataDic[11])).ToString();
+                GameDataDic[7] += "买车支出" + int.Parse(GameDataDic[10]) + ",";
                 break;
             case 14:
                 if (int.Parse(GameDataDic[2]) - int.Parse(GameDataDic[12]) > 0){ 
                 GameDataDic[1] = (int.Parse(GameDataDic[1]) + int.Parse(GameDataDic[9])).ToString();
                 GameDataDic[2] = (int.Parse(GameDataDic[2]) - int.Parse(GameDataDic[12])).ToString();
                 GameDataDic[6] = (int.Parse(GameDataDic[6]) + int.Parse(GameDataDic[9])).ToString();
+                GameDataDic[7] += "打工收入" + int.Parse(GameDataDic[9]) + ",";
                 }
                 else
                 {
