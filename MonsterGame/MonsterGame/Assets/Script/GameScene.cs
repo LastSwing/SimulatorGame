@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Assets.Script;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,7 +12,7 @@ public class GameScene : MonoBehaviour
     void Start()
     {
         btn_Return = GameObject.Find("btn_Return");
-        btn_Return.GetComponent<Button>().onClick.AddListener(delegate { SceneJump("MainScene"); });
+        btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
     }
 
     // Update is called once per frame
@@ -19,8 +20,5 @@ public class GameScene : MonoBehaviour
     {
 
     }
-    void SceneJump(string SceneName)
-    {
-        SceneManager.LoadScene(SceneName);
-    }
+
 }

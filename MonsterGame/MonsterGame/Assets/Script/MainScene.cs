@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Assets.Script;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,7 +12,11 @@ public class MainScene : MonoBehaviour
     void Start()
     {
         btn_GameStart = GameObject.Find("btn_GameStart");
-        btn_GameStart.GetComponent<Button>().onClick.AddListener(delegate { SceneJump("GameScene"); });
+        btn_GameStart.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene"); });
+        btn_Blood = GameObject.Find("btn_Blood");
+        btn_Blood.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("BloodScene"); });
+        btn_Acupoint = GameObject.Find("btn_Acupoint");
+        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("AcupointScene"); });
     }
 
     // Update is called once per frame
@@ -19,11 +24,5 @@ public class MainScene : MonoBehaviour
     {
 
     }
-
-    void SceneJump(string SceneName)
-    {
-        SceneManager.LoadScene(SceneName);
-    }
-
 
 }
