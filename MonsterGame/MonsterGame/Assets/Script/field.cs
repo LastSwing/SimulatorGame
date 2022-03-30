@@ -90,7 +90,7 @@ public class spring
         get
         {
             Dictionary<string, float> keyValuePairs = new Dictionary<string, float>();
-            keyValuePairs.Add("随机回复20-100%生命值", 40);
+            keyValuePairs.Add("不回复生命值，增加40最大生命值", 40);
             return keyValuePairs;
         }
     }

@@ -135,7 +135,7 @@ public class GameHelper
         }
         if (File.Exists(path + @"\" + Name))
         {
-            string json = DesDecrypt(File.ReadAllText(path +@"\"+ Name));
+            string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
             JsonReader readerJson = new JsonTextReader(new StringReader(json));
             string temp = string.Empty;
             while (readerJson.Read())
