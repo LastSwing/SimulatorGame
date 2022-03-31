@@ -10,12 +10,12 @@ public class AcupointScene : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        btn_Return = GameObject.Find("btn_Return");
-        btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
-        txt_Detail = GameObject.Find("txt_Detail").GetComponent<Text>();
-        txtPanel = GameObject.Find("TxtPanel");
-        txtPanel.transform.position = new Vector3(542, -3020, 0);
-        imgAcupoint = GameObject.Find("imgAcupoint").GetComponent<Image>();
+        //btn_Return = GameObject.Find("btn_Return");
+        //btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
+        //txt_Detail = GameObject.Find("txt_Detail").GetComponent<Text>();
+        //txtPanel = GameObject.Find("TxtPanel");
+        //txtPanel.transform.position = new Vector3(542, -3020, 0);
+        //imgAcupoint = GameObject.Find("imgAcupoint").GetComponent<Image>();
     }
 
     // Update is called once per frame
