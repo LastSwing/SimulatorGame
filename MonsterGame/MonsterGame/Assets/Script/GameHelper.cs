@@ -15,7 +15,7 @@ public class GameHelper
 
     //回合难度
 
-    public static int hard = 0;
+    public static int hard = 1;
 
     /// <summary>
     /// DES加密操作
@@ -89,15 +89,16 @@ public class GameHelper
     /// </summary>
     /// <param name="dic">属性，值</param>
     /// <param name="Name">文件名</param>
-    public static void DataExport(Dictionary<string, string> dic, string Name)
+    /// <param name="FolderName">文件夹名称</param>
+    public static void DataExport(Dictionary<string, string> dic, string Name, string FolderName)
     {
-        var id = $"Acupoint{System.DateTime.Now.ToString("yyyyMMddHHmmssff")}";
+        var id = $"{FolderName}{System.DateTime.Now.ToString("yyyyMMddHHmmssff")}";
         string json = "{" + WriteItem("ID", id);
         int j = 0;
         foreach (var item in dic)
         {
             j++;
-            if (dic.Count ==  j)
+            if (dic.Count == j)
                 json += WriteItem(item.Key, item.Value, true);
             else
                 json += WriteItem(item.Key, item.Value);
@@ -105,8 +106,8 @@ public class GameHelper
         json += "}";
         Debug.Log(json);
         json = DesEncrypt(json);
-        var path = Application.dataPath + "/Data/Acupoint";
-       //文件夹是否存在
+        var path = Application.dataPath + "/Data/" + FolderName;
+        //文件夹是否存在
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         if (!myDirectoryInfo.Exists)
         {
@@ -125,7 +126,7 @@ public class GameHelper
     /// <returns></returns>
     public static Dictionary<string, string> DataRead(string Name)
     {
-        var path = Application.dataPath + "/Data/Acupoint";
+        var path = Application.dataPath + "/Data/";
         Dictionary<string, string> dict = new Dictionary<string, string>();
         //文件夹是否存在
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
@@ -136,6 +137,7 @@ public class GameHelper
         if (File.Exists(path + @"\" + Name))
         {
             string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
+            Debug.Log("读档" + json);
             JsonReader readerJson = new JsonTextReader(new StringReader(json));
             string temp = string.Empty;
             while (readerJson.Read())
