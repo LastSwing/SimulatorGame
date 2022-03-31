@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Autogeneration
 {
@@ -27,8 +29,8 @@ public class Autogeneration
     public static field Littlemonster(int number,int hard)
     {
         field fd = new field();
-        fd.Atk = 2 * number* Random.Range(interval[0], interval[1]) * hard;
-        fd.HP = 10 * number * Random.Range(interval[0], interval[1]) * hard;
+        fd.Atk = Convert.ToInt32(2 * number* Random.Range(interval[0], interval[1]) * hard);
+        fd.HP = Convert.ToInt32(10 * number * Random.Range(interval[0], interval[1]) * hard);
         fd.Name = LittleName[Random.Range(0, 4)];
         return fd;
     }
@@ -41,8 +43,8 @@ public class Autogeneration
     public static field Bigmonster(int number, int hard)
     {
         field fd = new field();
-        fd.Atk = 5 * number * Random.Range(interval[0], interval[1]) * hard;
-        fd.HP = 30 * number * Random.Range(interval[0], interval[1]) * hard;
+        fd.Atk = Convert.ToInt32(5 * number * Random.Range(interval[0], interval[1]) * hard);
+        fd.HP = Convert.ToInt32(30 * number * Random.Range(interval[0], interval[1]) * hard);
         fd.Name = BigName[(number/30)-1];
         return fd;
     }

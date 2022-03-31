@@ -18,16 +18,16 @@ public class Attributes
         Dictionary<string, string> dict = GameHelper.DataRead("Blood");
         if (dict.Count == 0)
         {
-            dict.Add("女娲血脉","0");
+            dict.Add("女娲血脉", "0");
             dict.Add("盘古血脉", "0");
             dict.Add("夸父血脉", "0");
             dict.Add("伏羲血脉", "0");
             dict.Add("共工血脉", "0");
             dict.Add("蚩尤血脉", "0");
         }
-        if(!string.IsNullOrEmpty(BloodName))
+        if (!string.IsNullOrEmpty(BloodName))
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) + 1);
-        GameHelper.DataExport(dict, "Blood.txt");
+        GameHelper.DataExport(dict, "Blood.txt", "Blood");
         return dict;
     }
     /// <summary>

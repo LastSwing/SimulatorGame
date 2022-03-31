@@ -7,36 +7,36 @@ using System.Collections.Generic;
 /// </summary>
 public class Level
 {
-    float spring = 0.05F;//灵泉出现概率
-    float Secret = 0.1F;//秘境出现概率
+    static float spring = 0.05F;//灵泉出现概率
+    static float Secret = 0.1F;//秘境出现概率
     /// <summary>
     /// 生成关卡
     /// </summary>
     /// <param name="number">关卡数</param>
     /// <returns></returns>
-    public Dictionary<string,object> CreateLevel(float number)
+    public static Dictionary<int, object> CreateLevel(float number)
     {
-        Dictionary<string, object> dict = new Dictionary<string, object>();
+        Dictionary<int, object> dict = new Dictionary<int, object>();
         if (int.TryParse(System.Convert.ToString(number / 30.00F), out int result))//出现boss
         {
-            dict.Add("boss", Autogeneration.Bigmonster(result, GameHelper.hard));
+            dict.Add(99, Autogeneration.Bigmonster(result, GameHelper.hard));
             return dict;
         }
         else
         {
-            for (int i = 1; i < 3; i++)//模拟一关有三个，可以是小怪和灵泉或秘境
+            for (int i = 0; i < 3; i++)//模拟一关有三个，可以是小怪和灵泉或秘境
             {
                 if (Random.Range(0.00F, 1.01F) <= Random.Range(0.00F, spring))
                 {
-                    dict.Add("spring",null);
+                    dict.Add(i, null);//灵泉
                 }
                 else if (Random.Range(0.00F, 1.01F) <= Random.Range(0.00F, Secret))
                 {
-                    dict.Add("Secret", null);
+                    dict.Add(i, null);//秘境
                 }
                 else
                 {
-                    dict.Add("monster", Autogeneration.Bigmonster(result, GameHelper.hard));
+                    dict.Add(i, Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard));
                 }
             }
             return dict;
@@ -45,11 +45,10 @@ public class Level
     /// <summary>
     /// 模拟回合攻击
     /// </summary>
-    ///<param name = "List<string>" > 回合记录 </ param >
     ///<param name="fileid">角色属性</param>
     /// <param name="fileid1">怪物属性</param>
     /// <param name="victory">是否胜利</param>
-    /// <returns></returns>
+    /// <returns>回合记录</returns>
     public List<string> Combat(field fileid, field fileid1, out bool victory)
     {
         List<string> str = new List<string>();
