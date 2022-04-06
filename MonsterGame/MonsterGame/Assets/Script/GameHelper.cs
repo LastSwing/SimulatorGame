@@ -91,9 +91,9 @@ public class GameHelper
     /// <param name="dic">属性，值</param>
     /// <param name="Name">文件名</param>
     /// <param name="FolderName">文件夹名称</param>
-    public static void DataExport(Dictionary<string, string> dic, string Name, string FolderName)
+    public static void DataExport(Dictionary<string, string> dic, string Name)
     {
-        var id = $"{FolderName}{System.DateTime.Now.ToString("yyyyMMddHHmmssff")}";
+        var id = $"{System.DateTime.Now.ToString("yyyyMMddHHmmssff")}";
         string json = "{" + WriteItem("ID", id);
         int j = 0;
         foreach (var item in dic)
@@ -107,7 +107,7 @@ public class GameHelper
         json += "}";
         Debug.Log(json);
         json = DesEncrypt(json);
-        var path = Application.dataPath + "/Data/" + FolderName;
+        var path = Application.dataPath + "/Data/";
         //文件夹是否存在
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         if (!myDirectoryInfo.Exists)

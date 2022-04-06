@@ -27,7 +27,7 @@ public class Attributes
         }
         if (!string.IsNullOrEmpty(BloodName))
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) + 1);
-        GameHelper.DataExport(dict, "Blood.txt", "Blood");
+        GameHelper.DataExport(dict, "Blood.txt");
         return dict;
     }
     /// <summary>
@@ -52,7 +52,7 @@ public class Attributes
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) + 1);
         else if (!string.IsNullOrEmpty(BloodName) && o == 1)
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) - 1);
-        GameHelper.DataExport(dict, "Opening.txt", "Opening");
+        GameHelper.DataExport(dict, "Opening.txt");
         return dict;
     }
 }
