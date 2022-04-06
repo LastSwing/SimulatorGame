@@ -1,1 +1,1 @@
-rYFy4Ouo1nSAwgSLAqCvs4drGgfkVblT/5tXZcM+UCQ885Mw523WPJ32KQR7UfNpyJxdGttTui4FaXEPLVLMaAh0cg4vufQjP8uE+Dxkh8JJ7w+KkVG98NUCaGcl19Tm241wP7Gs5eR9iKQI9DAGLcyUYpcPtkjgBEydxoh29123Ra2S1+SzFujuRKiDQka3xva+clOrMCwBWUbALodypsT4PMJ63+OZJW2V/sriRU8=
+{"ID":"ROLE2022033114091292","Atk":"8","AtkRegain":"2","HP":"100","HPRegen":"5","Dodge":"0.01","Crit":"0.01","CritHarm":"3","Name":"昊天","Seckill":"0","Twice":"0","EXP":"0"}

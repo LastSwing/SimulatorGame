@@ -36,7 +36,7 @@ public class Attributes
     /// <param name="BloodName">需要提升的始神血脉名称</param>
     /// <param name="o">0增加 1减少</param>
     /// <returns></returns>
-    public static Dictionary<string, string> Opening(string BloodName,int o)
+    public static Dictionary<string, string> Opening(string BloodName, int o)
     {
         Dictionary<string, string> dict = GameHelper.DataRead("Opening");
         if (dict.Count == 0)
@@ -50,9 +50,9 @@ public class Attributes
         }
         if (!string.IsNullOrEmpty(BloodName) && o == 0)
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) + 1);
-        else if(!string.IsNullOrEmpty(BloodName) && o == 1)
+        else if (!string.IsNullOrEmpty(BloodName) && o == 1)
             dict[BloodName] = Convert.ToString(Convert.ToInt32(dict[BloodName]) - 1);
-        GameHelper.DataExport(dict, "Opening.txt");
+        GameHelper.DataExport(dict, "Opening.txt", "Opening");
         return dict;
     }
 }

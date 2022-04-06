@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 
 public class GameHelper
@@ -136,8 +137,9 @@ public class GameHelper
         }
         if (File.Exists(path + @"\" + Name))
         {
-            string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
-            Debug.Log("¶Áµµ" + json);
+            //string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
+            string json = File.ReadAllText(path + @"\" + Name, Encoding.UTF8);
+            //Debug.Log("¶Áµµ" + json);
             JsonReader readerJson = new JsonTextReader(new StringReader(json));
             string temp = string.Empty;
             while (readerJson.Read())

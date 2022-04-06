@@ -48,71 +48,87 @@ public class Level
     ///<param name="fileid">角色属性</param>
     /// <param name="fileid1">怪物属性</param>
     /// <param name="victory">是否胜利</param>
+    /// <param name="maxHp">最大血量</param>
     /// <returns>回合记录</returns>
-    public List<string> Combat(field fileid, field fileid1, out bool victory)
+    public static Dictionary<string, object> Combat(field fileid, field fileid1, float maxHp, out bool victory)
     {
+        Dictionary<string, object> dic = new Dictionary<string, object>();
         List<string> str = new List<string>();
         float random = Random.Range(0.00F, 1.01F);
-        int round = 0;
+        int round = 0;//0是角色回合，1是野怪回合，2是一方死亡
         victory = false;
-        while (round > 1)
+        while (round < 2)
         {
-            round = 0;
             string str1 = "";
+            #region 角色攻击
             if (round == 0)
             {
-                if (fileid1.Dodge == 0.00F || Random.Range(0.00F, 1.01F) <= fileid1.Dodge)
+                if (fileid1.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > fileid1.Dodge)
                 {
                     if (Random.Range(0.00F, 1.01F) <= fileid.Seckill)
                     {
-                        str1 += fileid.Name + "发动技能，将" + fileid1.Name + "秒杀。";
+                        str1 += fileid.Name + "\n发动技能，将" + fileid1.Name + "秒杀。";
                         fileid1.HP = 0;
+                        victory = true;
                         round = 2;
                         break;
                     }
-                    int atk = System.Convert.ToInt32(System.Math.Round(fileid.Atk + Random.Range(0.00F, 1.01F) < fileid.Crit ? fileid.Atk * fileid.CritHarm : 0.00F));
+                    int atk = System.Convert.ToInt32(System.Math.Round(fileid.Atk + (Random.Range(0.00F, 1.01F) <= fileid.Crit ? (fileid.CritHarm * fileid.Atk / 100) : 0.00F)));
                     fileid1.HP -= atk;
-                    str1 += fileid.Name + "发动攻击，对" + fileid1.Name + "造成了" + atk + "点伤害。";
-                    fileid.HP += fileid.AtkRegain;
+                    str1 += fileid.Name + "发动攻击，对" + fileid1.Name + "\n造成了" + atk + "点伤害。";
+                    if (fileid.HP < maxHp)//如果已经满血则不回血
+                    {
+                        var currentHp = fileid.HP += fileid.AtkRegain;
+                        if (currentHp > maxHp)
+                            fileid.HP = maxHp;
+                        else
+                            fileid.HP = currentHp;
+                        str1 += $"\n触发天赋技能，攻击恢复{fileid.AtkRegain}点血量。";
+                    }
                     if (fileid1.HP <= 0)
                     {
-                        str1 += fileid1.Name + "已死亡。";
+                        str1 += $"\n{fileid1.Name}死亡。";
                         round = 2;
                         victory = true;
                     }
                     else
                     {
                         fileid1.HP += fileid1.HPRegen;
+                        round = 1;
                     }
                 }
                 else
                 {
-                    str1 += fileid.Name + "发动攻击，但被" + fileid1.Name + "闪避了。";
+                    str1 += $"\n{fileid.Name}发动攻击，但被{fileid1.Name}闪避了。";
                     round = 1;
                 }
                 if (Random.Range(0.00F, 1.01F) <= fileid.Twice)
+                {
+                    str1 += $"\n{fileid.Name}触发回合内多次攻击技能，再次发动攻击。";
                     round = 0;
+                }
             }
+            #endregion
+            #region 野怪攻击
             else
             {
-                if (fileid.Dodge == 0.00F || Random.Range(0.00F, 1.01F) <= fileid.Dodge)
+                if (fileid.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > fileid.Dodge)
                 {
                     if (Random.Range(0.00F, 1.01F) <= fileid1.Seckill)
                     {
-                        str1 += fileid1.Name + "发动技能，将" + fileid.Name + "秒杀。";
+                        str1 += $"\n{fileid1.Name}发动技能，将{ fileid.Name}秒杀，游戏失败。";
                         fileid.HP = 0;
                         round = 2;
                         break;
                     }
-                    int atk = System.Convert.ToInt32(System.Math.Round(fileid1.Atk + Random.Range(0.00F, 1.01F) < fileid1.Crit ? fileid1.Atk * fileid1.CritHarm : 0.00F));
+                    int atk = System.Convert.ToInt32(System.Math.Round(fileid1.Atk + (Random.Range(0.00F, 1.01F) < fileid1.Crit ? (fileid1.CritHarm * fileid1.Atk / 100) : 0.00F)));
                     fileid.HP -= atk;
-                    str1 += fileid1.Name + "发动攻击，对" + fileid.Name + "造成了" + atk + "点伤害。";
+                    str1 += $"\n{fileid1.Name}发动攻击，对{fileid.Name}造成了{atk}点伤害。";
                     fileid1.HP += fileid1.AtkRegain;
                     if (fileid.HP <= 0)
                     {
-                        str1 += fileid.Name + "已死亡。";
+                        str1 += $"\n{fileid.Name}被击杀，游戏失败";
                         round = 2;
-                        victory = false;
                     }
                     else
                     {
@@ -122,14 +138,21 @@ public class Level
                 }
                 else
                 {
-                    str1 += fileid1.Name + "发动攻击，但被" + fileid.Name + "闪避了。";
+                    str1 +=$"\n{fileid1.Name}发动攻击，但被{fileid.Name}闪避了。";
                     round = 0;
                 }
                 if (Random.Range(0.00F, 1.01F) <= fileid1.Twice)
+                {
+                    str1 += $"\n{fileid1.Name}触发回合内多次攻击技能，再次发动攻击。";
                     round = 1;
+                }
             }
+            #endregion
             str.Add(str1);
         }
-        return str;
+        dic.Add("AtkDetail", str);
+        dic.Add("Role", fileid);
+        dic.Add("Monster", fileid1);
+        return dic;
     }
 }
