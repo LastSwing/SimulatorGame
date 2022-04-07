@@ -10,10 +10,10 @@ using UnityEngine.UI;
 
 public class GameScene : MonoBehaviour
 {
-    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail;
-    private Text txt_HP, txt_HPReply, txt_Dodge, txt_ATK, txt_Crit, txt_CritHarm, txt_CheckPoint, txt_Monster;//获取页面控件
+    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail, btn_AutomaticAtk, AgainPanel, btn_Again, btn_AgainReturn;
+    private Text txt_HP, txt_HPReply, txt_Dodge, txt_ATK, txt_Crit, txt_CritHarm, txt_CheckPoint, txt_Monster, txt_LevelMonster, txt_AutoAtk;//获取页面控件
     private InputField ipt_Atk, ipt_Detail;
-    private Image img_Monster;
+    private Image img_Monster, img_Monster1;
     private Dictionary<int, object> MonsterDic;
     private field RoleFd;
     // Start is called before the first frame update
@@ -28,6 +28,12 @@ public class GameScene : MonoBehaviour
         btn_ReturnAtk.GetComponent<Button>().onClick.AddListener(ReturnAtk);
         btn_Detail = GameObject.Find("btn_Detail");
         btn_Detail.GetComponent<Button>().onClick.AddListener(ShowDetail);
+        btn_AutomaticAtk = GameObject.Find("btn_AutomaticAtk");
+        btn_AutomaticAtk.GetComponent<Button>().onClick.AddListener(AutomaticAtk);
+        btn_Again = GameObject.Find("btn_Again");
+        btn_Again.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene"); });
+        btn_AgainReturn = GameObject.Find("AgainPanel/btn_Return");
+        btn_AgainReturn.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
 
         txt_HP = GameObject.Find("txt_HP").GetComponent<Text>();
         txt_HPReply = GameObject.Find("txt_HPReply").GetComponent<Text>();
@@ -36,11 +42,14 @@ public class GameScene : MonoBehaviour
         txt_Crit = GameObject.Find("txt_Crit").GetComponent<Text>();
         txt_CritHarm = GameObject.Find("txt_CritHarm").GetComponent<Text>();
         txt_CheckPoint = GameObject.Find("txt_CheckPoint").GetComponent<Text>();//关卡
+        txt_LevelMonster = GameObject.Find("txt_LevelMonster").GetComponent<Text>();//当前关卡的第几个怪
+        txt_AutoAtk = GameObject.Find("btn_AutomaticAtk/txt_AutoAtk").GetComponent<Text>();//自动攻击按钮文本
 
         ipt_Atk = GameObject.Find("ipt_Atk").GetComponent<InputField>();//战斗文本
         ipt_Detail = GameObject.Find("ipt_Detail").GetComponent<InputField>();//详细信息
 
         DetailPanel = GameObject.Find("DetailPanel");
+        AgainPanel = GameObject.Find("AgainPanel");
 
         #endregion
         Init(null, 1);
@@ -65,6 +74,17 @@ public class GameScene : MonoBehaviour
         txt_CritHarm.text = RoleFd.CritHarm + "%";
         txt_CheckPoint.text = $"厚土劫·初（{level}/300）";
         ipt_Atk.text += $"{(level == 1 ? "" : "\n")}厚土劫·初（{level}/300）";
+        txt_LevelMonster.text = "0";
+        #endregion
+
+        #region 初始图片位置
+
+        img_Monster = GameObject.Find("img_Monster0").GetComponent<Image>();
+        img_Monster1 = GameObject.Find("img_Monster2").GetComponent<Image>();
+
+        img_Monster1.transform.position = new Vector3(0, 2290, 0);
+        img_Monster.transform.position = new Vector3(300, 700, 0);
+
         #endregion
 
         //int level = GetLeveData();
@@ -167,6 +187,7 @@ public class GameScene : MonoBehaviour
     private void ClickAtkBtn()
     {
         float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
+        int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
         ipt_Detail.text = "";
         int level = GetLeveData();
         var InitHp = RoleFd.HP;
@@ -179,35 +200,35 @@ public class GameScene : MonoBehaviour
         }
         else   //小怪或灵泉
         {
-            for (int i = 0; i < MonsterDic.Count - 1; i++)
+            //for (int i = 0; i < MonsterDic.Count - 1; i++)
+            //{
+            #region 战斗
+            field monster = Common.ConvertObject<field>(MonsterDic[levelMonster]);
+            if (monster?.HP == 0)//灵泉或秘境
             {
-                #region 战斗
-                field monster = Common.ConvertObject<field>(MonsterDic[i]);
-                if (monster?.HP == 0)//灵泉或秘境
-                {
-                    ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                    ipt_Atk.text += "\n遇到了灵泉或者秘境！";
-                }
-                else
-                {
-                    var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
-                    var newRole = Common.ConvertObject<field>(Atk["Role"]);
-                    var Monster = Common.ConvertObject<field>(Atk["Monster"]);
-                    var AtkDetail = (IList<string>)Atk["AtkDetail"];
-
-                    foreach (var item in AtkDetail)
-                    {
-                        ipt_Detail.text += item;
-                    }
-                    if (newRole.HP <= 0)
-                        ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
-                    else
-                        ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，失去{InitHp - newRole.HP}点血量。" : "。")}";
-                    RoleFd = newRole;
-                    InitHp = newRole.HP;
-                }
-                #endregion
+                ipt_Detail.text += "\n遇到了灵泉或者秘境！";
+                ipt_Atk.text += "\n遇到了灵泉或者秘境！";
             }
+            else
+            {
+                var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                var newRole = Common.ConvertObject<field>(Atk["Role"]);
+                var Monster = Common.ConvertObject<field>(Atk["Monster"]);
+                var AtkDetail = (IList<string>)Atk["AtkDetail"];
+
+                foreach (var item in AtkDetail)
+                {
+                    ipt_Detail.text += item;
+                }
+                if (newRole.HP <= 0)
+                    ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                else
+                    ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                RoleFd = newRole;
+                InitHp = newRole.HP;
+            }
+            #endregion
+            //}
         }
         //战斗完后
         if (RoleFd.HP <= 0)
@@ -215,11 +236,18 @@ public class GameScene : MonoBehaviour
             RoleFd.HP = 0;
             Init(RoleFd, level);
             //战斗结束。弹出窗口
+            GameOver();
+        }
+        else if (levelMonster == 2)
+        {
+            Init(RoleFd, level + 1);
         }
         else
         {
-            //页面数据刷新
-            Init(RoleFd, level + 1);
+            //数值刷新
+            DataRefresh(RoleFd, levelMonster);
+            //数值刷新
+
         }
     }
 
@@ -236,5 +264,176 @@ public class GameScene : MonoBehaviour
     private void ShowDetail()
     {
         DetailPanel.transform.position = new Vector3(300, 600, 0);
+    }
+    /// <summary>
+    /// 数据刷新
+    /// </summary>
+    private void DataRefresh(field role, int imgNo)
+    {
+        #region 野怪图片更新
+        img_Monster = GameObject.Find("img_Monster" + imgNo).GetComponent<Image>();
+        img_Monster1 = GameObject.Find("img_Monster" + (imgNo + 1)).GetComponent<Image>();
+        img_Monster.transform.position = new Vector3(0, 2290, 0);
+        img_Monster1.transform.position = new Vector3(300, 700, 0);
+        #endregion
+
+        #region 数值刷新
+        txt_HP.text = role.HP.ToString();
+        txt_HPReply.text = role.HPRegen.ToString();
+        txt_Dodge.text = role.Dodge + "%";
+        txt_ATK.text = role.Atk.ToString();
+        txt_Crit.text = role.Crit + "%";
+        txt_CritHarm.text = role.CritHarm + "%";
+        txt_LevelMonster.text = (imgNo + 1).ToString();
+        #endregion
+    }
+    /// <summary>
+    /// 自动攻击
+    /// </summary>
+    private void AutomaticAtk()
+    {
+        var autoTxt = txt_AutoAtk.text;
+        int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
+        float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
+        ipt_Detail.text = "";
+        int level = GetLeveData();
+        var InitHp = RoleFd.HP;
+        //战斗详情添加到ipt_Detail
+        bool victory = false;
+        //判断是否是从第一关开始
+        if (levelMonster == 0)
+        {
+            if (autoTxt == "自动")
+            {
+                txt_AutoAtk.text = "暂停";
+                if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
+                {
+                    field monster = Common.ConvertObject<field>(MonsterDic[99]);
+                    var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                }
+                else   //小怪或灵泉
+                {
+                    for (int i = 0; i < MonsterDic.Count - 1; i++)
+                    {
+                        #region 战斗
+                        field monster = Common.ConvertObject<field>(MonsterDic[i]);
+                        if (monster?.HP == 0)//灵泉或秘境
+                        {
+                            ipt_Detail.text += "\n遇到了灵泉或者秘境！";
+                            ipt_Atk.text += "\n遇到了灵泉或者秘境！";
+                        }
+                        else
+                        {
+                            var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                            var newRole = Common.ConvertObject<field>(Atk["Role"]);
+                            var Monster = Common.ConvertObject<field>(Atk["Monster"]);
+                            var AtkDetail = (IList<string>)Atk["AtkDetail"];
+
+                            foreach (var item in AtkDetail)
+                            {
+                                ipt_Detail.text += item;
+                            }
+                            if (newRole.HP <= 0)
+                                ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                            else
+                                ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                            RoleFd = newRole;
+                            InitHp = newRole.HP;
+                        }
+                        #endregion
+                    }
+                }
+                //战斗完后
+                if (RoleFd.HP <= 0)
+                {
+                    RoleFd.HP = 0;
+                    Init(RoleFd, level);
+                    //战斗结束。弹出窗口
+                    GameOver();
+                }
+                else
+                {
+                    //数值刷新
+                    Init(RoleFd, level + 1);
+
+                }
+                txt_AutoAtk.text = "自动";
+            }
+            else
+            {
+                txt_AutoAtk.text = "自动";
+
+            }
+        }
+        else
+        {
+            while (levelMonster < 3)
+            {
+                if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
+                {
+                    field monster = Common.ConvertObject<field>(MonsterDic[99]);
+                    var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                }
+                else   //小怪或灵泉
+                {
+                    #region 战斗
+                    field monster = Common.ConvertObject<field>(MonsterDic[levelMonster]);
+                    if (monster?.HP == 0)//灵泉或秘境
+                    {
+                        ipt_Detail.text += "\n遇到了灵泉或者秘境！";
+                        ipt_Atk.text += "\n遇到了灵泉或者秘境！";
+                    }
+                    else
+                    {
+                        var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                        var newRole = Common.ConvertObject<field>(Atk["Role"]);
+                        var Monster = Common.ConvertObject<field>(Atk["Monster"]);
+                        var AtkDetail = (IList<string>)Atk["AtkDetail"];
+
+                        foreach (var item in AtkDetail)
+                        {
+                            ipt_Detail.text += item;
+                        }
+                        if (newRole.HP <= 0)
+                            ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                        else
+                            ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                        RoleFd = newRole;
+                        InitHp = newRole.HP;
+                    }
+                    #endregion
+                }
+                //战斗完后
+                if (RoleFd.HP <= 0)
+                {
+                    RoleFd.HP = 0;
+                    Init(RoleFd, level);
+                    //战斗结束。弹出窗口
+                    GameOver();
+                }
+                else if (levelMonster == 2)
+                {
+                    Init(RoleFd, level + 1);
+                }
+                else
+                {
+                    //数值刷新
+                    DataRefresh(RoleFd, levelMonster);
+                    //数值刷新
+
+                }
+                levelMonster++;
+            }
+        }
+
+    }
+
+
+    /// <summary>
+    /// 游戏结束
+    /// </summary>
+    private void GameOver()
+    {
+        AgainPanel.transform.position = new Vector3(300, 600, 0);
     }
 }
