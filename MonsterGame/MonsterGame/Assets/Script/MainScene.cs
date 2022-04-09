@@ -28,6 +28,7 @@ public class MainScene : MonoBehaviour
         txt_GameStart = GameObject.Find("btn_GameStart/txt_GameStart").GetComponent<Text>();//按钮文本 
         #endregion
         Init();
+        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("OpeningScene"); });
     }
 
     // Update is called once per frame
