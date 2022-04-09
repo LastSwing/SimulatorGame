@@ -78,7 +78,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u66B4\u51FB+10"
+  m_Text: "\u95EA\u907F + 0"
 --- !u!1 &1899055793137010010
 GameObject:
   m_ObjectHideFlags: 0
@@ -157,7 +157,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7D2B\u5BAB\u7A74"
+  m_Text: "\u4E2D\u67A2\u7A74"
 --- !u!1 &2438942357960064680
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,7 +200,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 600}
+  m_AnchoredPosition: {x: 0, y: -350}
   m_SizeDelta: {x: 1080, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &8620120752158890949
@@ -283,7 +283,7 @@ MonoBehaviour:
   Image: {fileID: 3019354146300982499}
   Odetail: {fileID: 227114958402910178}
   layer: 0
-  Index: 0
+  Index: 5
 --- !u!1 &3334022766963513492
 GameObject:
   m_ObjectHideFlags: 0
@@ -441,7 +441,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u6240\u9700\u80FD\u91CF\u503C 50\n\uFF080/10\uFF09"
+  m_Text: "\u6240\u9700\u80FD\u91CF\u503C\r50\n(0/10)"
 --- !u!1 &4770111652500977509
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,7 +610,7 @@ GameObject:
   - component: {fileID: 5132842377302692775}
   m_Layer: 5
   m_Name: Oaddbtn
-  m_TagString: Untagged
+  m_TagString: 5
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -630,10 +630,10 @@ RectTransform:
   m_Father: {fileID: 2058862699700688123}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 420, y: 0}
-  m_SizeDelta: {x: 80, y: 200}
+  m_SizeDelta: {x: -1000, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8948762540157151960
 CanvasRenderer:
@@ -731,7 +731,7 @@ GameObject:
   - component: {fileID: 4297456954736753790}
   m_Layer: 5
   m_Name: Odelbtn
-  m_TagString: Untagged
+  m_TagString: 5
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -751,10 +751,10 @@ RectTransform:
   m_Father: {fileID: 2058862699700688123}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 500, y: 0}
-  m_SizeDelta: {x: 80, y: 200}
+  m_SizeDelta: {x: -1000, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3076250956186850458
 CanvasRenderer:

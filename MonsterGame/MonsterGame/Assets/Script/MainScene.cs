@@ -16,7 +16,7 @@ public class MainScene : MonoBehaviour
         btn_Blood = GameObject.Find("btn_Blood");
         btn_Blood.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("BloodScene"); });
         btn_Acupoint = GameObject.Find("btn_Acupoint");
-        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("AcupointScene"); });
+        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("OpeningScene"); });
     }
 
     // Update is called once per frame

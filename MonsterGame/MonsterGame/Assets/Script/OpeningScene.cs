@@ -1,3 +1,4 @@
+using Assets.Script;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using UnityEngine.UI;
 public class OpeningScene : MonoBehaviour
 {
     public RectTransform _content;
-    public GameObject itemPrefab;
+    public GameObject itemPrefab, btn_Return;
     public Text Energyindex;
     /// <summary>
     /// 能量值
@@ -20,15 +21,18 @@ public class OpeningScene : MonoBehaviour
         Dictionary<string,string> opening = Attributes.Opening("",0);
         openings = new List<OpeningValue>();
         int index = 0;
-        Energy = 1000;
+        Energy = 100000;
         Energyindex.text = Energy.ToString();
         foreach (var item in opening)
         {
-            itemPrefab.transform.position = new Vector3(0f,-400+(index*200));
-            OpeningValue opening1 = GameTools.AddChild(_content, itemPrefab).GetComponent<OpeningValue>();
+            btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
+            itemPrefab.transform.position = new Vector2(0f,650-(index*200));
+            OpeningValue opening1 = GameTools.AddChild(_content, itemPrefab).GetComponent<OpeningValue>(); //
             opening1.oname.text = item.Key;
-            opening1.iadd.onClick.AddListener(() => OnaddChlick(index));
-            opening1.idel.onClick.AddListener(() => OndelChlick(index));
+            opening1.iadd.onClick.AddListener(OnaddChlick);
+            opening1.iadd.tag = index.ToString();
+            opening1.idel.onClick.AddListener(OndelChlick);
+            opening1.idel.tag = index.ToString();
             int _value = Convert.ToInt32(item.Value);
             opening1.layer = _value;
             opening1.Index = index;
@@ -44,10 +48,10 @@ public class OpeningScene : MonoBehaviour
 
     }
 
-    public void OnaddChlick(int i)
+    public void OnaddChlick()
     {
         var button = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
-        OpeningValue opening1 = openings[i-1];
+        OpeningValue opening1 = openings[Convert.ToInt32(button.transform.tag)];
         if (Energy >= opening1.energyValue && opening1.layer < 10)
         {
             Energy = Energy - opening1.energyValue;
@@ -56,14 +60,14 @@ public class OpeningScene : MonoBehaviour
             Change(opening1);
             List<OpeningValue> open = new List<OpeningValue>();
             open.Add(opening1);
-            openings.RemoveRange(i-1, 1);
-            openings.InsertRange(i-1, open);
+            openings.RemoveRange(Convert.ToInt32(button.transform.tag), 1);
+            openings.InsertRange(Convert.ToInt32(button.transform.tag), open);
         }
-        Debug.Log("add");
     }
-    public void OndelChlick(int i)
+    public void OndelChlick()
     {
-        OpeningValue opening1 = openings[i-1];
+        var button = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
+        OpeningValue opening1 = openings[Convert.ToInt32(button.transform.tag)];
         if (opening1.layer > 0)
         {
             opening1.layer -= 1;
@@ -72,8 +76,8 @@ public class OpeningScene : MonoBehaviour
             Change(opening1);
             List<OpeningValue> open = new List<OpeningValue>();
             open.Add(opening1);
-            openings.RemoveRange(i-1, 1);
-            openings.InsertRange(i-1, open);
+            openings.RemoveRange(Convert.ToInt32(button.transform.tag), 1);
+            openings.InsertRange(Convert.ToInt32(button.transform.tag), open);
         }
         Debug.Log("del");
     }
@@ -102,7 +106,7 @@ public class OpeningScene : MonoBehaviour
             default:
                 break;
         }
-        opening.Odetail.text = "所需能量值\r" + opening.energyValue + "\n(" + opening.layer + "/10)";
+        opening.Odetail.text = "窍穴进度：" + opening.layer*10 + "%\n\r" + (opening.energyValue == 1000?"MAX": opening.energyValue.ToString()) + "能量值";
         return opening;
     }
 }
