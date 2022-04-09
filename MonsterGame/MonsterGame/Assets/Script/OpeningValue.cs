@@ -11,20 +11,27 @@ public class OpeningValue : MonoBehaviour
     public Text oname;
     public Text ovalue;
     public Image Image;
-    public int layer;
+    public Text Odetail;
+    public int layer;//²ãÊý
+    public int Index;//±êÊ¶
+    public int energyValue
+    {
+        get
+        {
+            int energy = 50;
+            if (layer == 0)
+                energy = 50;
+            else
+                energy = 100 * layer;
+            return energy;
+        }
+        set
+        {
+            energyValue = value;
+        }
+    }
     void Start()
     {
-        iadd.onClick.AddListener(OnaddChlick);
-        idel.onClick.AddListener(OndleChlick);
-
-    }
-    public void OnaddChlick()
-    { 
-        
-    }
-    public void OndleChlick()
-    {
-
     }
     // Update is called once per frame
     void Update()
