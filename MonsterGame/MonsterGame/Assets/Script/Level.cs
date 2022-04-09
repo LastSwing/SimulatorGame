@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 /// <summary>
 /// 关卡
@@ -19,7 +20,7 @@ public class Level
         Dictionary<int, object> dict = new Dictionary<int, object>();
         if (int.TryParse(System.Convert.ToString(number / 30.00F), out int result))//出现boss
         {
-            dict.Add(99, Autogeneration.Bigmonster(result, GameHelper.hard));
+            dict.Add(99, JsonConvert.SerializeObject(Autogeneration.Bigmonster(result, GameHelper.hard)));
             return dict;
         }
         else
@@ -36,7 +37,7 @@ public class Level
                 }
                 else
                 {
-                    dict.Add(i, Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard));
+                    dict.Add(i, JsonConvert.SerializeObject(Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard)));
                 }
             }
             return dict;
@@ -138,7 +139,7 @@ public class Level
                 }
                 else
                 {
-                    str1 +=$"\n{fileid1.Name}发动攻击，但被{fileid.Name}闪避了。";
+                    str1 += $"\n{fileid1.Name}发动攻击，但被{fileid.Name}闪避了。";
                     round = 0;
                 }
                 if (Random.Range(0.00F, 1.01F) <= fileid1.Twice)
