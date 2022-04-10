@@ -1,1 +1,1 @@
-{"ID":"ROLE2022033114091292","Atk":"8","AtkRegain":"2","HP":"100","HPRegen":"5","Dodge":"0.01","Crit":"0.01","CritHarm":"3","Name":"昊天","Seckill":"0","Twice":"0","EXP":"0"}
+{"Atk":8.0,"Crit":5.0,"CritHarm":1.0,"AtkRegain":2.0,"HP":100.0,"HPRegen":0.0,"Dodge":0.0,"Name":"��","Seckill":0.0,"Twice":0.0,"EXP":187}

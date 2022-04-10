@@ -96,8 +96,8 @@ public class GameScene : MonoBehaviour
                     for (int i = 0; i < MonsterDic.Count - 2; i++)
                     {
                         #region 战斗
-                        field monster = Common.ConvertObject<field>(MonsterDic[i]);
-                        if (monster?.HP == 0)//灵泉或秘境
+                        field monster = MonsterDic[i] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[i].ToString());
+                        if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
                             ipt_Atk.text += "\n遇到了灵泉或者秘境！";
@@ -120,6 +120,18 @@ public class GameScene : MonoBehaviour
                                 ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                             RoleFd = newRole;
                             InitHp = newRole.HP;
+
+                            #region 经验
+                            if (monster.HP <= 0 && RoleFd.HP > 0)
+                            {
+                                float[] interval = { 0.5F, 1.5F };
+                                int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
+                                //角色添加经验值
+                                RoleAddEXP(Exp);
+                                ipt_Atk.text += $"获得{Exp}点经验值。";
+                                ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
+                            }
+                            #endregion
                         }
                         #endregion
                     }
@@ -153,8 +165,8 @@ public class GameScene : MonoBehaviour
                     else   //小怪或灵泉
                     {
                         #region 战斗
-                        field monster = Common.ConvertObject<field>(MonsterDic[levelMonster]);
-                        if (monster?.HP == 0)//灵泉或秘境
+                        field monster = MonsterDic[levelMonster] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[levelMonster].ToString());
+                        if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
                             ipt_Atk.text += "\n遇到了灵泉或者秘境！";
@@ -177,6 +189,17 @@ public class GameScene : MonoBehaviour
                                 ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                             RoleFd = newRole;
                             InitHp = newRole.HP;
+                            #region 经验
+                            if (monster.HP <= 0 && RoleFd.HP > 0)
+                            {
+                                float[] interval = { 0.5F, 1.5F };
+                                int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
+                                //角色添加经验值
+                                RoleAddEXP(Exp);
+                                ipt_Atk.text += $"获得{Exp}点经验值。";
+                                ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
+                            }
+                            #endregion
                         }
                         #endregion
                     }
@@ -355,7 +378,6 @@ public class GameScene : MonoBehaviour
             //{
             #region 战斗
             field monster = MonsterDic[levelMonster] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[levelMonster].ToString());
-            monsterName = monster.Name;
             if (monster == null || monster?.HP == 0)//灵泉或秘境
             {
                 ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -378,11 +400,22 @@ public class GameScene : MonoBehaviour
                     ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                 RoleFd = newRole;
                 InitHp = newRole.HP;
+
+                #region 经验
+                if (monster.HP <= 0 && RoleFd.HP > 0)
+                {
+                    float[] interval = { 0.5F, 1.5F };
+                    int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
+                    //角色添加经验值
+                    RoleAddEXP(Exp);
+                    ipt_Atk.text += $"获得{Exp}点经验值。";
+                    ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
+                }
+                #endregion
             }
             #endregion
             //}
         }
-        float[] interval = { 0.5F, 1.5F };
         //战斗完后
         if (RoleFd.HP <= 0)
         {
@@ -394,20 +427,11 @@ public class GameScene : MonoBehaviour
         else if (levelMonster == 2)
         {
             Init(RoleFd, level + 1);
-            //角色添加经验值
-            int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
-            RoleAddEXP(Exp);
-            ipt_Atk.text += $"击败{monsterName},获得{Exp}点经验值。";
-            ipt_Detail.text += $"击败{monsterName},获得{Exp}点经验值。";
         }
         else
         {
             //数值刷新
             DataRefresh(RoleFd, levelMonster);
-            int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
-            RoleAddEXP(Exp);
-            ipt_Atk.text += $"击败{monsterName},获得{Exp}点经验值。";
-            ipt_Detail.text += $"击败{monsterName},获得{Exp}点经验值。";
 
         }
     }
