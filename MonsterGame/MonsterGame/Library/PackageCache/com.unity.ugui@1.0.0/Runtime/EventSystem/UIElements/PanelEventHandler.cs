@@ -191,7 +191,7 @@ namespace UnityEngine.UIElements
             // Need to scale as the UI system expects lines.
             scrollDelta /= kPixelPerLine;
 
-            using (var e = WheelEvent.GetPooled(scrollDelta, m_PointerEvent))
+            using (var e = WheelEvent.GetPooled(scrollDelta, m_PointerEvent.position))
             {
                 SendEvent(e, eventData);
             }
