@@ -1,8 +1,10 @@
-﻿using System;
+﻿using LitJson;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 
@@ -110,7 +112,99 @@ namespace Assets.Script
             IList<string> objList = (IList<string>)asObject;
             return objList.ToList();
         }
+        /// <summary>
+        /// dic转JSON
+        /// </summary>
+        /// <param name="dic"></param>
+        /// <returns></returns>
+        public static string ConvertToJson(Dictionary<string, object> dic)
+        {
+            string result = "{";
+            for (int i = 0; i < 3; i++)
+            {
+                result += $"\"{i}\":\"{{";
+                var fd = ConvertObject<field>(dic[i.ToString()]);
+                Type t = typeof(field);
+                foreach (var item in t.GetProperties())
+                {
+                    if (fd != null)
+                    {
+                        if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                        {
+                            result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(fd)}\\\",";
+                        }
+                    }
+                    else
+                    {
+                        if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+                        {
+                            result += $"\\\"{item.Name}\\\":\\\"\\\",";
+                        }
+                    }
+                }
+                char[] mychar = { ',' };
+                result = result.TrimEnd(mychar);
+                result += "}\",";
+            }
+            result += "\"888\":\"{";
+            var obj = ConvertObject<field>(dic["888"]);
+            Type t1 = typeof(field);
+            foreach (var item in t1.GetProperties())
+            {
+                if (obj != null)
+                {
+                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                    {
+                        result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(obj)}\\\",";
+                    }
+                }
+                else
+                {
+                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+                    {
+                        result += $"\\\"{item.Name}\\\":\\\"\\\",";
+                    }
+                }
+            }
+            char[] mychar1 = { ',' };
+            result = result.TrimEnd(mychar1);
+            result += "}\",";
+            result += $"\"999\":\"{dic["999"]}\"";
+            result += "}";
+            return result;
+        }
 
+        /// <summary>
+        /// object转json
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static string ObjectToJson(object obj)
+        {
+            string result = "{";
+            Type t = obj.GetType();
+            foreach (var item in t.GetProperties())
+            {
+                if (obj != null)
+                {
+                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                    {
+                        result += $"\"{item.Name}\":\"{item.GetValue(obj)}\",";
+                    }
+                }
+                else
+                {
+                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+                    {
+                        result += $"\"{item.Name}\":\"\",";
+                    }
+                }
+            }
+            char[] mychar = { ',' };
+            result = result.TrimEnd(mychar);
+            result += "}";
+            return result;
+        }
 
     }
 }

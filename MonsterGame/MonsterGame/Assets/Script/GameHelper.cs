@@ -162,6 +162,7 @@ public class GameHelper
                     Console.WriteLine(reader.Token + "\t" + reader.Value);
                 } 
             }
+            json.Close();
         }
         return dict;
     }
