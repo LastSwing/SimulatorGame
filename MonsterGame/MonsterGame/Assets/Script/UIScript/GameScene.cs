@@ -1,9 +1,11 @@
 ﻿using Assets.Script;
 using LitJson;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class GameScene : MonoBehaviour
 {
@@ -13,41 +15,44 @@ public class GameScene : MonoBehaviour
     private Image img_Monster, img_Monster1;
     private Dictionary<string, object> MonsterDic;
     private field RoleFd;
+    private Scrollbar TalkWinBar;
     // Start is called before the first frame update
     void Start()
     {
         #region 控件绑定
-        btn_Return = GameObject.Find("btn_Return");
+        btn_Return = transform.Find("btn_Return").gameObject;
         btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
-        btn_Atk = GameObject.Find("btn_Atk");
+        btn_Atk = transform.Find("btn_Atk").gameObject;
         btn_Atk.GetComponent<Button>().onClick.AddListener(ClickAtkBtn);
-        btn_ReturnAtk = GameObject.Find("btn_ReturnAtk");
+        btn_ReturnAtk = transform.Find("DetailPanel/btn_ReturnAtk").gameObject;
         btn_ReturnAtk.GetComponent<Button>().onClick.AddListener(ReturnAtk);
-        btn_Detail = GameObject.Find("btn_Detail");
+        btn_Detail = transform.Find("btn_Detail").gameObject;
         btn_Detail.GetComponent<Button>().onClick.AddListener(ShowDetail);
-        btn_AutomaticAtk = GameObject.Find("btn_AutomaticAtk");
+        btn_AutomaticAtk = transform.Find("btn_AutomaticAtk").gameObject;
         btn_AutomaticAtk.GetComponent<Button>().onClick.AddListener(AutomaticAtk);
-        btn_Again = GameObject.Find("btn_Again");
+        btn_Again = transform.Find("AgainPanel/btn_Again").gameObject;
         btn_Again.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene", 0); });
-        btn_AgainReturn = GameObject.Find("AgainPanel/btn_Return");
+        btn_AgainReturn = transform.Find("AgainPanel/btn_Return").gameObject;
         btn_AgainReturn.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
 
-        txt_HP = GameObject.Find("txt_HP").GetComponent<Text>();
-        txt_HPReply = GameObject.Find("txt_HPReply").GetComponent<Text>();
-        txt_Dodge = GameObject.Find("txt_Dodge").GetComponent<Text>();
-        txt_ATK = GameObject.Find("txt_ATK").GetComponent<Text>();
-        txt_Crit = GameObject.Find("txt_Crit").GetComponent<Text>();
-        txt_CritHarm = GameObject.Find("txt_CritHarm").GetComponent<Text>();
-        txt_CheckPoint = GameObject.Find("txt_CheckPoint").GetComponent<Text>();//关卡
-        txt_LevelMonster = GameObject.Find("txt_LevelMonster").GetComponent<Text>();//当前关卡的第几个怪
-        txt_AutoAtk = GameObject.Find("btn_AutomaticAtk/txt_AutoAtk").GetComponent<Text>();//自动攻击按钮文本
-        txt_AutoState = GameObject.Find("txt_AutoState").GetComponent<Text>();//自动攻击状态
+        txt_HP = transform.Find("txt_HP").GetComponent<Text>();
+        txt_HPReply = transform.Find("txt_HPReply").GetComponent<Text>();
+        txt_Dodge = transform.Find("txt_Dodge").GetComponent<Text>();
+        txt_ATK = transform.Find("txt_ATK").GetComponent<Text>();
+        txt_Crit = transform.Find("txt_Crit").GetComponent<Text>();
+        txt_CritHarm = transform.Find("txt_CritHarm").GetComponent<Text>();
+        txt_CheckPoint = transform.Find("txt_CheckPoint").GetComponent<Text>();//关卡
+        txt_LevelMonster = transform.Find("txt_LevelMonster").GetComponent<Text>();//当前关卡的第几个怪
+        txt_AutoAtk = transform.Find("btn_AutomaticAtk/txt_AutoAtk").GetComponent<Text>();//自动攻击按钮文本
+        txt_AutoState = transform.Find("txt_AutoState").GetComponent<Text>();//自动攻击状态
+        TalkWinBar = transform.Find("Battle/Scroll View/Scrollbar Vertical").GetComponent<Scrollbar>();//滑动框
+        ipt_Atk = transform.Find("Battle/Scroll View/Viewport/sv_Content/ipt_Atk").GetComponent<InputField>();//战斗文本
+        ipt_Atk.onValueChanged.AddListener(UpdateDetail);
+        ipt_Detail = transform.Find("DetailPanel/sv_Detail/v_Detail/svc_Detail/ipt_Detail").GetComponent<InputField>();//详细信息
+        
 
-        ipt_Atk = GameObject.Find("ipt_Atk").GetComponent<InputField>();//战斗文本
-        ipt_Detail = GameObject.Find("ipt_Detail").GetComponent<InputField>();//详细信息
-
-        DetailPanel = GameObject.Find("DetailPanel");
-        AgainPanel = GameObject.Find("AgainPanel");
+        DetailPanel = transform.Find("DetailPanel").gameObject;
+        AgainPanel = transform.Find("AgainPanel").gameObject;
 
         #endregion
         if (Common.HasAgain == 0)
@@ -64,6 +69,11 @@ public class GameScene : MonoBehaviour
             }
             Init(Common.ConvertObject<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
         }
+    }
+
+    private void UpdateDetail(string arg0)
+    {
+        TalkWinBar.value = 0;
     }
 
     // Update is called once per frame
@@ -396,14 +406,16 @@ public class GameScene : MonoBehaviour
     /// </summary>
     private void ReturnAtk()
     {
-        DetailPanel.transform.position = new Vector3(0, -2178, 0);
+        //DetailPanel.transform.position = new Vector3(0, -2178, 0);
+        DetailPanel.SetActive(false);
     }
     /// <summary>
     /// 展示战斗详情
     /// </summary>
     private void ShowDetail()
     {
-        DetailPanel.transform.position = new Vector3(300, 600, 0);
+        //DetailPanel.transform.position = new Vector3(300, 600, 0);
+        DetailPanel.SetActive(true);
     }
     /// <summary>
     /// 数据刷新
@@ -413,8 +425,8 @@ public class GameScene : MonoBehaviour
         #region 野怪图片更新
         img_Monster = GameObject.Find("img_Monster" + imgNo).GetComponent<Image>();
         img_Monster1 = GameObject.Find("img_Monster" + (imgNo + 1)).GetComponent<Image>();
-        img_Monster.transform.position = new Vector3(0, 2290, 0);
-        img_Monster1.transform.position = new Vector3(300, 700, 0);
+        //img_Monster.transform.position = new Vector3(0, 2290, 0);
+        //img_Monster1.transform.position = new Vector3(300, 700, 0);
         #endregion
 
         #region 数值刷新
@@ -578,7 +590,8 @@ public class GameScene : MonoBehaviour
     /// </summary>
     private void GameOver()
     {
-        AgainPanel.transform.position = new Vector3(300, 600, 0);
+        AgainPanel.SetActive(true);
+        //AgainPanel.transform.position = new Vector3(300, 600, 0);
     }
 
 
