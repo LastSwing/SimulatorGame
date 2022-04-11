@@ -1,7 +1,6 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using LitJson;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using UnityEngine;
 
 /// <summary>
 /// 关卡
@@ -20,7 +19,7 @@ public class Level
         Dictionary<int, object> dict = new Dictionary<int, object>();
         if (int.TryParse(System.Convert.ToString(number / 30.00F), out int result))//出现boss
         {
-            dict.Add(99, JsonConvert.SerializeObject(Autogeneration.Bigmonster(result, GameHelper.hard)));
+            dict.Add(99, JsonMapper.ToJson(Autogeneration.Bigmonster(result, GameHelper.hard)));
             return dict;
         }
         else
@@ -37,7 +36,7 @@ public class Level
                 }
                 else
                 {
-                    dict.Add(i, JsonConvert.SerializeObject(Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard)));
+                    dict.Add(i, JsonMapper.ToJson(Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard)));
                 }
             }
             return dict;

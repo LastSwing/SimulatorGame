@@ -1,10 +1,8 @@
 ﻿using Assets.Script;
-using Newtonsoft.Json;
-using System.Collections;
+using LitJson;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainScene : MonoBehaviour
@@ -41,7 +39,7 @@ public class MainScene : MonoBehaviour
     {
         //判断是否显示继续游戏
         var dic = GetSaveData();
-        var field = JsonConvert.DeserializeObject<field>(dic[888].ToString());
+        var field = JsonMapper.ToObject<field>(dic[888].ToString());
         if (field?.HP != 0)
         {
             ShowContinueGame();
@@ -66,9 +64,9 @@ public class MainScene : MonoBehaviour
         }
         if (File.Exists(path + @"\" + "LevelData/Level.txt"))
         {
-            //string json = GameHelper.DesDecrypt(File.ReadAllText(path + @"\" + "LevelData/Level.txt"));
-            string json = File.ReadAllText(path + @"\" + "LevelData/Level.txt");
-            dict = JsonConvert.DeserializeObject<Dictionary<int, object>>(json);
+            StreamReader json = File.OpenText(path + @"\" + "LevelData/Level.txt");
+            string input = json.ReadToEnd();
+            dict = JsonMapper.ToObject<Dictionary<int, object>>(input);
         }
         return dict;
     }

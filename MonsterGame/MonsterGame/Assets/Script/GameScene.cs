@@ -1,5 +1,5 @@
 ﻿using Assets.Script;
-using Newtonsoft.Json;
+using LitJson;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -64,7 +64,7 @@ public class GameScene : MonoBehaviour
             monster.Add(0, dic[0]);
             monster.Add(1, dic[1]);
             monster.Add(2, dic[2]);
-            Init(JsonConvert.DeserializeObject<field>(dic?[888].ToString()), System.Convert.ToInt32(dic?[999]), monster);
+            Init(JsonMapper.ToObject<field>(dic?[888].ToString()), System.Convert.ToInt32(dic?[999]), monster);
         }
     }
 
@@ -96,7 +96,7 @@ public class GameScene : MonoBehaviour
                     for (int i = 0; i < MonsterDic.Count - 2; i++)
                     {
                         #region 战斗
-                        field monster = MonsterDic[i] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[i].ToString());
+                        field monster = MonsterDic[i] == null ? null : JsonMapper.ToObject<field>(MonsterDic[i].ToString());
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -165,7 +165,7 @@ public class GameScene : MonoBehaviour
                     else   //小怪或灵泉
                     {
                         #region 战斗
-                        field monster = MonsterDic[levelMonster] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[levelMonster].ToString());
+                        field monster = MonsterDic[levelMonster] == null ? null : JsonMapper.ToObject<field>(MonsterDic[levelMonster].ToString());
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -266,7 +266,7 @@ public class GameScene : MonoBehaviour
             for (int i = 0; i < MonsterDic.Count; i++)
             {
                 #region 关卡生成
-                field monster = MonsterDic[i] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[i].ToString());
+                field monster = MonsterDic[i] == null ? null : JsonMapper.ToObject<field>(MonsterDic[i].ToString());
                 if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
                     Debug.Log("秘境或灵泉");
@@ -317,7 +317,7 @@ public class GameScene : MonoBehaviour
     private void LevelDataSave(Dictionary<int, object> monster, int level)
     {
         monster.Add(999, level);//关卡
-        string json = JsonConvert.SerializeObject(monster);
+        string json = JsonMapper.ToJson(monster);
         //json = GameHelper.DesEncrypt(json);//前期不加密
         var path = Application.dataPath + "/Data/LevelData";
         //文件夹是否存在
@@ -346,9 +346,9 @@ public class GameScene : MonoBehaviour
         }
         if (File.Exists(path + @"\" + "LevelData/Level.txt"))
         {
-            //string json = GameHelper.DesDecrypt(File.ReadAllText(path + @"\" + "LevelData/Level.txt"));
-            string json = File.ReadAllText(path + @"\" + "LevelData/Level.txt");
-            dict = JsonConvert.DeserializeObject<Dictionary<int, object>>(json);
+            StreamReader json = File.OpenText(path + @"\" + "LevelData/Level.txt");
+            string input = json.ReadToEnd();
+            dict = JsonMapper.ToObject<Dictionary<int, object>>(input);
         }
         return dict;
     }
@@ -377,7 +377,7 @@ public class GameScene : MonoBehaviour
             //for (int i = 0; i < MonsterDic.Count - 1; i++)
             //{
             #region 战斗
-            field monster = MonsterDic[levelMonster] == null ? null : JsonConvert.DeserializeObject<field>(MonsterDic[levelMonster].ToString());
+            field monster = MonsterDic[levelMonster] == null ? null : JsonMapper.ToObject<field>(MonsterDic[levelMonster].ToString());
             if (monster == null || monster?.HP == 0)//灵泉或秘境
             {
                 ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -633,7 +633,7 @@ public class GameScene : MonoBehaviour
     {
         var role = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt"));
         role.EXP += exp;
-        string json = JsonConvert.SerializeObject(role);
+        string json = JsonMapper.ToJson(role);
         //json = GameHelper.DesEncrypt(json);//前期不加密
         var path = Application.dataPath + "/Data/Role";
         //文件夹是否存在

@@ -1,1 +1,1 @@
-{"Atk":8.0,"Crit":5.0,"CritHarm":1.0,"AtkRegain":2.0,"HP":100.0,"HPRegen":0.0,"Dodge":0.0,"Name":"��","Seckill":0.0,"Twice":0.0,"EXP":187}
+{"Atk":8.0,"Crit":5.0,"CritHarm":1.0,"AtkRegain":2.0,"HP":100.0,"HPRegen":0.0,"Dodge":0.0,"Name":"��","Seckill":0.0,"Twice":0.0,"EXP":339}

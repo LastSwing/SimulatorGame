@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using LitJson;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -70,6 +70,9 @@ public class GameHelper
         return sr.ReadToEnd();
     }
 
+    #endregion
+
+
     /// <summary>
     /// 数据组装 成JSON
     /// </summary>
@@ -138,30 +141,12 @@ public class GameHelper
         if (File.Exists(path + @"\" + Name))
         {
             //string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
-            string json = File.ReadAllText(path + @"\" + Name, Encoding.UTF8);
+            StreamReader json = File.OpenText(path + @"\" + Name);
             //Debug.Log("读档" + json);
-            JsonReader readerJson = new JsonTextReader(new StringReader(json));
-            string temp = string.Empty;
-            while (readerJson.Read())
-            {
-                if (readerJson.Value != null)
-                {
-                    switch (readerJson.TokenType)
-                    {
-                        case JsonToken.PropertyName:
-                            dict.Add(readerJson.Value.ToString(), string.Empty);
-                            temp = readerJson.Value.ToString();
-                            break;
-                        default:
-                            dict[temp] = readerJson.Value.ToString();
-                            break;
-                    }
-                    Console.WriteLine(readerJson.TokenType + "\t" + readerJson.Value);
-                }
-            }
+            string input = json.ReadToEnd();
+            dict = JsonMapper.ToObject<Dictionary<string, string>>(input);
         }
         return dict;
     }
-    #endregion
-
+    
 }
