@@ -140,11 +140,28 @@ public class GameHelper
         }
         if (File.Exists(path + @"\" + Name))
         {
-            //string json = DesDecrypt(File.ReadAllText(path + @"\" + Name));
             StreamReader json = File.OpenText(path + @"\" + Name);
             //Debug.Log("¶Áµµ" + json);
             string input = json.ReadToEnd();
-            dict = JsonMapper.ToObject<Dictionary<string, string>>(input);
+            JsonReader reader = new JsonReader(input);
+            string temp = string.Empty;
+            while (reader.Read())
+            {
+                if (reader.Value != null)
+                {
+                    switch (reader.Token)
+                    {
+                        case JsonToken.PropertyName:
+                            dict.Add(reader.Value.ToString(), string.Empty);
+                            temp = reader.Value.ToString();
+                            break;
+                        default:
+                            dict[temp] = reader.Value.ToString();
+                            break;
+                    }
+                    Console.WriteLine(reader.Token + "\t" + reader.Value);
+                } 
+            }
         }
         return dict;
     }

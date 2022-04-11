@@ -1,5 +1,4 @@
-﻿using LitJson;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -14,12 +13,12 @@ public class Level
     /// </summary>
     /// <param name="number">关卡数</param>
     /// <returns></returns>
-    public static Dictionary<int, object> CreateLevel(float number)
+    public static Dictionary<string, object> CreateLevel(float number)
     {
-        Dictionary<int, object> dict = new Dictionary<int, object>();
+        Dictionary<string, object> dict = new Dictionary<string, object>();
         if (int.TryParse(System.Convert.ToString(number / 30.00F), out int result))//出现boss
         {
-            dict.Add(99, JsonMapper.ToJson(Autogeneration.Bigmonster(result, GameHelper.hard)));
+            dict.Add("99", Autogeneration.Bigmonster(result, GameHelper.hard));
             return dict;
         }
         else
@@ -28,15 +27,15 @@ public class Level
             {
                 if (Random.Range(0.00F, 1.01F) <= Random.Range(0.00F, spring))
                 {
-                    dict.Add(i, null);//灵泉
+                    dict.Add(i.ToString(), null);//灵泉
                 }
                 else if (Random.Range(0.00F, 1.01F) <= Random.Range(0.00F, Secret))
                 {
-                    dict.Add(i, null);//秘境
+                    dict.Add(i.ToString(), null);//秘境
                 }
                 else
                 {
-                    dict.Add(i, JsonMapper.ToJson(Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard)));
+                    dict.Add(i.ToString(), Autogeneration.Littlemonster(System.Convert.ToInt32(number), GameHelper.hard));
                 }
             }
             return dict;

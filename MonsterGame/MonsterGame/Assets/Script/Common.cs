@@ -16,7 +16,7 @@ namespace Assets.Script
         /// </summary>
         /// <param name="SceneName">场景名称</param>
         /// <param name="HasAgain">是否重新开始1、不重开，0重开</param>
-        public static void SceneJump(string SceneName,int Again= 1)
+        public static void SceneJump(string SceneName, int Again = 1)
         {
             HasAgain = Again;
             SceneManager.LoadScene(SceneName);
@@ -110,6 +110,7 @@ namespace Assets.Script
             IList<string> objList = (IList<string>)asObject;
             return objList.ToList();
         }
+
 
     }
 }

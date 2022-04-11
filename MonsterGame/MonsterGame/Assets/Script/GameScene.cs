@@ -1,11 +1,8 @@
 ﻿using Assets.Script;
 using LitJson;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameScene : MonoBehaviour
@@ -14,7 +11,7 @@ public class GameScene : MonoBehaviour
     private Text txt_HP, txt_HPReply, txt_Dodge, txt_ATK, txt_Crit, txt_CritHarm, txt_CheckPoint, txt_Monster, txt_LevelMonster, txt_AutoAtk, txt_AutoState;//获取页面控件
     private InputField ipt_Atk, ipt_Detail;
     private Image img_Monster, img_Monster1;
-    private Dictionary<int, object> MonsterDic;
+    private Dictionary<string, object> MonsterDic;
     private field RoleFd;
     // Start is called before the first frame update
     void Start()
@@ -60,11 +57,12 @@ public class GameScene : MonoBehaviour
         else
         {
             var dic = GetLeveData();
-            var monster = new Dictionary<int, object>();
-            monster.Add(0, dic[0]);
-            monster.Add(1, dic[1]);
-            monster.Add(2, dic[2]);
-            Init(JsonMapper.ToObject<field>(dic?[888].ToString()), System.Convert.ToInt32(dic?[999]), monster);
+            var monster = new Dictionary<string, object>();
+            for (int i = 0; i < 3; i++)
+            {
+                monster.Add(i.ToString(), dic[i.ToString()]);
+            }
+            Init(Common.ConvertObject<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
         }
     }
 
@@ -78,7 +76,7 @@ public class GameScene : MonoBehaviour
             int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
             float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
             ipt_Detail.text = "";
-            int level = System.Convert.ToInt32(GetLeveData()[999]);
+            int level = System.Convert.ToInt32(GetLeveData()["999"]);
             var InitHp = RoleFd.HP;
             //战斗详情添加到ipt_Detail
             bool victory = false;
@@ -88,7 +86,7 @@ public class GameScene : MonoBehaviour
                 txt_AutoAtk.text = "暂停";
                 if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
                 {
-                    field monster = Common.ConvertObject<field>(MonsterDic[99]);
+                    field monster = Common.ConvertObject<field>(MonsterDic["99"]);
                     var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
                 }
                 else   //小怪或灵泉
@@ -96,7 +94,7 @@ public class GameScene : MonoBehaviour
                     for (int i = 0; i < MonsterDic.Count - 2; i++)
                     {
                         #region 战斗
-                        field monster = MonsterDic[i] == null ? null : JsonMapper.ToObject<field>(MonsterDic[i].ToString());
+                        field monster = Common.ConvertObject<field>(MonsterDic[i.ToString()].ToString());
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -159,13 +157,13 @@ public class GameScene : MonoBehaviour
                 {
                     if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
                     {
-                        field monster = Common.ConvertObject<field>(MonsterDic[99]);
+                        field monster = Common.ConvertObject<field>(MonsterDic["99"]);
                         var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
                     }
                     else   //小怪或灵泉
                     {
                         #region 战斗
-                        field monster = MonsterDic[levelMonster] == null ? null : JsonMapper.ToObject<field>(MonsterDic[levelMonster].ToString());
+                        field monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()].ToString());
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
@@ -229,7 +227,7 @@ public class GameScene : MonoBehaviour
         }
     }
 
-    void Init(field role, int level, Dictionary<int, object> monsterD = null)
+    void Init(field role, int level, Dictionary<string, object> monsterD = null)
     {
         #region 基础数据绑定
 
@@ -259,14 +257,14 @@ public class GameScene : MonoBehaviour
         MonsterDic = monsterD == null ? Level.CreateLevel(level) : monsterD;
         if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
         {
-            field monster = Common.ConvertObject<field>(MonsterDic[99]);
+            field monster = Common.ConvertObject<field>(MonsterDic["99"]);
         }
         else   //小怪或灵泉
         {
             for (int i = 0; i < MonsterDic.Count; i++)
             {
                 #region 关卡生成
-                field monster = MonsterDic[i] == null ? null : JsonMapper.ToObject<field>(MonsterDic[i].ToString());
+                field monster = Common.ConvertObject<field>(MonsterDic[i.ToString()]);
                 if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
                     Debug.Log("秘境或灵泉");
@@ -305,7 +303,7 @@ public class GameScene : MonoBehaviour
             }
         }
         //当前关卡数据存储到文本
-        MonsterDic.Add(888, RoleFd);
+        MonsterDic.Add("888", RoleFd);
         LevelDataSave(MonsterDic, level);
     }
 
@@ -314,9 +312,9 @@ public class GameScene : MonoBehaviour
     /// </summary>
     /// <param name="dic">野怪数据</param>
     /// <param name="level">当前关卡</param>
-    private void LevelDataSave(Dictionary<int, object> monster, int level)
+    private void LevelDataSave(Dictionary<string, object> monster, int level)
     {
-        monster.Add(999, level);//关卡
+        monster.Add("999", level);//关卡
         string json = JsonMapper.ToJson(monster);
         //json = GameHelper.DesEncrypt(json);//前期不加密
         var path = Application.dataPath + "/Data/LevelData";
@@ -334,10 +332,10 @@ public class GameScene : MonoBehaviour
     /// 获取当前关卡
     /// </summary>
     /// <returns></returns>
-    private Dictionary<int, object> GetLeveData()
+    private Dictionary<string, object> GetLeveData()
     {
         var path = Application.dataPath + "/Data/";
-        Dictionary<int, object> dict = new Dictionary<int, object>();
+        Dictionary<string, object> dict = new Dictionary<string, object>();
         //文件夹是否存在
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         if (!myDirectoryInfo.Exists)
@@ -348,7 +346,7 @@ public class GameScene : MonoBehaviour
         {
             StreamReader json = File.OpenText(path + @"\" + "LevelData/Level.txt");
             string input = json.ReadToEnd();
-            dict = JsonMapper.ToObject<Dictionary<int, object>>(input);
+            dict = JsonMapper.ToObject<Dictionary<string, object>>(input);
         }
         return dict;
     }
@@ -361,14 +359,14 @@ public class GameScene : MonoBehaviour
         float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
         int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
         ipt_Detail.text = "";
-        int level = System.Convert.ToInt32(GetLeveData()[999]);
+        int level = System.Convert.ToInt32(GetLeveData()["999"]);
         var InitHp = RoleFd.HP;
         var monsterName = "";
         //战斗详情添加到ipt_Detail
         bool victory = false;
         if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
         {
-            field monster = Common.ConvertObject<field>(MonsterDic[99]);
+            field monster = Common.ConvertObject<field>(MonsterDic["99"]);
             monsterName = monster.Name;
             var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
         }
@@ -377,7 +375,7 @@ public class GameScene : MonoBehaviour
             //for (int i = 0; i < MonsterDic.Count - 1; i++)
             //{
             #region 战斗
-            field monster = MonsterDic[levelMonster] == null ? null : JsonMapper.ToObject<field>(MonsterDic[levelMonster].ToString());
+            field monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()].ToString());
             if (monster == null || monster?.HP == 0)//灵泉或秘境
             {
                 ipt_Detail.text += "\n遇到了灵泉或者秘境！";
