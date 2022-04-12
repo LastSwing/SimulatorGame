@@ -7,15 +7,17 @@ using UnityEngine.UI;
 
 public class BloodScene : MonoBehaviour
 {
-    private GameObject btn_Return,txtPanel;
-    private Text txt_Detail;
+    public RectTransform _Connect;
+    private GameObject btn_Return;
+    public GameObject txtPanel;
+    public Text txt_Detail;
     // Start is called before the first frame update
     void Start()
     {
         btn_Return = GameObject.Find("btn_Return");
         btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
-        txt_Detail = GameObject.Find("txt_Detail").GetComponent<Text>();
-        txtPanel = GameObject.Find("TxtPanel");
+        //txt_Detail = GameObject.Find("txt_Detail").GetComponent<Text>();
+        //txtPanel = GameObject.Find("TxtPanel");
         txtPanel.transform.position = new Vector3(542, -3020, 0);
         //txt_Detail.transform.position = new Vector3(542, -3020, 0);
         //txt_Detail.gameObject.activeInHierarchy = true;
@@ -59,7 +61,7 @@ public class BloodScene : MonoBehaviour
                 txt_Detail.text = "敬请期待";
                 break;
         }
-        txtPanel.transform.position = new Vector3(300, 600, 0);
-        //txt_Detail.transform.position = new Vector3(300, 600, 0);
+        txtPanel.transform.position = _Connect.position;
+        txt_Detail.transform.position = _Connect.position;
     }
 }
