@@ -1,7 +1,10 @@
 ﻿using Assets.Script;
 using LitJson;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,17 +16,17 @@ public class MainScene : MonoBehaviour
     void Start()
     {
         #region 初始化控件
-        btn_GameStart = GameObject.Find("btn_GameStart");
+        btn_GameStart = transform.Find("btn_GameStart").gameObject;
         btn_GameStart.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene", 0); });
-        btn_Blood = GameObject.Find("btn_Blood");
+        btn_Blood = transform.Find("btn_Blood").gameObject;
         btn_Blood.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("BloodScene"); });
-        btn_Acupoint = GameObject.Find("btn_Acupoint");
+        btn_Acupoint = transform.Find("btn_Acupoint").gameObject;
         btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("AcupointScene"); });
-        btn_ContinueGame = GameObject.Find("btn_ContinueGame");
+        btn_ContinueGame = transform.Find("btn_ContinueGame").gameObject;
         btn_ContinueGame.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene"); });
 
-        txt_Level = GameObject.Find("txt_Level").GetComponent<Text>();//关卡 
-        txt_GameStart = GameObject.Find("btn_GameStart/txt_GameStart").GetComponent<Text>();//按钮文本 
+        //txt_Level = transform.Find("txt_Level").GetComponent<Text>();//关卡 
+        txt_GameStart = transform.Find("btn_GameStart/txt_GameStart").GetComponent<Text>();//按钮文本 
         #endregion
         Init();
         btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("OpeningScene"); });
@@ -39,11 +42,12 @@ public class MainScene : MonoBehaviour
     {
         //判断是否显示继续游戏
         var dic = GetSaveData();
-        var field = Common.ConvertObject<field>(dic["888"]);
+
+        var field = Common.JsonToModel<field>(dic["888"].ToString());
         if (field?.HP != 0)
         {
             ShowContinueGame();
-            txt_Level.text = $"厚土界 · 初 \n ({dic["999"]} / 300)";
+            //txt_Level.text = $"厚土界 · 初 \n ({dic["999"]} / 300)";
             txt_GameStart.text = "重新开始";
         }
     }
@@ -95,7 +99,8 @@ public class MainScene : MonoBehaviour
     /// </summary>
     private void ShowContinueGame()
     {
-        btn_ContinueGame.transform.position = new Vector3(300, -534, 0);
+        //btn_ContinueGame.transform.position = new Vector3(300, -534, 0);
+        btn_ContinueGame.SetActive(true);
     }
 
 }
