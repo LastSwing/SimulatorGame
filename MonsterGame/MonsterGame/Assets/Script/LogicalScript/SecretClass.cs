@@ -20,11 +20,12 @@ public class SecretClass
     /// <summary>
     /// 数值
     /// </summary>
-    public float Numerical { get; set; }
+    public float[] Numerical { get; set; }
+
     /// <summary>
     /// 增量
     /// </summary>
-    public float Increment { get; set; }
+    public float[] Increment { get; set; }
     /// <summary>
     /// 等级
     /// </summary>
@@ -43,7 +44,7 @@ public class SecretClass
     /// <param name="increment">增量</param>
     /// <param name="lv">等级</param>
     /// 
-    public SecretClass(string name, string value, string classify, float numerical, float increment, int lv, int key)
+    public SecretClass(string name, string value, string classify, float[] numerical, float[] increment, int lv, int key)
     {
         Name = name;
         Value = value;
