@@ -20,15 +20,9 @@ public class MainScene : MonoBehaviour
         btn_GameStart.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene", 0); });
         btn_Blood = transform.Find("btn_Blood").gameObject;
         btn_Blood.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("BloodScene"); });
-<<<<<<< HEAD
-        btn_Acupoint = GameObject.Find("btn_Acupoint");
-        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("OpeningScene"); });
-        btn_ContinueGame = GameObject.Find("btn_ContinueGame");
-=======
         btn_Acupoint = transform.Find("btn_Acupoint").gameObject;
-        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("AcupointScene"); });
+        btn_Acupoint.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("OpeningScene"); });
         btn_ContinueGame = transform.Find("btn_ContinueGame").gameObject;
->>>>>>> e50757c56223f45db02d23a782b419c25adb027c
         btn_ContinueGame.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene"); });
 
         //txt_Level = transform.Find("txt_Level").GetComponent<Text>();//关卡 
