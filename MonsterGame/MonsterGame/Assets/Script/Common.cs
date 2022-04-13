@@ -3,9 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 
 namespace Assets.Script
@@ -117,65 +114,136 @@ namespace Assets.Script
         /// </summary>
         /// <param name="dic"></param>
         /// <returns></returns>
-        public static string ConvertToJson(Dictionary<string, object> dic)
+        public static string DicToJson(Dictionary<string, object> dic)
         {
             string result = "{";
-            for (int i = 0; i < 3; i++)
+            char[] mychar = { ',' };
+            foreach (var item in dic.Keys)
             {
-                result += $"\"{i}\":\"{{";
-                var fd = ConvertObject<field>(dic[i.ToString()]);
-                Type t = typeof(field);
-                foreach (var item in t.GetProperties())
+                if (dic[item] == null)
                 {
-                    if (fd != null)
+                    result += $"\"{item}\":\"\",";
+                    continue;
+                }
+                Type type = dic[item]?.GetType();
+                if (type.IsClass || type.IsGenericType)
+                {
+                    result += $"\"{item}\":\"{{";
+                    foreach (var info in type.GetProperties())
                     {
-                        if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                        if (dic[item] != null)
                         {
-                            result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(fd)}\\\",";
+                            if (info.PropertyType.IsPrimitive)//字符类型
+                            {
+                                result += $"\\\"{info.Name}\\\":{info.GetValue(dic[item])},";
+                            }
+                            else if (info.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                            {
+                                result += $"\\\"{info.Name}\\\":\\\"{info.GetValue(dic[item])}\\\",";
+                            }
+                        }
+                        else
+                        {
+                            if (info.PropertyType.IsPrimitive || info.PropertyType == typeof(string))   //对象为空直接赋双引号
+                            {
+                                result += $"\\\"{info.Name}\\\":\\\"\\\",";
+                            }
+                        }
+                    }
+                    result = result.TrimEnd(mychar);
+                    result += "}\",";
+                }
+                else
+                {
+                    if (dic[item] != null)
+                    {
+                        if (type.IsPrimitive)//字符类型
+                        {
+                            result += $"\"{item}\":{dic[item]},";
+                        }
+                        else if (type == typeof(string))    //基础数据类型，非自定义的class或者struct
+                        {
+                            result += $"\"{item}\":\"{dic[item]}\",";
                         }
                     }
                     else
                     {
-                        if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+                        if (type.IsPrimitive || type == typeof(string))   //对象为空直接赋双引号
                         {
-                            result += $"\\\"{item.Name}\\\":\\\"\\\",";
+                            result += $"\"{item}\":\"\",";
                         }
                     }
                 }
-                char[] mychar = { ',' };
-                result = result.TrimEnd(mychar);
-                result += "}\",";
             }
-            result += "\"888\":\"{";
-            var obj = ConvertObject<field>(dic["888"]);
-            Type t1 = typeof(field);
-            foreach (var item in t1.GetProperties())
-            {
-                if (obj != null)
-                {
-                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
-                    {
-                        result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(obj)}\\\",";
-                    }
-                }
-                else
-                {
-                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
-                    {
-                        result += $"\\\"{item.Name}\\\":\\\"\\\",";
-                    }
-                }
-            }
-            char[] mychar1 = { ',' };
-            result = result.TrimEnd(mychar1);
-            result += "}\",";
-            result += $"\"999\":\"{dic["999"]}\"";
+
+            #region 老版本
+            //for (int i = 0; i < 3; i++)
+            //{
+            //    result += $"\"{i}\":\"{{";
+            //    var fd = ConvertObject<field>(dic[i.ToString()]);
+            //    Type t = typeof(field);
+            //    foreach (var item in t.GetProperties())
+            //    {
+            //        if (fd != null)
+            //        {
+            //            if (item.PropertyType.IsPrimitive)//字符类型
+            //            {
+            //                result += $"\\\"{item.Name}\\\":{item.GetValue(fd)},";
+            //            }
+            //            else if (item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+            //            {
+            //                result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(fd)}\\\",";
+            //            }
+            //        }
+            //        else
+            //        {
+            //            if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+            //            {
+            //                result += $"\\\"{item.Name}\\\":\\\"\\\",";
+            //            }
+            //        }
+            //    }
+            //    char[] mychar = { ',' };
+            //    result = result.TrimEnd(mychar);
+            //    result += "}\",";
+            //}
+            //result += "\"888\":\"{";
+            //var obj = ConvertObject<field>(dic["888"]);
+            //Type t1 = typeof(field);
+            //foreach (var item in t1.GetProperties())
+            //{
+            //    if (obj != null)
+            //    {
+            //        if (item.PropertyType.IsPrimitive)//字符类型
+            //        {
+            //            result += $"\\\"{item.Name}\\\":{item.GetValue(obj)},";
+            //        }
+            //        else if (item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+            //        {
+            //            result += $"\\\"{item.Name}\\\":\\\"{item.GetValue(obj)}\\\",";
+            //        }
+            //    }
+            //    else
+            //    {
+            //        if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+            //        {
+            //            result += $"\\\"{item.Name}\\\":\\\"\\\",";
+            //        }
+            //    }
+            //}
+            //char[] mychar1 = { ',' };
+            //result = result.TrimEnd(mychar1);
+            //result += "}\",";
+            //result += $"\"999\":\"{dic["999"]}\"";
+            //result += "}"; 
+            #endregion
+            result = result.TrimEnd(mychar);
             result += "}";
             return result;
         }
 
         /// <summary>
-        /// object转json
+        /// 单层object转json
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
@@ -187,7 +255,11 @@ namespace Assets.Script
             {
                 if (obj != null)
                 {
-                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                    if (item.PropertyType.IsPrimitive)//字符类型
+                    {
+                        result += $"\"{item.Name}\":{item.GetValue(obj)},";
+                    }
+                    else if (item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
                     {
                         result += $"\"{item.Name}\":\"{item.GetValue(obj)}\",";
                     }
@@ -206,5 +278,44 @@ namespace Assets.Script
             return result;
         }
 
+        /// <summary>
+        /// 字符串转Model
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        public static T JsonToModel<T>(string json)
+        {
+            var data = JsonMapper.ToObject(json);
+            if (data == null) return default(T);
+            var t = Activator.CreateInstance<T>();
+            foreach (var info in typeof(T).GetProperties())
+            {
+                var aa = info.PropertyType;
+                object obj = null;
+                //取得object对象中此属性的值
+                var val = data[info.Name].ToString();
+                if (val != null)
+                {
+                    //非泛型
+                    if (!info.PropertyType.IsGenericType)
+                        obj = Convert.ChangeType(val, info.PropertyType);
+                    else//泛型Nullable<>
+                    {
+                        Type genericTypeDefinition = info.PropertyType.GetGenericTypeDefinition();
+                        if (genericTypeDefinition == typeof(Nullable<>))
+                        {
+                            obj = Convert.ChangeType(val, Nullable.GetUnderlyingType(info.PropertyType));
+                        }
+                        else
+                        {
+                            obj = Convert.ChangeType(val, info.PropertyType);
+                        }
+                    }
+                    info.SetValue(t, obj, null);
+                }
+            }
+            return t;
+        }
     }
 }

@@ -24,8 +24,8 @@ public class InputContentSize : MonoBehaviour
         //获取行数，不要使用Text组件来分割，不知道什么原因无法完整分割。
         string[] texts = input.text.Split('\n');
         //设置高度：文字行数乘以文字大小，同样保留空白区
-        size.y = (texts.Length + 3) * text.fontSize;
-        size1.y = (texts.Length + 3) * text.fontSize;
+        size.y = (texts.Length + 1) * text.fontSize * 2;
+        size1.y = (texts.Length + 1) * text.fontSize * 2;
         //以下是防止内容变小
         //判断当前高度是否小于原高度，如果小于的话则不设置
         if (size.y < 491f)

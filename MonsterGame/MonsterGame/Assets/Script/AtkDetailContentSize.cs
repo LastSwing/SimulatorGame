@@ -25,7 +25,7 @@ public class AtkDetailContentSize : MonoBehaviour
         string[] texts = input.text.Split('\n');
         //设置高度：文字行数乘以文字大小，同样保留空白区
         size.y = (texts.Length) * text.fontSize * 2;
-        size1.y = (texts.Length) * text.fontSize * 2;
+        size1.y = (texts.Length) * text.fontSize  * 2;
         //以下是防止内容变小
         //判断当前高度是否小于原高度，如果小于的话则不设置
         if (size.y < 1670f)

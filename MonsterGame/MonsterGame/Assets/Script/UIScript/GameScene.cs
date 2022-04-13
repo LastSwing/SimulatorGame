@@ -35,12 +35,12 @@ public class GameScene : MonoBehaviour
         btn_AgainReturn = transform.Find("AgainPanel/btn_Return").gameObject;
         btn_AgainReturn.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
 
-        txt_HP = transform.Find("txt_HP").GetComponent<Text>();
-        txt_HPReply = transform.Find("txt_HPReply").GetComponent<Text>();
-        txt_Dodge = transform.Find("txt_Dodge").GetComponent<Text>();
-        txt_ATK = transform.Find("txt_ATK").GetComponent<Text>();
-        txt_Crit = transform.Find("txt_Crit").GetComponent<Text>();
-        txt_CritHarm = transform.Find("txt_CritHarm").GetComponent<Text>();
+        txt_HP = transform.Find("t_HP/txt_HP").GetComponent<Text>();
+        txt_HPReply = transform.Find("t_HPReply/txt_HPReply").GetComponent<Text>();
+        txt_Dodge = transform.Find("t_Dodge/txt_Dodge").GetComponent<Text>();
+        txt_ATK = transform.Find("t_ATK/txt_ATK").GetComponent<Text>();
+        txt_Crit = transform.Find("t_Crit/txt_Crit").GetComponent<Text>();
+        txt_CritHarm = transform.Find("t_CritHarm/txt_CritHarm").GetComponent<Text>();
         txt_CheckPoint = transform.Find("txt_CheckPoint").GetComponent<Text>();//关卡
         txt_LevelMonster = transform.Find("txt_LevelMonster").GetComponent<Text>();//当前关卡的第几个怪
         txt_AutoAtk = transform.Find("btn_AutomaticAtk/txt_AutoAtk").GetComponent<Text>();//自动攻击按钮文本
@@ -49,7 +49,7 @@ public class GameScene : MonoBehaviour
         ipt_Atk = transform.Find("Battle/Scroll View/Viewport/sv_Content/ipt_Atk").GetComponent<InputField>();//战斗文本
         ipt_Atk.onValueChanged.AddListener(UpdateDetail);
         ipt_Detail = transform.Find("DetailPanel/sv_Detail/v_Detail/svc_Detail/ipt_Detail").GetComponent<InputField>();//详细信息
-        
+
 
         DetailPanel = transform.Find("DetailPanel").gameObject;
         AgainPanel = transform.Find("AgainPanel").gameObject;
@@ -65,9 +65,9 @@ public class GameScene : MonoBehaviour
             var monster = new Dictionary<string, object>();
             for (int i = 0; i < 3; i++)
             {
-                monster.Add(i.ToString(), dic[i.ToString()]);
+                monster.Add(i.ToString(), Common.JsonToModel<field>(dic[i.ToString()].ToString()));
             }
-            Init(Common.ConvertObject<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
+            Init(Common.JsonToModel<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
         }
     }
 
@@ -237,6 +237,12 @@ public class GameScene : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 数据初始化
+    /// </summary>
+    /// <param name="role"></param>
+    /// <param name="level"></param>
+    /// <param name="monsterD"></param>
     void Init(field role, int level, Dictionary<string, object> monsterD = null)
     {
         #region 基础数据绑定
@@ -318,6 +324,7 @@ public class GameScene : MonoBehaviour
     }
 
 
+    #region 按钮
     /// <summary>
     /// 攻击按钮
     /// </summary>
@@ -584,6 +591,7 @@ public class GameScene : MonoBehaviour
 
     }
 
+    #endregion
 
     /// <summary>
     /// 游戏结束
@@ -595,7 +603,7 @@ public class GameScene : MonoBehaviour
     }
 
 
-    #region 
+    #region 方法
 
     /// <summary>
     /// 当前关卡数据保存到文本
@@ -605,7 +613,7 @@ public class GameScene : MonoBehaviour
     private void LevelDataSave(Dictionary<string, object> monster, int level)
     {
         monster.Add("999", level);//关卡
-        string json = Common.ConvertToJson(monster);
+        string json = Common.DicToJson(monster);
         //json = GameHelper.DesEncrypt(json);//前期不加密
         var path = Application.dataPath + "/Data/LevelData";
         //文件夹是否存在
