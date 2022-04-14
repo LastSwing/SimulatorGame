@@ -109,7 +109,7 @@ public class GameHelper
         }
         json += "}";
         Debug.Log(json);
-        json = DesEncrypt(json);
+        //json = DesEncrypt(json);
         var path = Application.dataPath + "/Data/";
         //文件夹是否存在
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
