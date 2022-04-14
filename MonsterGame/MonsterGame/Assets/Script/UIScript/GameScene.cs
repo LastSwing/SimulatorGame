@@ -1,6 +1,9 @@
 ﻿using Assets.Script;
+using Assets.Script.FSM;
+using Assets.Script.UIScript;
 using LitJson;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -9,13 +12,17 @@ using Random = UnityEngine.Random;
 
 public class GameScene : MonoBehaviour
 {
-    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail, btn_AutomaticAtk, AgainPanel, btn_Again, btn_AgainReturn;
+    StateMachine<GameScene> myStateMachine;
+    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail, btn_AutomaticAtk, AgainPanel, btn_Again, btn_AgainReturn, HippocrenePanel;
     private Text txt_HP, txt_HPReply, txt_Dodge, txt_ATK, txt_Crit, txt_CritHarm, txt_CheckPoint, txt_Monster, txt_LevelMonster, txt_AutoAtk, txt_AutoState;//获取页面控件
     private InputField ipt_Atk, ipt_Detail;
     private Image img_Monster, img_Monster1;
+    private RectTransform img_rect, txt_rect, img_rect_temp, txt_rect_temp;
     private Dictionary<string, object> MonsterDic;
     private field RoleFd;
     private Scrollbar TalkWinBar;
+    private bool coroutine = false;
+    private bool hasHippocrene = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -53,8 +60,12 @@ public class GameScene : MonoBehaviour
 
         DetailPanel = transform.Find("DetailPanel").gameObject;
         AgainPanel = transform.Find("AgainPanel").gameObject;
+        HippocrenePanel = transform.Find("HippocrenePanel").gameObject;
+
 
         #endregion
+
+        #region 是否已存档
         if (Common.HasAgain == 0)
         {
             Init(null, 1);
@@ -69,16 +80,34 @@ public class GameScene : MonoBehaviour
             }
             Init(Common.JsonToModel<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
         }
-    }
+        #endregion
 
-    private void UpdateDetail(string arg0)
-    {
-        TalkWinBar.value = 0;
+        #region 状态机初始化
+        myStateMachine = new StateMachine<GameScene>(this);
+        myStateMachine.SetCurrentState(GameScene_StateIdle.Instance);
+        myStateMachine.SetGlobalState(GameScene_GlobalState.Instance);
+        #endregion
     }
-
     // Update is called once per frame
     void Update()
     {
+        #region 是否释放攻击按钮
+        if (coroutine)
+        {
+            Debug.Log(coroutine);
+            myStateMachine.ChangeState(GameScene_StateIdle.Instance);
+            coroutine = false;
+        }
+        #endregion
+
+        #region 展示灵泉秘境画板
+        if (hasHippocrene)
+        {
+            ShowHippocrene();
+        } 
+        #endregion
+
+        #region 自动攻击
         //游戏开始生成小怪
         if (txt_AutoState.text == "1")
         {
@@ -88,6 +117,7 @@ public class GameScene : MonoBehaviour
             ipt_Detail.text = "";
             int level = System.Convert.ToInt32(GetLeveData()["999"]);
             var InitHp = RoleFd.HP;
+            string AtkText = "";
             //战斗详情添加到ipt_Detail
             bool victory = false;
             //判断是否是从第一关开始
@@ -108,7 +138,7 @@ public class GameScene : MonoBehaviour
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                            ipt_Atk.text += "\n遇到了灵泉或者秘境！";
+                            AtkText += "遇到了灵泉或者秘境！\n";
                             txt_AutoState.text = "0";
                         }
                         else
@@ -123,9 +153,9 @@ public class GameScene : MonoBehaviour
                                 ipt_Detail.text += item;
                             }
                             if (newRole.HP <= 0)
-                                ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                                AtkText = $"被{monster.Name}击杀了你，游戏失败！";
                             else
-                                ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                                AtkText += $"击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                             RoleFd = newRole;
                             InitHp = newRole.HP;
 
@@ -136,7 +166,7 @@ public class GameScene : MonoBehaviour
                                 int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
                                 //角色添加经验值
                                 RoleAddEXP(Exp);
-                                ipt_Atk.text += $"获得{Exp}点经验值。";
+                                AtkText += $" 获得{Exp}点经验值。\n";
                                 ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
                             }
                             #endregion
@@ -144,6 +174,7 @@ public class GameScene : MonoBehaviour
                         #endregion
                     }
                 }
+                PlayText(AtkText);
                 //战斗完后
                 if (RoleFd.HP <= 0)
                 {
@@ -177,8 +208,9 @@ public class GameScene : MonoBehaviour
                         if (monster == null || monster?.HP == 0)//灵泉或秘境
                         {
                             ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                            ipt_Atk.text += "\n遇到了灵泉或者秘境！";
+                            AtkText += "遇到了灵泉或者秘境！";
                             txt_AutoState.text = "0";
+                            hasHippocrene = true;
                         }
                         else
                         {
@@ -192,9 +224,9 @@ public class GameScene : MonoBehaviour
                                 ipt_Detail.text += item;
                             }
                             if (newRole.HP <= 0)
-                                ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                                AtkText = $"被{monster.Name}击杀了你，游戏失败！";
                             else
-                                ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                                AtkText += $"击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                             RoleFd = newRole;
                             InitHp = newRole.HP;
                             #region 经验
@@ -204,13 +236,14 @@ public class GameScene : MonoBehaviour
                                 int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
                                 //角色添加经验值
                                 RoleAddEXP(Exp);
-                                ipt_Atk.text += $"获得{Exp}点经验值。";
+                                AtkText += $" 获得{Exp}点经验值。\n";
                                 ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
                             }
                             #endregion
                         }
                         #endregion
                     }
+                    PlayText(AtkText);
                     //战斗完后
                     if (RoleFd.HP <= 0)
                     {
@@ -235,6 +268,7 @@ public class GameScene : MonoBehaviour
                 txt_AutoState.text = "0";
             }
         }
+        #endregion
     }
 
     /// <summary>
@@ -254,18 +288,32 @@ public class GameScene : MonoBehaviour
         txt_ATK.text = RoleFd.Atk.ToString();
         txt_Crit.text = RoleFd.Crit + "%";
         txt_CritHarm.text = RoleFd.CritHarm + "%";
-        txt_CheckPoint.text = $"厚土劫·初（{level}/300）";
+        txt_CheckPoint.text = $"厚土劫·初 \n（{level}/300）";
         ipt_Atk.text += $"{(level == 1 ? "" : "\n")}厚土劫·初（{level}/300）";
         txt_LevelMonster.text = "0";
         #endregion
 
-        #region 初始图片位置
+        #region 图片初始化
 
-        img_Monster = GameObject.Find("img_Monster0").GetComponent<Image>();
-        img_Monster1 = GameObject.Find("img_Monster2").GetComponent<Image>();
-
-        img_Monster1.transform.position = new Vector3(0, 2290, 0);
-        img_Monster.transform.position = new Vector3(300, 700, 0);
+        //图1
+        GameObject.Find("img_Monster0").transform.localScale = Vector3.one;
+        GameObject.Find("img_Monster1").transform.localScale = Vector3.one;
+        //图2
+        GameObject.Find($"img_Monster1/txt_Monster1").GetComponent<Text>().fontSize = 23;
+        img_rect_temp = GameObject.Find("img_Monster1").GetComponent<RectTransform>();
+        img_rect_temp.sizeDelta = new Vector2(225f, 230f);
+        img_rect_temp.anchoredPosition = new Vector2(362f, 187f);
+        txt_rect_temp = GameObject.Find("img_Monster1/txt_Monster1").GetComponent<RectTransform>();
+        txt_rect_temp.sizeDelta = new Vector2(255f, 56f);
+        txt_rect_temp.anchoredPosition = new Vector2(0f, 143f);
+        //图3
+        GameObject.Find($"img_Monster2/txt_Monster2").GetComponent<Text>().fontSize = 23;
+        img_rect_temp = GameObject.Find("img_Monster2").GetComponent<RectTransform>();
+        img_rect_temp.sizeDelta = new Vector2(225f, 230f);
+        img_rect_temp.anchoredPosition = new Vector2(-362f, 187f);
+        txt_rect_temp = GameObject.Find("img_Monster2/txt_Monster2").GetComponent<RectTransform>();
+        txt_rect_temp.sizeDelta = new Vector2(255f, 56f);
+        txt_rect_temp.anchoredPosition = new Vector2(0f, 143f);
 
         #endregion
 
@@ -277,13 +325,19 @@ public class GameScene : MonoBehaviour
         }
         else   //小怪或灵泉
         {
+            #region 图片绑定
             for (int i = 0; i < MonsterDic.Count; i++)
             {
                 #region 关卡生成
                 field monster = Common.ConvertObject<field>(MonsterDic[i.ToString()]);
                 if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
-                    Debug.Log("秘境或灵泉");
+                    //Debug.Log("秘境或灵泉");
+                    txt_Monster = GameObject.Find($"img_Monster{i}/txt_Monster{i}").GetComponent<Text>();
+                    txt_Monster.text = "恢复灵泉";
+                    img_Monster = GameObject.Find("img_Monster" + i).GetComponent<Image>();
+                    Sprite img = Resources.Load("Images/QuanShui", typeof(Sprite)) as Sprite;
+                    img_Monster.sprite = img;//图片
                 }
                 else
                 {
@@ -317,6 +371,7 @@ public class GameScene : MonoBehaviour
                 }
                 #endregion
             }
+            #endregion
         }
         //当前关卡数据存储到文本
         MonsterDic.Add("888", RoleFd);
@@ -335,25 +390,23 @@ public class GameScene : MonoBehaviour
         ipt_Detail.text = "";
         int level = System.Convert.ToInt32(GetLeveData()["999"]);
         var InitHp = RoleFd.HP;
-        var monsterName = "";
+        string AtkText = "";
         //战斗详情添加到ipt_Detail
         bool victory = false;
         if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
         {
             field monster = Common.ConvertObject<field>(MonsterDic["99"]);
-            monsterName = monster.Name;
             var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
         }
         else   //小怪或灵泉
         {
-            //for (int i = 0; i < MonsterDic.Count - 1; i++)
-            //{
             #region 战斗
             field monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()]);
             if (monster == null || monster?.HP == 0)//灵泉或秘境
             {
                 ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                ipt_Atk.text += "\n遇到了灵泉或者秘境！";
+                AtkText += "遇到了灵泉或者秘境！";
+                hasHippocrene = true;
             }
             else
             {
@@ -367,9 +420,9 @@ public class GameScene : MonoBehaviour
                     ipt_Detail.text += item;
                 }
                 if (newRole.HP <= 0)
-                    ipt_Atk.text = $"被{monster.Name}击杀了你，游戏失败！";
+                    AtkText = $"被{monster.Name}击杀了，游戏失败！";
                 else
-                    ipt_Atk.text += $"\n击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
+                    AtkText += $"击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
                 RoleFd = newRole;
                 InitHp = newRole.HP;
 
@@ -380,14 +433,14 @@ public class GameScene : MonoBehaviour
                     int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
                     //角色添加经验值
                     RoleAddEXP(Exp);
-                    ipt_Atk.text += $"获得{Exp}点经验值。";
+                    AtkText += $" 获得{Exp}点经验值。";
                     ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
                 }
                 #endregion
             }
             #endregion
-            //}
         }
+        PlayText(AtkText);
         //战斗完后
         if (RoleFd.HP <= 0)
         {
@@ -424,28 +477,7 @@ public class GameScene : MonoBehaviour
         //DetailPanel.transform.position = new Vector3(300, 600, 0);
         DetailPanel.SetActive(true);
     }
-    /// <summary>
-    /// 数据刷新
-    /// </summary>
-    private void DataRefresh(field role, int imgNo)
-    {
-        #region 野怪图片更新
-        img_Monster = GameObject.Find("img_Monster" + imgNo).GetComponent<Image>();
-        img_Monster1 = GameObject.Find("img_Monster" + (imgNo + 1)).GetComponent<Image>();
-        //img_Monster.transform.position = new Vector3(0, 2290, 0);
-        //img_Monster1.transform.position = new Vector3(300, 700, 0);
-        #endregion
 
-        #region 数值刷新
-        txt_HP.text = role.HP.ToString();
-        txt_HPReply.text = role.HPRegen.ToString();
-        txt_Dodge.text = role.Dodge + "%";
-        txt_ATK.text = role.Atk.ToString();
-        txt_Crit.text = role.Crit + "%";
-        txt_CritHarm.text = role.CritHarm + "%";
-        txt_LevelMonster.text = (imgNo + 1).ToString();
-        #endregion
-    }
     /// <summary>
     /// 自动攻击
     /// </summary>
@@ -593,6 +625,110 @@ public class GameScene : MonoBehaviour
 
     #endregion
 
+
+    #region 方法
+    /// <summary>
+    /// 攻击按钮无效
+    /// </summary>
+    public void BtnLoseEfficacy()
+    {
+        btn_Atk.GetComponent<Button>().enabled = true;
+        btn_Atk.GetComponent<Button>().interactable = false;
+        btn_AutomaticAtk.GetComponent<Button>().enabled = true;
+        btn_AutomaticAtk.GetComponent<Button>().interactable = false;
+    }
+    /// <summary>
+    /// 攻击按钮有效
+    /// </summary>
+    public void BtnEffective()
+    {
+        btn_Atk.GetComponent<Button>().enabled = true;
+        btn_Atk.GetComponent<Button>().interactable = true;
+        btn_AutomaticAtk.GetComponent<Button>().enabled = true;
+        btn_AutomaticAtk.GetComponent<Button>().interactable = true;
+    }
+
+    /// <summary>
+    /// 调用协成实现一个字一个字显出的效果
+    /// </summary>
+    private void PlayText(string str)
+    {
+        myStateMachine.FSMUpdate();
+        StartCoroutine(ShowText(str, str.Length));
+    }
+    IEnumerator ShowText(string str, int strLength)
+    {
+        string s = "";
+        int i = 0;
+        while (i < strLength)
+        {
+            yield return new WaitForSeconds(0.1f);
+            s += str[i].ToString();
+            ipt_Atk.text = s;
+            i += 1;
+        }
+        //显示完成，停止当前协成
+        StopCoroutine(ShowText(str, strLength));
+        coroutine = true;
+    }
+
+    /// <summary>
+    /// 显示灵泉面板
+    /// </summary>
+    private void ShowHippocrene()
+    {
+        HippocrenePanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// 数据刷新
+    /// </summary>
+    /// <param name="role">角色Model</param>
+    /// <param name="imgNo">图片编码</param>
+    private void DataRefresh(field role, int imgNo)
+    {
+        #region 野怪图片更新
+
+        #region 图1销毁
+        GameObject.Find("img_Monster" + imgNo).transform.localScale = Vector3.zero;
+        //GameObject.Find($"img_Monster{imgNo}/txt_Monster{imgNo}").SetActive(false);
+        #endregion
+
+        #region 图2中间展示
+        GameObject.Find($"img_Monster{imgNo + 1}/txt_Monster{imgNo + 1}").GetComponent<Text>().fontSize = 38;
+
+        img_rect = GameObject.Find("img_Monster" + (imgNo + 1)).GetComponent<RectTransform>();
+        img_rect.sizeDelta = new Vector2(391f, 403f);
+        img_rect.anchoredPosition = new Vector2(0f, 201f);
+        txt_rect = GameObject.Find($"img_Monster{imgNo + 1}/txt_Monster{imgNo + 1}").GetComponent<RectTransform>();
+        txt_rect.sizeDelta = new Vector2(391f, 70f);
+        txt_rect.anchoredPosition = new Vector2(0f, 239f);
+
+        #endregion
+
+        #endregion
+
+        #region 数值刷新
+        txt_HP.text = role.HP.ToString();
+        txt_HPReply.text = role.HPRegen.ToString();
+        txt_Dodge.text = role.Dodge + "%";
+        txt_ATK.text = role.Atk.ToString();
+        txt_Crit.text = role.Crit + "%";
+        txt_CritHarm.text = role.CritHarm + "%";
+        txt_LevelMonster.text = (imgNo + 1).ToString();
+        #endregion
+
+    }
+
+    /// <summary>
+    /// 设置滚动条
+    /// </summary>
+    /// <param name="arg0"></param>
+    private void UpdateDetail(string arg0)
+    {
+        TalkWinBar.value = 0;
+    }
+
     /// <summary>
     /// 游戏结束
     /// </summary>
@@ -601,9 +737,6 @@ public class GameScene : MonoBehaviour
         AgainPanel.SetActive(true);
         //AgainPanel.transform.position = new Vector3(300, 600, 0);
     }
-
-
-    #region 方法
 
     /// <summary>
     /// 当前关卡数据保存到文本
