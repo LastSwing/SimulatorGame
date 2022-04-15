@@ -73,7 +73,7 @@ public class SecretArea
         get
         {
             List<SecretClass> Secret = new List<SecretClass>();
-            Secret.Add(new SecretClass("女娲血脉", "增加{0}点永久生命值，每秒回复{1}点生命值。", "NvWa", new float[] { 20F ,3F}, new float[] { 30F, 2F }, 1, 16));
+            Secret.Add(new SecretClass("女娲血脉", "增加{0}点永久生命值，每回合回复{1}点生命值。", "NvWa", new float[] { 20F ,3F}, new float[] { 30F, 2F }, 1, 16));
             Secret.Add(new SecretClass("盘古血脉", "回复+{0}，遇到灵泉概率+{1}%。", "PanGu", new float[] { 7F, 10F},new float[] {3F,5F }, 1, 17));
             Secret.Add(new SecretClass("共工血脉", "增加{0}闪避概率，免伤+{1}%。", "GongGong", new float[] { 0.1F, 5F }, new float[] { 5F, 5F }, 1, 18));
             Secret.Add(new SecretClass("蚩尤血脉", "攻击时{0}%概率让对手缴械。", "ChiYou", new float[] { 10F }, new float[] {  5F }, 1, 19));
