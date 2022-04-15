@@ -2,6 +2,7 @@ using Assets.Script;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,13 +19,15 @@ public class OpeningScene : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Dictionary<string,string> opening = Attributes.Opening("",0);
+        Dictionary<string,string> opening = Attributes.Opening("",2);
         openings = new List<OpeningValue>();
         int index = 0;
-        Energy = 100000;
+        var role = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt"));
+        Energy = role.EXP;
         Energyindex.text = Energy.ToString();
         foreach (var item in opening)
         {
+            if (item.Key == "ID") continue;
             btn_Return.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
             itemPrefab.transform.position = new Vector2(0f,650-(index*200));
             OpeningValue opening1 = GameTools.AddChild(_content, itemPrefab).GetComponent<OpeningValue>(); //
@@ -55,6 +58,7 @@ public class OpeningScene : MonoBehaviour
         if (Energy >= opening1.energyValue && opening1.layer < 10)
         {
             Energy = Energy - opening1.energyValue;
+            RoleAddEXP(Energy);
             Energyindex.text = Energy.ToString();
             opening1.layer += 1;
             Change(opening1);
@@ -62,6 +66,7 @@ public class OpeningScene : MonoBehaviour
             open.Add(opening1);
             openings.RemoveRange(Convert.ToInt32(button.transform.tag), 1);
             openings.InsertRange(Convert.ToInt32(button.transform.tag), open);
+            Attributes.Opening(opening1.oname.text, 0);
         }
     }
     public void OndelChlick()
@@ -72,14 +77,15 @@ public class OpeningScene : MonoBehaviour
         {
             opening1.layer -= 1;
             Energy = Energy + opening1.energyValue;
+            RoleAddEXP(Energy);
             Energyindex.text = Energy.ToString();
             Change(opening1);
             List<OpeningValue> open = new List<OpeningValue>();
             open.Add(opening1);
             openings.RemoveRange(Convert.ToInt32(button.transform.tag), 1);
             openings.InsertRange(Convert.ToInt32(button.transform.tag), open);
+            Attributes.Opening(opening1.oname.text, 1);
         }
-        Debug.Log("del");
     }
     private OpeningValue Change(OpeningValue opening)
     {
@@ -108,5 +114,26 @@ public class OpeningScene : MonoBehaviour
         }
         opening.Odetail.text = "窍穴进度：" + opening.layer*10 + "%\n\r" + (opening.energyValue == 1000?"MAX": opening.energyValue.ToString()) + "能量值";
         return opening;
+    }
+
+    /// <summary>
+    /// 角色添加减少经验值
+    /// </summary>
+    private void RoleAddEXP(int exp)
+    {
+        var role = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt"));
+        role.EXP = exp;
+        string json = Common.ObjectToJson(role);
+        //json = GameHelper.DesEncrypt(json);//前期不加密
+        var path = Application.dataPath + "/Data/Role";
+        //文件夹是否存在
+        DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+        if (!myDirectoryInfo.Exists)
+        {
+            Directory.CreateDirectory(path);
+        }
+        if (File.Exists($"{path}/Role.txt"))
+            File.Delete($"{path}/Role.txt");
+        File.WriteAllText($"{path}/Role.txt", json);
     }
 }

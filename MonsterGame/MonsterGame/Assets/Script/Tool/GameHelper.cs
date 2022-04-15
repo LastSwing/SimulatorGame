@@ -97,7 +97,9 @@ public class GameHelper
     public static void DataExport(Dictionary<string, string> dic, string Name)
     {
         var id = $"{System.DateTime.Now.ToString("yyyyMMddHHmmssff")}";
-        string json = "{" + WriteItem("ID", id);
+        string json = "{";
+        if (!dic.ContainsKey("ID"))
+             json += WriteItem("ID", id);
         int j = 0;
         foreach (var item in dic)
         {
