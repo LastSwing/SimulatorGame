@@ -13,7 +13,7 @@ using Random = UnityEngine.Random;
 public class GameScene : MonoBehaviour
 {
     StateMachine<GameScene> myStateMachine;
-    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail, btn_AutomaticAtk, AgainPanel, btn_Again, btn_AgainReturn, HippocrenePanel;
+    private GameObject btn_Return, btn_Atk, btn_ReturnAtk, DetailPanel, btn_Detail, btn_AutomaticAtk, AgainPanel, btn_Again, btn_AgainReturn, HippocrenePanel, btn_Restore_50, btn_Add_20, btn_Restore_20, btn_ReturnGame;
     private Text txt_HP, txt_HPReply, txt_Dodge, txt_ATK, txt_Crit, txt_CritHarm, txt_CheckPoint, txt_Monster, txt_LevelMonster, txt_AutoAtk;//获取页面控件
     public Text txt_AutoState, txt_AtkState;
     private InputField ipt_Atk, ipt_Detail;
@@ -22,16 +22,17 @@ public class GameScene : MonoBehaviour
     private Dictionary<string, object> MonsterDic;
     private field RoleFd, monster;
     private Scrollbar TalkWinBar;
-    private bool coroutine = false;//释放攻击按钮
+    private bool coroutine = false;//是否释放攻击按钮
     private bool hasHippocrene = false;//释放灵泉面板
     private bool hasPlayText = false;//文字播放完成
+    public bool HippocreneOptions, HippocreneOver = false; //灵泉选项
 
     // 定义每帧累加时间
     private float totalTimer;
     // 定义变量存储时间
     private int second, no = 0;
-    private string temp, AtkText, AtkDetail = "";
-    int round = 0;//0是角色回合，1是野怪回合，2是一方死亡
+    public string temp, AtkText, AtkDetail = "";
+    int round = 0;//0是角色回合，1是野怪回合，2是回合结束
 
 
     void Start()
@@ -51,6 +52,15 @@ public class GameScene : MonoBehaviour
         btn_Again.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("GameScene", 0); });
         btn_AgainReturn = transform.Find("AgainPanel/btn_Return").gameObject;
         btn_AgainReturn.GetComponent<Button>().onClick.AddListener(delegate { Common.SceneJump("MainScene"); });
+        btn_Restore_50 = transform.Find("HippocrenePanel/btn_Restore_50").gameObject;
+        btn_Restore_50.GetComponent<Button>().onClick.AddListener(Restore50);
+        btn_Add_20 = transform.Find("HippocrenePanel/btn_Add_20").gameObject;
+        btn_Add_20.GetComponent<Button>().onClick.AddListener(HpAdd);
+        btn_Restore_20 = transform.Find("HippocrenePanel/btn_Restore_20").gameObject;
+        btn_Restore_20.GetComponent<Button>().onClick.AddListener(Restore20);
+        btn_ReturnGame = transform.Find("AgainPanel/btn_ReturnGame").gameObject;
+        btn_ReturnGame.GetComponent<Button>().onClick.AddListener(ShowGame);
+
 
         txt_HP = transform.Find("t_HP/txt_HP").GetComponent<Text>();
         txt_HPReply = transform.Find("t_HPReply/txt_HPReply").GetComponent<Text>();
@@ -75,7 +85,6 @@ public class GameScene : MonoBehaviour
         AgainPanel = transform.Find("AgainPanel").gameObject;
         HippocrenePanel = transform.Find("HippocrenePanel").gameObject;
 
-
         #endregion
 
         #region 状态机初始化
@@ -86,9 +95,11 @@ public class GameScene : MonoBehaviour
 
         //数据初始化
         #region 是否已存档
+        var role = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt"));
         if (Common.HasAgain == 0)
         {
-            Init(null, 1);
+            Init(role, 1);
+            SaveCurrentRole(role);
         }
         else
         {
@@ -96,7 +107,7 @@ public class GameScene : MonoBehaviour
             var monster = new Dictionary<string, object>();
             for (int i = 0; i < 3; i++)
             {
-                monster.Add(i.ToString(), Common.JsonToModel<field>(dic[i.ToString()].ToString()));
+                monster.Add(i.ToString(), dic[i.ToString()].ToString() == "" ? null : Common.JsonToModel<field>(dic[i.ToString()].ToString()));
             }
             Init(Common.JsonToModel<field>(dic?["888"].ToString()), System.Convert.ToInt32(dic?["999"]), monster);
         }
@@ -119,9 +130,30 @@ public class GameScene : MonoBehaviour
         if (hasHippocrene)
         {
             ShowHippocrene();
+            hasHippocrene = false;
         }
         #endregion
+        #region 灵泉选项完成后刷新数据
 
+        if (HippocreneOver)
+        {
+            //灵泉选项完成后刷新数据
+            int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
+            if (levelMonster == 2)
+            {
+                var currentLevelDic = GetLeveData();//当前关卡数据
+                int level = System.Convert.ToInt32(currentLevelDic["999"]);
+                Init(RoleFd, level + 1);
+            }
+            else if (txt_AtkState.text == "0")
+            {
+                //数值刷新
+                DataRefresh(RoleFd, levelMonster);
+
+            }
+            HippocreneOver = false;
+        }
+        #endregion
     }
 
     /// <summary>
@@ -135,7 +167,8 @@ public class GameScene : MonoBehaviour
         #region 基础数据绑定
 
         RoleFd = role == null ? Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")) : role;
-        txt_HP.text = RoleFd.HP.ToString();
+        float maxHp = GetCurrentRole().HP;
+        txt_HP.text = $"({RoleFd.HP}/{maxHp})";
         txt_HPReply.text = RoleFd.HPRegen.ToString();
         txt_Dodge.text = RoleFd.Dodge + "%";
         txt_ATK.text = RoleFd.Atk.ToString();
@@ -174,7 +207,6 @@ public class GameScene : MonoBehaviour
 
         #endregion
 
-        //int level = GetLeveData();
         MonsterDic = monsterD == null ? Level.CreateLevel(level) : monsterD;
         if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
         {
@@ -283,6 +315,69 @@ public class GameScene : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 恢复50%的血量
+    /// </summary>
+    private void Restore50()
+    {
+        float maxHp = GetCurrentRole().HP;
+        var RestoreHp = Convert.ToInt32(maxHp * 0.5);
+        var currentHp = RoleFd.HP;
+        RoleFd.HP += RestoreHp;
+        if (RoleFd.HP > maxHp)
+        {
+            RoleFd.HP = maxHp;
+        }
+        HippocrenePanel.SetActive(false);
+        UpdateRoleHP(RoleFd.HP);
+        AtkDetail += $"【遇到了灵泉恢复了{RoleFd.HP - currentHp}点血量！】\n\n";
+        AtkText += $"遇到了灵泉恢复了{RoleFd.HP - currentHp}点血量！";
+        BtnLoseEfficacy();
+        second = AtkText.Length;
+        HippocreneOptions = true;
+        PlayText(AtkText);
+    }
+
+    /// <summary>
+    /// 恢复20%-100%的血量
+    /// </summary>
+    private void Restore20()
+    {
+        float maxHp = GetCurrentRole().HP;
+        var RestoreHp = Convert.ToInt32(maxHp * Random.Range(0.2F, 1.01F));
+        var currentHp = RoleFd.HP;
+        RoleFd.HP += RestoreHp;
+        if (RoleFd.HP > maxHp)
+        {
+            RoleFd.HP = maxHp;
+        }
+        HippocrenePanel.SetActive(false);
+        UpdateRoleHP(RoleFd.HP);
+        AtkDetail += $"【遇到了灵泉恢复了{RoleFd.HP - currentHp}点血量！】\n\n";
+        AtkText += $"遇到了灵泉恢复了{RoleFd.HP - currentHp}点血量！";
+        BtnLoseEfficacy();
+        second = AtkText.Length;
+        HippocreneOptions = true;
+        PlayText(AtkText);
+    }
+
+    /// <summary>
+    /// 加最大生命值
+    /// </summary>
+    private void HpAdd()
+    {
+        var role = GetCurrentRole();
+        role.HP += 20;
+        SaveCurrentRole(role);
+        HippocrenePanel.SetActive(false);
+        AtkDetail += $"【遇到了灵泉增加了20点最大生命值！】\n\n";
+        AtkText += $"遇到了灵泉增加了20点最大生命值！";
+        BtnLoseEfficacy();
+        second = AtkText.Length;
+        HippocreneOptions = true;
+        PlayText(AtkText);
+    }
+
     #endregion
 
 
@@ -294,8 +389,9 @@ public class GameScene : MonoBehaviour
     {
         totalTimer += Time.deltaTime;
         int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
-        float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
-        int level = System.Convert.ToInt32(GetLeveData()["999"]);
+        var currentLevelDic = GetLeveData();//当前关卡数据
+        float maxHp = GetCurrentRole().HP;
+        int level = System.Convert.ToInt32(currentLevelDic["999"]);
         var InitHp = RoleFd.HP;
         //战斗详情添加到ipt_Detail
 
@@ -316,8 +412,8 @@ public class GameScene : MonoBehaviour
                 monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()]);
                 if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
-                    AtkDetail += "\n遇到了灵泉或者秘境！";
-                    AtkText += "遇到了灵泉或者秘境！";
+                    //AtkDetail += "\n遇到了灵泉或者秘境！";
+                    //AtkText += "遇到了灵泉或者秘境！";
                     hasHippocrene = true;
                     txt_AutoState.text = "0";
                     txt_AutoAtk.text = "自动";
@@ -345,7 +441,9 @@ public class GameScene : MonoBehaviour
             if (RoleFd.HP <= 0)
             {
                 RoleFd.HP = 0;
-                Init(RoleFd, level);
+                //Init(RoleFd, level);
+                txt_AutoState.text = "0";
+                txt_AutoAtk.text = "自动";
                 //战斗结束。弹出窗口
                 GameOver();
             }
@@ -374,11 +472,35 @@ public class GameScene : MonoBehaviour
         #region 角色攻击
         if (round == 0)
         {
+            #region 血量恢复
+            if (RoleFd.HPRegen > 0)
+            {
+                if (RoleFd.HP < maxHp)
+                {
+                    var RestoreHp = maxHp - RoleFd.HP;
+                    if (RestoreHp < RoleFd.HPRegen)
+                    {
+                        RoleFd.HP = maxHp;
+                        AtkDetail += $" 【{RoleFd.Name} 触发天赋技能，血量恢复{ RestoreHp}点血量。】\n\n ";
+                        UpdateRoleHP(RoleFd.HP);
+                    }
+                    else
+                    {
+                        RoleFd.HP += RoleFd.HPRegen;
+                        if (RoleFd.HPRegen > 0)
+                        {
+                            AtkDetail += $" 【{RoleFd.Name} 触发天赋技能，血量恢复{ RoleFd.HPRegen}点血量。】\n\n ";
+                            UpdateRoleHP(RoleFd.HP);
+                        }
+                    }
+                }
+            }
+            #endregion
             if (monster.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > (monster.Dodge * 0.01))
             {
                 if (Random.Range(0.00F, 1.01F) <= RoleFd.Seckill)
                 {
-                    AtkDetail += RoleFd.Name + "\n发动技能，将" + monster.Name + "秒杀。";
+                    AtkDetail += $"【{RoleFd.Name}发动技能，将{ monster.Name }秒杀。】\n\n";
                     monster.HP = 0;
                     UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
                     victory = true;
@@ -389,12 +511,12 @@ public class GameScene : MonoBehaviour
                 {
                     atk = System.Convert.ToInt32(RoleFd.Atk + (RoleFd.CritHarm * RoleFd.Atk / 100));
                     monster.HP -= atk;
-                    AtkDetail += RoleFd.Name + "发动攻击，（暴击）对" + monster.Name + "\n造成了" + atk + "点伤害。";
+                    AtkDetail += $"【{RoleFd.Name }发动攻击，（暴击）对{ monster.Name }造成了{ atk }点伤害。{(RoleFd.HP < maxHp && RoleFd.AtkRegain > 0 ? "" : "】\n")}\n";
                 }
                 else
                 {
                     monster.HP -= atk;
-                    AtkDetail += RoleFd.Name + "发动攻击，对" + monster.Name + "\n造成了" + atk + "点伤害。";
+                    AtkDetail += $"【{RoleFd.Name }发动攻击，对{ monster.Name }造成了{ atk }点伤害。{(RoleFd.HP < maxHp && RoleFd.AtkRegain > 0 ? "" : "】\n")}\n";
                 }
                 UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
                 if (RoleFd.HP < maxHp)//如果已经满血则不回血
@@ -406,35 +528,29 @@ public class GameScene : MonoBehaviour
                         RoleFd.HP = currentHp;
                     if (RoleFd.AtkRegain > 0)
                     {
-                        AtkDetail += $"\n {RoleFd.Name} 触发天赋技能，攻击恢复{RoleFd.AtkRegain}点血量。";
+                        AtkDetail += $" {RoleFd.Name} 触发天赋技能，攻击恢复{RoleFd.AtkRegain}点血量。{(monster.HP <= 0 ? "" : "】\n")}\n ";
                         UpdateRoleHP(RoleFd.HP);
                     }
                 }
                 if (monster.HP <= 0)
                 {
-                    AtkDetail += $"\n{monster.Name}死亡。";
+                    AtkDetail += $"{monster.Name}死亡。】\n\n";
                     round = 2;
                     victory = true;
                 }
                 else
                 {
-                    monster.HP += monster.HPRegen;
-                    if (monster.HPRegen > 0)
-                    {
-                        AtkDetail += $"\n {monster.Name} 触发天赋技能，血量恢复{ monster.HPRegen}点血量。";
-                        UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
-                    }
                     round = 1;
                 }
             }
             else
             {
-                AtkDetail += $"\n{RoleFd.Name}发动攻击，但被{monster.Name}闪避了。";
+                AtkDetail += $"【{RoleFd.Name}发动攻击，但被{monster.Name}闪避了。】\n\n";
                 round = 1;
             }
             if (Random.Range(0.00F, 1.01F) <= RoleFd.Twice)
             {
-                AtkDetail += $"\n{RoleFd.Name}触发回合内多次攻击技能，再次发动攻击。";
+                AtkDetail += $"【{RoleFd.Name}触发回合内多次攻击技能，再次发动攻击。】\n";
                 round = 0;
             }
         }
@@ -442,11 +558,37 @@ public class GameScene : MonoBehaviour
         #region 野怪攻击
         else
         {
+            var monsterMaxHp = Common.JsonToModel<field>(GetLeveData()[levelMonster.ToString()].ToString()).HP;
+            #region 血量恢复
+            if (monster.HPRegen > 0)
+            {
+                if (monster.HP < monsterMaxHp)
+                {
+                    var RestoreHp = monsterMaxHp - monster.HP;
+                    if (RestoreHp < monster.HPRegen)
+                    {
+                        monster.HP = monsterMaxHp;
+                        AtkDetail += $" 【{monster.Name} 触发天赋技能，血量恢复{ RestoreHp}点血量。】\n\n ";
+                        UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                    }
+                    else
+                    {
+                        monster.HP += monster.HPRegen;
+                        if (monster.HPRegen > 0)
+                        {
+                            AtkDetail += $" 【{monster.Name} 触发天赋技能，血量恢复{ monster.HPRegen}点血量。】\n\n ";
+                            UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                        }
+                    }
+                }
+            }
+            #endregion
             if (RoleFd.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > (RoleFd.Dodge * 0.01))
             {
+
                 if (Random.Range(0.00F, 1.01F) <= monster.Seckill)
                 {
-                    AtkDetail += $"\n{monster.Name}发动技能，将{ RoleFd.Name}秒杀，游戏失败。";
+                    AtkDetail += $"【{monster.Name}发动技能，将{ RoleFd.Name}秒杀，游戏失败。】\n\n";
                     RoleFd.HP = 0;
                     UpdateRoleHP(0);
                     round = 2;
@@ -456,15 +598,14 @@ public class GameScene : MonoBehaviour
                 {
                     atk = System.Convert.ToInt32(monster.Atk + (monster.CritHarm * monster.Atk / 100));
                     RoleFd.HP -= atk;
-                    AtkDetail += monster.Name + "发动攻击，（暴击）对" + RoleFd.Name + "\n造成了" + atk + "点伤害。";
+                    AtkDetail += $"【{monster.Name}发动攻击，（暴击）对{RoleFd.Name }造成了{ atk }点伤害。{(monster.HP < monsterMaxHp && monster.AtkRegain > 0 ? "" : "】\n")}\n";
                 }
                 else
                 {
                     RoleFd.HP -= atk;
-                    AtkDetail += monster.Name + "发动攻击，对" + RoleFd.Name + "\n造成了" + atk + "点伤害。";
+                    AtkDetail += $"【{monster.Name}发动攻击，对{RoleFd.Name }造成了{ atk }点伤害。{(monster.HP < monsterMaxHp && monster.AtkRegain > 0 ? "" : "】\n")}\n";
                 }
                 UpdateRoleHP(RoleFd.HP);
-                var monsterMaxHp = Common.JsonToModel<field>(GetLeveData()[levelMonster.ToString()].ToString()).HP;
                 if (monster.HP < monsterMaxHp)//如果已经满血则不回血
                 {
                     var currentHp = monster.HP += monster.AtkRegain;
@@ -474,34 +615,28 @@ public class GameScene : MonoBehaviour
                         monster.HP = currentHp;
                     if (monster.AtkRegain > 0)
                     {
-                        AtkDetail += $"\n {monster.Name} 触发天赋技能，攻击恢复{monster.AtkRegain}点血量。";
+                        AtkDetail += $"{monster.Name} 触发天赋技能，攻击恢复{monster.AtkRegain}点血量。】\n\n";
                         UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
                     }
                 }
                 if (RoleFd.HP <= 0)
                 {
-                    AtkDetail += $"\n{RoleFd.Name}被击杀，游戏失败";
+                    AtkDetail += $"【{RoleFd.Name}被击杀，游戏失败】\n\n";
                     round = 2;
                 }
                 else
                 {
-                    RoleFd.HP += RoleFd.HPRegen;
-                    if (RoleFd.HPRegen>0)
-                    {
-                        UpdateRoleHP(RoleFd.HP);
-                        AtkDetail += $"\n {RoleFd.Name} 触发天赋技能，血量恢复{RoleFd.HPRegen}点血量。";
-                    }
                     round = 0;
                 }
             }
             else
             {
-                AtkDetail += $"\n{monster.Name}发动攻击，但被{RoleFd.Name}闪避了。";
+                AtkDetail += $"【{monster.Name}发动攻击，但被{RoleFd.Name}闪避了。】\n\n";
                 round = 0;
             }
             if (Random.Range(0.00F, 1.01F) <= monster.Twice)
             {
-                AtkDetail += $"\n{monster.Name}触发回合内多次攻击技能，再次发动攻击。";
+                AtkDetail += $"【{monster.Name}触发回合内多次攻击技能，再次发动攻击。】\n";
                 round = 1;
             }
         }
@@ -519,8 +654,8 @@ public class GameScene : MonoBehaviour
             int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
             //角色添加经验值
             RoleAddEXP(Exp);
-            AtkText += $" 获得{Exp}点经验值。";
-            AtkDetail += $"击败{monster.Name},获得{Exp}点经验值。";
+            AtkText += $" 获得{Exp}点经验值。\n";
+            AtkDetail += $"【击败{monster.Name},获得{Exp}点经验值。】\n\n";
         }
         #endregion
     }
@@ -532,9 +667,10 @@ public class GameScene : MonoBehaviour
     {
         #region 攻击
         totalTimer += Time.deltaTime;
-        float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
         int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
-        int level = System.Convert.ToInt32(GetLeveData()["999"]);
+        var currentLevelDic = GetLeveData();//当前关卡数据
+        float maxHp = GetCurrentRole().HP;
+        int level = System.Convert.ToInt32(currentLevelDic["999"]);
         var InitHp = RoleFd.HP;
         //战斗详情添加到AtkDetail
         #region 战斗
@@ -553,8 +689,8 @@ public class GameScene : MonoBehaviour
                 monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()]);
                 if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
-                    AtkDetail += "\n遇到了灵泉或者秘境！";
-                    AtkText += "遇到了灵泉或者秘境！";
+                    //AtkDetail += "\n遇到了灵泉或者秘境！";
+                    //AtkText += "遇到了灵泉或者秘境！";
                     hasHippocrene = true;
                 }
                 else
@@ -580,7 +716,7 @@ public class GameScene : MonoBehaviour
             if (RoleFd.HP <= 0)
             {
                 RoleFd.HP = 0;
-                Init(RoleFd, level);
+                //Init(RoleFd, level);
                 //战斗结束。弹出窗口
                 GameOver();
             }
@@ -615,7 +751,8 @@ public class GameScene : MonoBehaviour
     /// </summary>
     private void UpdateRoleHP(float hp)
     {
-        txt_HP.text = hp.ToString();
+        float maxHp = GetCurrentRole().HP;
+        txt_HP.text = $"({hp}/{maxHp})";
     }
 
     /// <summary>
@@ -640,32 +777,42 @@ public class GameScene : MonoBehaviour
     }
 
     /// <summary>
-    /// 调用协成实现一个字一个字显出的效果
+    /// 实现文字渐显
     /// </summary>
-    private void PlayText(string str)
+    /// <param name="str">要渐显的字符串</param>
+    /// <param name="hasHipp">是否是灵泉</param>
+    public void PlayText(string str, bool hasHipp = false)
     {
         Debug.Log("进入方法PlayText");
 
-        totalTimer += Time.deltaTime;
-        if (second > 0)
+        if (!string.IsNullOrWhiteSpace(str))
         {
-            if (totalTimer >= 0.1)
+            totalTimer += Time.deltaTime;
+            if (second > 0)
             {
-                second--;
-                temp += str[no].ToString();
-                ipt_Atk.text = temp;
-                // 累加时间归0，重新累加
-                totalTimer = 0;
-                no++;
+                if (totalTimer >= 0.1)
+                {
+                    second--;
+                    temp += str[no].ToString();
+                    ipt_Atk.text = temp;
+                    // 累加时间归0，重新累加
+                    totalTimer = 0;
+                    no++;
+                }
             }
-        }
-        if (second == 0)
-        {
-            temp = "";
-            coroutine = true;
-            txt_AtkState.text = "0";
-            hasPlayText = true;
-            round = 0;
+            if (second == 0)
+            {
+                temp = "";
+                coroutine = true;
+                txt_AtkState.text = "0";
+                hasPlayText = true;
+                round = 0;
+                HippocreneOptions = false;
+                if (hasHipp)
+                {
+                    HippocreneOver = true;
+                }
+            }
         }
     }
 
@@ -706,7 +853,8 @@ public class GameScene : MonoBehaviour
         #endregion
 
         #region 数值刷新
-        txt_HP.text = role.HP.ToString();
+        float maxHp = GetCurrentRole().HP;
+        txt_HP.text = $"({role.HP}/{maxHp})";
         txt_HPReply.text = role.HPRegen.ToString();
         txt_Dodge.text = role.Dodge + "%";
         txt_ATK.text = role.Atk.ToString();
@@ -736,6 +884,16 @@ public class GameScene : MonoBehaviour
     {
         AgainPanel.SetActive(true);
         //AgainPanel.transform.position = new Vector3(300, 600, 0);
+
+    }
+    /// <summary>
+    /// 显示游戏
+    /// </summary>
+    private void ShowGame()
+    {
+        AgainPanel.SetActive(false);
+        //AgainPanel.transform.position = new Vector3(300, 600, 0);
+
     }
 
     /// <summary>
@@ -745,7 +903,10 @@ public class GameScene : MonoBehaviour
     /// <param name="level">当前关卡</param>
     private void LevelDataSave(Dictionary<string, object> monster, int level)
     {
-        monster.Add("999", level);//关卡
+        if (!monster.ContainsKey("999"))
+        {
+            monster.Add("999", level);//关卡
+        }
         string json = Common.DicToJson(monster);
         //json = GameHelper.DesEncrypt(json);//前期不加密
         var path = Application.dataPath + "/Data/LevelData";
@@ -821,6 +982,46 @@ public class GameScene : MonoBehaviour
         if (File.Exists($"{path}/Role.txt"))
             File.Delete($"{path}/Role.txt");
         File.WriteAllText($"{path}/Role.txt", json);
+    }
+
+    /// <summary>
+    /// 保存当前角色信息
+    /// </summary>
+    private void SaveCurrentRole(field role)
+    {
+        string json = Common.ObjectToJson(role);
+        //json = GameHelper.DesEncrypt(json);//前期不加密
+        var path = Application.dataPath + "/Data/Role";
+        //文件夹是否存在
+        DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+        if (!myDirectoryInfo.Exists)
+        {
+            Directory.CreateDirectory(path);
+        }
+        if (File.Exists($"{path}/CurrentRole.txt"))
+            File.Delete($"{path}/CurrentRole.txt");
+        File.WriteAllText($"{path}/CurrentRole.txt", json);
+    }
+
+    private field GetCurrentRole()
+    {
+        var path = Application.dataPath + "/Data/";
+        field role = new field();
+        //文件夹是否存在
+        DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+        if (!myDirectoryInfo.Exists)
+        {
+            Directory.CreateDirectory(path);
+        }
+        if (File.Exists(path + @"\" + "Role/CurrentRole.txt"))
+        {
+            StreamReader json = File.OpenText(path + @"\" + "Role/CurrentRole.txt");
+            //Debug.Log("读档" + json);
+            string input = json.ReadToEnd();
+            role = Common.JsonToModel<field>(input);
+            json.Close();
+        }
+        return role;
     }
 
     #endregion

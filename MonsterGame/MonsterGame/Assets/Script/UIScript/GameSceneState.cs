@@ -86,6 +86,13 @@ namespace Assets.Script.UIScript
             }
 
             #endregion
+
+            #region 选择灵泉选项
+            if (entity.HippocreneOptions)
+            {
+                entity.PlayText(entity.AtkText, true);
+            }
+            #endregion
         }
 
         public override void OnExit(GameScene entity)

@@ -286,8 +286,8 @@ namespace Assets.Script
         /// <returns></returns>
         public static T JsonToModel<T>(string json)
         {
+            if (string.IsNullOrWhiteSpace(json)) return default(T);
             var data = JsonMapper.ToObject(json);
-            if (data == null) return default(T);
             var t = Activator.CreateInstance<T>();
             foreach (var info in typeof(T).GetProperties())
             {
