@@ -20,10 +20,11 @@ public class GameScene : MonoBehaviour
     private Image img_Monster, img_Monster1;
     private RectTransform img_rect, txt_rect, img_rect_temp, txt_rect_temp;
     private Dictionary<string, object> MonsterDic;
-    private field RoleFd;
+    private field RoleFd, monster;
     private Scrollbar TalkWinBar;
-    private bool coroutine = false;
-    private bool hasHippocrene = false;
+    private bool coroutine = false;//释放攻击按钮
+    private bool hasHippocrene = false;//释放灵泉面板
+    private bool hasPlayText = false;//文字播放完成
 
     // 定义每帧累加时间
     private float totalTimer;
@@ -144,6 +145,9 @@ public class GameScene : MonoBehaviour
         ipt_Atk.text += $"{(level == 1 ? "" : "\n")}厚土劫·初（{level}/300）";
         txt_LevelMonster.text = "0";
         AtkDetail = "";
+        AtkText = "";
+        hasPlayText = false;
+        no = 0;
         #endregion
 
         #region 图片初始化
@@ -239,7 +243,6 @@ public class GameScene : MonoBehaviour
     private void ClickAtkBtn()
     {
         txt_AtkState.text = "1";
-
     }
 
     /// <summary>
@@ -266,7 +269,18 @@ public class GameScene : MonoBehaviour
     private void AutomaticAtk()
     {
         //在 update中修改展示
-        txt_AutoState.text = "1";
+
+        var autoTxt = txt_AutoAtk.text;
+        if (autoTxt == "自动")
+        {
+            txt_AutoState.text = "1";
+            txt_AutoAtk.text = "暂停";
+        }
+        else
+        {
+            txt_AutoState.text = "0";
+            txt_AutoAtk.text = "自动";
+        }
     }
 
     #endregion
@@ -278,69 +292,54 @@ public class GameScene : MonoBehaviour
     /// </summary>
     public void AutoATK()
     {
-        var autoTxt = txt_AutoAtk.text;
+        totalTimer += Time.deltaTime;
         int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
         float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
-        ipt_Detail.text = "";
         int level = System.Convert.ToInt32(GetLeveData()["999"]);
         var InitHp = RoleFd.HP;
-        string AtkText = "";
         //战斗详情添加到ipt_Detail
-        bool victory = false;
-        //判断是否是从第一个怪开始
-        if (levelMonster == 0)
+
+
+        #region 战斗
+
+        //攻击不能用循环要用状态机，1秒进行一轮攻击
+        if (totalTimer >= 1 && round != 2)
         {
-            txt_AutoAtk.text = "暂停";
             if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
             {
-                field monster = Common.ConvertObject<field>(MonsterDic["99"]);
-                var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                monster = Common.ConvertObject<field>(MonsterDic["99"]);
+                //var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                ATK(levelMonster, maxHp, level, InitHp);
             }
             else   //小怪或灵泉
             {
-                for (int i = 0; i < MonsterDic.Count - 2; i++)
+                monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()]);
+                if (monster == null || monster?.HP == 0)//灵泉或秘境
                 {
-                    #region 战斗
-                    field monster = Common.ConvertObject<field>(MonsterDic[i.ToString()]);
-                    if (monster == null || monster?.HP == 0)//灵泉或秘境
-                    {
-                        ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                        AtkText += "遇到了灵泉或者秘境！\n";
-                        txt_AutoState.text = "0";
-                    }
-                    else
-                    {
-                        var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
-                        var newRole = Common.ConvertObject<field>(Atk["Role"]);
-                        var Monster = Common.ConvertObject<field>(Atk["Monster"]);
-                        var AtkDetail = (IList<string>)Atk["AtkDetail"];
-
-                        foreach (var item in AtkDetail)
-                        {
-                            ipt_Detail.text += item;
-                        }
-                        if (newRole.HP <= 0)
-                            AtkText = $"被{monster.Name}击杀了你，游戏失败！";
-                        else
-                            AtkText += $"击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
-                        RoleFd = newRole;
-                        InitHp = newRole.HP;
-
-                        #region 经验
-                        if (monster.HP <= 0 && RoleFd.HP > 0)
-                        {
-                            float[] interval = { 0.5F, 1.5F };
-                            int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
-                            //角色添加经验值
-                            RoleAddEXP(Exp);
-                            AtkText += $" 获得{Exp}点经验值。\n";
-                            ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
-                        }
-                        #endregion
-                    }
-                    #endregion
+                    AtkDetail += "\n遇到了灵泉或者秘境！";
+                    AtkText += "遇到了灵泉或者秘境！";
+                    hasHippocrene = true;
+                    txt_AutoState.text = "0";
+                    txt_AutoAtk.text = "自动";
+                }
+                else
+                {
+                    //var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                    //1s一次攻击
+                    ATK(levelMonster, maxHp, level, InitHp);
                 }
             }
+            totalTimer = 0;
+            //野怪、角色数值刷新
+            MonsterDic[levelMonster.ToString()] = monster;
+            second = AtkText.Length;
+        }
+
+        #endregion
+
+        if (round == 2)//战斗完成
+        {
+            InitHp = RoleFd.HP;
             PlayText(AtkText);
             //战斗完后
             if (RoleFd.HP <= 0)
@@ -350,90 +349,180 @@ public class GameScene : MonoBehaviour
                 //战斗结束。弹出窗口
                 GameOver();
             }
-            else
+            else if (hasPlayText && levelMonster == 2)
+            {
+                Init(RoleFd, level + 1);
+            }
+            else if (hasPlayText)
             {
                 //数值刷新
-                Init(RoleFd, level + 1);
-
+                DataRefresh(RoleFd, levelMonster);
             }
-            txt_AutoAtk.text = "自动";
-            txt_AutoState.text = "0";
         }
-        else
-        {
-            while (levelMonster < 3)
-            {
-                if (int.TryParse(System.Convert.ToString(level / 30.00F), out int result))//boss
-                {
-                    field monster = Common.ConvertObject<field>(MonsterDic["99"]);
-                    var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
-                }
-                else   //小怪或灵泉
-                {
-                    #region 战斗
-                    field monster = Common.ConvertObject<field>(MonsterDic[levelMonster.ToString()]);
-                    if (monster == null || monster?.HP == 0)//灵泉或秘境
-                    {
-                        ipt_Detail.text += "\n遇到了灵泉或者秘境！";
-                        AtkText += "遇到了灵泉或者秘境！";
-                        txt_AutoState.text = "0";
-                        hasHippocrene = true;
-                    }
-                    else
-                    {
-                        var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
-                        var newRole = Common.ConvertObject<field>(Atk["Role"]);
-                        var Monster = Common.ConvertObject<field>(Atk["Monster"]);
-                        var AtkDetail = (IList<string>)Atk["AtkDetail"];
 
-                        foreach (var item in AtkDetail)
-                        {
-                            ipt_Detail.text += item;
-                        }
-                        if (newRole.HP <= 0)
-                            AtkText = $"被{monster.Name}击杀了你，游戏失败！";
-                        else
-                            AtkText += $"击败了{monster.Name}{(InitHp != newRole.HP ? $"，{(InitHp < newRole.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - newRole.HP)}点血量。" : "。")}";
-                        RoleFd = newRole;
-                        InitHp = newRole.HP;
-                        #region 经验
-                        if (monster.HP <= 0 && RoleFd.HP > 0)
-                        {
-                            float[] interval = { 0.5F, 1.5F };
-                            int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
-                            //角色添加经验值
-                            RoleAddEXP(Exp);
-                            AtkText += $" 获得{Exp}点经验值。\n";
-                            ipt_Detail.text += $"击败{monster.Name},获得{Exp}点经验值。";
-                        }
-                        #endregion
-                    }
-                    #endregion
-                }
-                PlayText(AtkText);
-                //战斗完后
-                if (RoleFd.HP <= 0)
+    }
+    /// <summary>
+    /// 攻击
+    /// </summary>
+    /// <param name="levelMonster">当前关卡的野怪序号</param>
+    /// <param name="maxHp">当前角色最大血量</param>
+    /// <param name="level">当前关卡</param>
+    /// <param name="InitHp">角色初始血量</param>
+    private void ATK(int levelMonster, float maxHp, int level, float InitHp)
+    {
+        bool victory = false;
+        #region 角色攻击
+        if (round == 0)
+        {
+            if (monster.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > (monster.Dodge * 0.01))
+            {
+                if (Random.Range(0.00F, 1.01F) <= RoleFd.Seckill)
                 {
-                    RoleFd.HP = 0;
-                    Init(RoleFd, level);
-                    //战斗结束。弹出窗口
-                    GameOver();
+                    AtkDetail += RoleFd.Name + "\n发动技能，将" + monster.Name + "秒杀。";
+                    monster.HP = 0;
+                    UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                    victory = true;
+                    round = 2;
                 }
-                else if (levelMonster == 2)
+                int atk = System.Convert.ToInt32(RoleFd.Atk);
+                if (Random.Range(0.00F, 1.01F) <= (RoleFd.Crit * 0.01))
                 {
-                    Init(RoleFd, level + 1);
+                    atk = System.Convert.ToInt32(RoleFd.Atk + (RoleFd.CritHarm * RoleFd.Atk / 100));
+                    monster.HP -= atk;
+                    AtkDetail += RoleFd.Name + "发动攻击，（暴击）对" + monster.Name + "\n造成了" + atk + "点伤害。";
                 }
                 else
                 {
-                    //数值刷新
-                    DataRefresh(RoleFd, levelMonster);
-                    //数值刷新
-
+                    monster.HP -= atk;
+                    AtkDetail += RoleFd.Name + "发动攻击，对" + monster.Name + "\n造成了" + atk + "点伤害。";
                 }
-                levelMonster++;
+                UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                if (RoleFd.HP < maxHp)//如果已经满血则不回血
+                {
+                    var currentHp = RoleFd.HP += RoleFd.AtkRegain;
+                    if (currentHp > maxHp)
+                        RoleFd.HP = maxHp;
+                    else
+                        RoleFd.HP = currentHp;
+                    if (RoleFd.AtkRegain > 0)
+                    {
+                        AtkDetail += $"\n {RoleFd.Name} 触发天赋技能，攻击恢复{RoleFd.AtkRegain}点血量。";
+                        UpdateRoleHP(RoleFd.HP);
+                    }
+                }
+                if (monster.HP <= 0)
+                {
+                    AtkDetail += $"\n{monster.Name}死亡。";
+                    round = 2;
+                    victory = true;
+                }
+                else
+                {
+                    monster.HP += monster.HPRegen;
+                    if (monster.HPRegen > 0)
+                    {
+                        AtkDetail += $"\n {monster.Name} 触发天赋技能，血量恢复{ monster.HPRegen}点血量。";
+                        UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                    }
+                    round = 1;
+                }
             }
-            txt_AutoState.text = "0";
+            else
+            {
+                AtkDetail += $"\n{RoleFd.Name}发动攻击，但被{monster.Name}闪避了。";
+                round = 1;
+            }
+            if (Random.Range(0.00F, 1.01F) <= RoleFd.Twice)
+            {
+                AtkDetail += $"\n{RoleFd.Name}触发回合内多次攻击技能，再次发动攻击。";
+                round = 0;
+            }
         }
+        #endregion
+        #region 野怪攻击
+        else
+        {
+            if (RoleFd.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > (RoleFd.Dodge * 0.01))
+            {
+                if (Random.Range(0.00F, 1.01F) <= monster.Seckill)
+                {
+                    AtkDetail += $"\n{monster.Name}发动技能，将{ RoleFd.Name}秒杀，游戏失败。";
+                    RoleFd.HP = 0;
+                    UpdateRoleHP(0);
+                    round = 2;
+                }
+                int atk = System.Convert.ToInt32(monster.Atk);
+                if (Random.Range(0.00F, 1.01F) <= (monster.Crit * 0.01))
+                {
+                    atk = System.Convert.ToInt32(monster.Atk + (monster.CritHarm * monster.Atk / 100));
+                    RoleFd.HP -= atk;
+                    AtkDetail += monster.Name + "发动攻击，（暴击）对" + RoleFd.Name + "\n造成了" + atk + "点伤害。";
+                }
+                else
+                {
+                    RoleFd.HP -= atk;
+                    AtkDetail += monster.Name + "发动攻击，对" + RoleFd.Name + "\n造成了" + atk + "点伤害。";
+                }
+                UpdateRoleHP(RoleFd.HP);
+                var monsterMaxHp = Common.JsonToModel<field>(GetLeveData()[levelMonster.ToString()].ToString()).HP;
+                if (monster.HP < monsterMaxHp)//如果已经满血则不回血
+                {
+                    var currentHp = monster.HP += monster.AtkRegain;
+                    if (currentHp > monsterMaxHp)
+                        monster.HP = monsterMaxHp;
+                    else
+                        monster.HP = currentHp;
+                    if (monster.AtkRegain > 0)
+                    {
+                        AtkDetail += $"\n {monster.Name} 触发天赋技能，攻击恢复{monster.AtkRegain}点血量。";
+                        UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
+                    }
+                }
+                if (RoleFd.HP <= 0)
+                {
+                    AtkDetail += $"\n{RoleFd.Name}被击杀，游戏失败";
+                    round = 2;
+                }
+                else
+                {
+                    RoleFd.HP += RoleFd.HPRegen;
+                    if (RoleFd.HPRegen>0)
+                    {
+                        UpdateRoleHP(RoleFd.HP);
+                        AtkDetail += $"\n {RoleFd.Name} 触发天赋技能，血量恢复{RoleFd.HPRegen}点血量。";
+                    }
+                    round = 0;
+                }
+            }
+            else
+            {
+                AtkDetail += $"\n{monster.Name}发动攻击，但被{RoleFd.Name}闪避了。";
+                round = 0;
+            }
+            if (Random.Range(0.00F, 1.01F) <= monster.Twice)
+            {
+                AtkDetail += $"\n{monster.Name}触发回合内多次攻击技能，再次发动攻击。";
+                round = 1;
+            }
+        }
+        #endregion
+
+        if (monster.HP > 0 && RoleFd.HP <= 0)
+            AtkText = $"被{monster.Name}击杀了，游戏失败！";
+        else if (monster.HP <= 0)
+            AtkText += $"击败了{monster.Name}{(InitHp != RoleFd.HP ? $"，{(InitHp < RoleFd.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - RoleFd.HP)}点血量。" : "。")}";
+
+        #region 经验
+        if (victory)
+        {
+            float[] interval = { 0.5F, 1.5F };
+            int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
+            //角色添加经验值
+            RoleAddEXP(Exp);
+            AtkText += $" 获得{Exp}点经验值。";
+            AtkDetail += $"击败{monster.Name},获得{Exp}点经验值。";
+        }
+        #endregion
     }
 
     /// <summary>
@@ -441,15 +530,12 @@ public class GameScene : MonoBehaviour
     /// </summary>
     public void SingleATK()
     {
-        Debug.Log("SingleATK");
         #region 攻击
         totalTimer += Time.deltaTime;
         float maxHp = Common.ConvertModel<field>(GameHelper.DataRead("Role/Role.txt")).HP;
         int levelMonster = System.Convert.ToInt32(txt_LevelMonster.text);
         int level = System.Convert.ToInt32(GetLeveData()["999"]);
         var InitHp = RoleFd.HP;
-        bool victory = false;
-        field monster = null;
         //战斗详情添加到AtkDetail
         #region 战斗
 
@@ -460,6 +546,7 @@ public class GameScene : MonoBehaviour
             {
                 monster = Common.ConvertObject<field>(MonsterDic["99"]);
                 //var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
+                ATK(levelMonster, maxHp, level, InitHp);
             }
             else   //小怪或灵泉
             {
@@ -474,115 +561,7 @@ public class GameScene : MonoBehaviour
                 {
                     //var Atk = Level.Combat(RoleFd, monster, maxHp, out victory);
                     //1s一次攻击
-                    victory = false;
-                    #region 角色攻击
-                    if (round == 0)
-                    {
-                        if (monster.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > monster.Dodge)
-                        {
-                            if (Random.Range(0.00F, 1.01F) <= RoleFd.Seckill)
-                            {
-                                AtkDetail += RoleFd.Name + "\n发动技能，将" + monster.Name + "秒杀。";
-                                monster.HP = 0;
-                                UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
-                                victory = true;
-                                round = 2;
-                            }
-                            int atk = System.Convert.ToInt32(System.Math.Round(RoleFd.Atk + (Random.Range(0.00F, 1.01F) <= RoleFd.Crit ? (RoleFd.CritHarm * RoleFd.Atk / 100) : 0.00F)));
-                            monster.HP -= atk;
-                            AtkDetail += RoleFd.Name + "发动攻击，对" + monster.Name + "\n造成了" + atk + "点伤害。";
-                            UpdateCurrentMonsterHP(levelMonster, monster.HP, monster.Name);
-                            if (RoleFd.HP < maxHp)//如果已经满血则不回血
-                            {
-                                var currentHp = RoleFd.HP += RoleFd.AtkRegain;
-                                if (currentHp > maxHp)
-                                    RoleFd.HP = maxHp;
-                                else
-                                    RoleFd.HP = currentHp;
-                                AtkDetail += $"\n触发天赋技能，攻击恢复{RoleFd.AtkRegain}点血量。";
-                            }
-                            if (monster.HP <= 0)
-                            {
-                                AtkDetail += $"\n{monster.Name}死亡。";
-                                round = 2;
-                                victory = true;
-                            }
-                            else
-                            {
-                                monster.HP += monster.HPRegen;
-                                round = 1;
-                            }
-                        }
-                        else
-                        {
-                            AtkDetail += $"\n{RoleFd.Name}发动攻击，但被{monster.Name}闪避了。";
-                            round = 1;
-                        }
-                        if (Random.Range(0.00F, 1.01F) <= RoleFd.Twice)
-                        {
-                            AtkDetail += $"\n{RoleFd.Name}触发回合内多次攻击技能，再次发动攻击。";
-                            round = 0;
-                        }
-                    }
-                    #endregion
-                    #region 野怪攻击
-                    else
-                    {
-                        if (RoleFd.Dodge == 0.00F || Random.Range(0.00F, 1.01F) > RoleFd.Dodge)
-                        {
-                            if (Random.Range(0.00F, 1.01F) <= monster.Seckill)
-                            {
-                                AtkDetail += $"\n{monster.Name}发动技能，将{ RoleFd.Name}秒杀，游戏失败。";
-                                RoleFd.HP = 0;
-                                UpdateRoleHP(0);
-                                round = 2;
-                            }
-                            int atk = System.Convert.ToInt32(System.Math.Round(monster.Atk + (Random.Range(0.00F, 1.01F) < monster.Crit ? (monster.CritHarm * monster.Atk / 100) : 0.00F)));
-                            RoleFd.HP -= atk;
-                            AtkDetail += $"\n{monster.Name}发动攻击，对{RoleFd.Name}造成了{atk}点伤害。";
-                            monster.HP += monster.AtkRegain;
-                            UpdateRoleHP(RoleFd.HP);
-                            if (RoleFd.HP <= 0)
-                            {
-                                AtkDetail += $"\n{RoleFd.Name}被击杀，游戏失败";
-                                round = 2;
-                            }
-                            else
-                            {
-                                RoleFd.HP += monster.HPRegen;
-                                UpdateRoleHP(RoleFd.HP);
-                                round = 0;
-                            }
-                        }
-                        else
-                        {
-                            AtkDetail += $"\n{monster.Name}发动攻击，但被{RoleFd.Name}闪避了。";
-                            round = 0;
-                        }
-                        if (Random.Range(0.00F, 1.01F) <= monster.Twice)
-                        {
-                            AtkDetail += $"\n{monster.Name}触发回合内多次攻击技能，再次发动攻击。";
-                            round = 1;
-                        }
-                    }
-                    #endregion
-
-                    if (monster.HP > 0 && RoleFd.HP <= 0)
-                        AtkText = $"被{monster.Name}击杀了，游戏失败！";
-                    else if (monster.HP <= 0)
-                        AtkText += $"击败了{monster.Name}{(InitHp != RoleFd.HP ? $"，{(InitHp < RoleFd.HP ? "恢复" : "失去")}{System.Math.Abs(InitHp - RoleFd.HP)}点血量。" : "。")}";
-
-                    #region 经验
-                    if (victory)
-                    {
-                        float[] interval = { 0.5F, 1.5F };
-                        int Exp = System.Convert.ToInt32(3 * level * Random.Range(interval[0], interval[1]) * GameHelper.hard);
-                        //角色添加经验值
-                        RoleAddEXP(Exp);
-                        AtkText += $" 获得{Exp}点经验值。";
-                        AtkDetail += $"击败{monster.Name},获得{Exp}点经验值。";
-                    }
-                    #endregion
+                    ATK(levelMonster, maxHp, level, InitHp);
                 }
             }
             totalTimer = 0;
@@ -685,6 +664,7 @@ public class GameScene : MonoBehaviour
             temp = "";
             coroutine = true;
             txt_AtkState.text = "0";
+            hasPlayText = true;
             round = 0;
         }
     }
@@ -733,6 +713,9 @@ public class GameScene : MonoBehaviour
         txt_Crit.text = role.Crit + "%";
         txt_CritHarm.text = role.CritHarm + "%";
         txt_LevelMonster.text = (imgNo + 1).ToString();
+        no = 0;
+        AtkText = "";
+        hasPlayText = false;
         #endregion
 
     }
