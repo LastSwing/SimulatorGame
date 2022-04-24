@@ -1,0 +1,1 @@
+{"Atk":8,"Crit":15,"CritHarm":21,"AtkRegain":2,"HP":300,"HPRegen":0,"Dodge":25,"Name":"张三","Seckill":0,"Twice":0,"EXP":2414}

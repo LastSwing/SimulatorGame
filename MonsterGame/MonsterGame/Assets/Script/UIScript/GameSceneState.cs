@@ -66,8 +66,33 @@ namespace Assets.Script.UIScript
 
         public override void Execute(GameScene entity)
         {
-            Debug.Log("状态执行中");
-            entity.BtnLoseEfficacy();
+            //Debug.Log("状态执行中");
+            //判断是否触发攻击
+            #region 单次攻击
+
+            if (entity.txt_AtkState.text == "1")
+            {
+                entity.SingleATK();
+                entity.BtnLoseEfficacy();
+            }
+
+            #endregion
+
+            #region 自动攻击
+
+            if (entity.txt_AutoState.text == "1")
+            {
+                entity.AutoATK();
+            }
+
+            #endregion
+
+            #region 选择灵泉选项
+            if (entity.HippocreneOptions)
+            {
+                entity.PlayText(entity.AtkText, true);
+            }
+            #endregion
         }
 
         public override void OnExit(GameScene entity)
