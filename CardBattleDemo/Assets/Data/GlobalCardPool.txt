@@ -1,0 +1,1 @@
+{"ID":"Card2022042421361504","CardType":2,"StateType":1,"CardScope":0,"HasAOE":0,"CardName":"皮甲","CardUrl":"","CardDetail":"护甲+6；消耗1点能量","Consume":1,"Effect":6}

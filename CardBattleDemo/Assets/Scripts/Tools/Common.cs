@@ -1,0 +1,315 @@
+﻿using LitJson;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Assets.Scripts.Tools
+{
+    public static class Common
+    {
+        public static int HasAgain;
+        /// <summary>
+        /// 跳转页面
+        /// </summary>
+        /// <param name="SceneName">场景名称</param>
+        /// <param name="HasAgain">是否重新开始1、不重开，0重开</param>
+        public static void SceneJump(string SceneName, int Again = 1)
+        {
+            HasAgain = Again;
+            SceneManager.LoadScene(SceneName);
+        }
+
+        #region JSON格式化
+
+        /// <summary>
+        /// 将object对象转换为实体对象
+        /// </summary>
+        /// <typeparam name="T">实体对象类名</typeparam>
+        /// <param name="asObject">object对象</param>
+        /// <returns></returns>
+        public static T ConvertObject<T>(object asObject) where T : new()
+        {
+            //创建实体对象实例
+            var t = Activator.CreateInstance<T>();
+            if (asObject != null)
+            {
+                Type type = asObject.GetType();
+                //遍历实体对象属性
+                foreach (var info in typeof(T).GetProperties())
+                {
+                    object obj = null;
+                    //取得object对象中此属性的值
+                    var val = type.GetProperty(info.Name)?.GetValue(asObject);
+                    if (val != null)
+                    {
+                        //非泛型
+                        if (!info.PropertyType.IsGenericType)
+                            obj = Convert.ChangeType(val, info.PropertyType);
+                        else//泛型Nullable<>
+                        {
+                            Type genericTypeDefinition = info.PropertyType.GetGenericTypeDefinition();
+                            if (genericTypeDefinition == typeof(Nullable<>))
+                            {
+                                obj = Convert.ChangeType(val, Nullable.GetUnderlyingType(info.PropertyType));
+                            }
+                            else
+                            {
+                                obj = Convert.ChangeType(val, info.PropertyType);
+                            }
+                        }
+                        info.SetValue(t, obj, null);
+                    }
+                }
+            }
+            return t;
+        }
+
+        /// <summary>
+        /// Dic转Model
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dict"></param>
+        /// <returns></returns>
+        public static T ConvertModel<T>(Dictionary<string, string> dict)
+        {
+            //
+            T obj = Activator.CreateInstance<T>();
+            //根据Key值设定 Columns
+            foreach (KeyValuePair<string, string> item in dict)
+            {
+                if (item.Key == "ID")
+                {
+                    continue;
+                }
+                PropertyInfo prop = obj.GetType().GetProperty(item.Key);
+                if (!string.IsNullOrEmpty(item.Value))
+                {
+                    object value = item.Value;
+                    //Nullable 获取Model类字段的真实类型
+                    Type itemType = Nullable.GetUnderlyingType(prop.PropertyType) == null ? prop.PropertyType : Nullable.GetUnderlyingType(prop.PropertyType);
+                    //根据Model类字段的真实类型进行转换
+                    prop.SetValue(obj, Convert.ChangeType(value, itemType), null);
+                }
+
+
+            }
+            return obj;
+        }
+
+        /// <summary>
+        /// Obj转List<string>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dict"></param>
+        /// <returns></returns>
+        public static List<string> ConvertToList(object asObject)
+        {
+            IList<string> objList = (IList<string>)asObject;
+            return objList.ToList();
+        }
+        /// <summary>
+        /// dic转JSON
+        /// </summary>
+        /// <param name="dic"></param>
+        /// <returns></returns>
+        public static string DicToJson(Dictionary<string, object> dic)
+        {
+            string result = "{";
+            char[] mychar = { ',' };
+            foreach (var item in dic.Keys)
+            {
+                if (dic[item] == null)
+                {
+                    result += $"\"{item}\":\"\",";
+                    continue;
+                }
+                Type type = dic[item]?.GetType();
+                if (type.IsClass || type.IsGenericType)
+                {
+                    result += $"\"{item}\":\"{{";
+                    foreach (var info in type.GetProperties())
+                    {
+                        if (dic[item] != null)
+                        {
+                            if (info.PropertyType.IsPrimitive)//字符类型
+                            {
+                                result += $"\\\"{info.Name}\\\":{info.GetValue(dic[item])},";
+                            }
+                            else if (info.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                            {
+                                result += $"\\\"{info.Name}\\\":\\\"{info.GetValue(dic[item])}\\\",";
+                            }
+                        }
+                        else
+                        {
+                            if (info.PropertyType.IsPrimitive || info.PropertyType == typeof(string))   //对象为空直接赋双引号
+                            {
+                                result += $"\\\"{info.Name}\\\":\\\"\\\",";
+                            }
+                        }
+                    }
+                    result = result.TrimEnd(mychar);
+                    result += "}\",";
+                }
+                else
+                {
+                    if (dic[item] != null)
+                    {
+                        if (type.IsPrimitive)//字符类型
+                        {
+                            result += $"\"{item}\":{dic[item]},";
+                        }
+                        else if (type == typeof(string))    //基础数据类型，非自定义的class或者struct
+                        {
+                            result += $"\"{item}\":\"{dic[item]}\",";
+                        }
+                    }
+                    else
+                    {
+                        if (type.IsPrimitive || type == typeof(string))   //对象为空直接赋双引号
+                        {
+                            result += $"\"{item}\":\"\",";
+                        }
+                    }
+                }
+            }
+
+            result = result.TrimEnd(mychar);
+            result += "}";
+            return result;
+        }
+
+        /// <summary>
+        /// 单层object转json
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static string ObjectToJson(object obj)
+        {
+            string result = "{";
+            Type t = obj.GetType();
+            foreach (var item in t.GetProperties())
+            {
+                if (obj != null)
+                {
+                    if (item.PropertyType.IsPrimitive)//字符类型
+                    {
+                        result += $"\"{item.Name}\":{item.GetValue(obj)},";
+                    }
+                    else if (item.PropertyType == typeof(string))    //基础数据类型，非自定义的class或者struct
+                    {
+                        result += $"\"{item.Name}\":\"{item.GetValue(obj)}\",";
+                    }
+                }
+                else
+                {
+                    if (item.PropertyType.IsPrimitive || item.PropertyType == typeof(string))   //对象为空直接赋双引号
+                    {
+                        result += $"\"{item.Name}\":\"\",";
+                    }
+                }
+            }
+            char[] mychar = { ',' };
+            result = result.TrimEnd(mychar);
+            result += "}";
+            return result;
+        }
+
+        /// <summary>
+        /// 字符串转Model
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        public static T JsonToModel<T>(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return default(T);
+            var data = JsonMapper.ToObject(json);
+            var t = Activator.CreateInstance<T>();
+            foreach (var info in typeof(T).GetProperties())
+            {
+                var aa = info.PropertyType;
+                object obj = null;
+                //取得object对象中此属性的值
+                var val = data[info.Name].ToString();
+                if (val != null)
+                {
+                    //非泛型
+                    if (!info.PropertyType.IsGenericType)
+                        obj = Convert.ChangeType(val, info.PropertyType);
+                    else//泛型Nullable<>
+                    {
+                        Type genericTypeDefinition = info.PropertyType.GetGenericTypeDefinition();
+                        if (genericTypeDefinition == typeof(Nullable<>))
+                        {
+                            obj = Convert.ChangeType(val, Nullable.GetUnderlyingType(info.PropertyType));
+                        }
+                        else
+                        {
+                            obj = Convert.ChangeType(val, info.PropertyType);
+                        }
+                    }
+                    info.SetValue(t, obj, null);
+                }
+            }
+            return t;
+        }
+        #endregion
+
+        #region 文件保存提取
+
+        /// <summary>
+        /// 保存字符串到文本
+        /// </summary>
+        /// <param name="json">字符串</param>
+        /// <param name="path">文件名称</param>
+        public static void SaveTxtFile(string json, string pathName)
+        {
+
+            //json = GameHelper.DesEncrypt(json);//前期不加密
+            var path = Application.dataPath + "/Data/";
+            //文件夹是否存在
+            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+            if (!myDirectoryInfo.Exists)
+            {
+                Directory.CreateDirectory(path);
+            }
+            if (File.Exists($"{path}/{pathName}"))
+                File.Delete($"{path}/{pathName}");
+            File.WriteAllText($"{path}/{pathName}", json);
+        }
+
+        /// <summary>
+        /// 按文件名称获取文件
+        /// </summary>
+        /// <param name="pathName"></param>
+        public static T GetTxtFile<T>(string pathName)
+        {
+            var path = Application.dataPath + "/Data/";
+            T role = Activator.CreateInstance<T>();
+            //文件夹是否存在
+            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+            if (!myDirectoryInfo.Exists)
+            {
+                Directory.CreateDirectory(path);
+            }
+            if (File.Exists(path + pathName))
+            {
+                StreamReader json = File.OpenText(path + pathName);
+                //Debug.Log("读档" + json);
+                string input = json.ReadToEnd();
+                role = JsonToModel<T>(input);
+                json.Close();
+            }
+            return role;
+        }
+
+        #endregion
+    }
+}
