@@ -7,29 +7,28 @@ using System.Threading.Tasks;
 namespace Assets.Scripts.LogicalScripts.Models
 {
     /// <summary>
-    /// 怪物属性
+    /// 玩家类
     /// </summary>
-    public class MonsterModel
+    public class GlobalPlayerModel
     {
         /// <summary>
-        /// 血量
+        /// 主键
         /// </summary>
-        public float HP { get; set; }
+        public string ID { get; set; }
 
         /// <summary>
-        /// 初始攻击力
+        /// 出战的角色ID
         /// </summary>
-        public float ATK { get; set; }
+        public string CurrentRoleID { get; set; }
 
         /// <summary>
-        /// 等级
+        /// 所拥有的的角色
         /// </summary>
-        public float Level { get; set; }
+        public List<CurrentRoleModel> RoleList { get; set; }
 
         /// <summary>
-        /// 野怪类型
-        /// 1战士、2坦克、3辅助、4Boss
+        /// 财富值
         /// </summary>
-        public int Type { get; set; }
+        public float Wealth { get; set; }
     }
 }
