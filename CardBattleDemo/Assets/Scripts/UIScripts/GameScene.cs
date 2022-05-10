@@ -40,11 +40,11 @@ public class GameScene : MonoBehaviour
 
         #region 控件初始化
 
-        Player = transform.Find("Player").GetComponent<Image>();
+        Player = transform.Find("Player/Player").GetComponent<Image>();
         Enemy = transform.Find("Enemy").GetComponent<Image>();
 
-        Player_HP = transform.Find("Player/Pimg_HP/Text").GetComponent<Text>();
-        Ai_HP = transform.Find("Enemy/Eimg_HP/Text").GetComponent<Text>();
+        Player_HP = transform.Find("Player/Text").GetComponent<Text>();
+        Ai_HP = transform.Find("Enemy/Text").GetComponent<Text>();
         txt_StartCardCount = transform.Find("CardPool/left_Card/txt_StartCardCount").GetComponent<Text>();
         txt_EndCardCount = transform.Find("CardPool/right_Card/txt_EndCardCount").GetComponent<Text>();
 
@@ -62,14 +62,16 @@ public class GameScene : MonoBehaviour
 
     void Init()
     {
-        PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.PlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");
-        AiRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.AIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");
-
+        Common.DelereTxtFile(GlobalAttr.UsedCardPoolsFileName);
+        PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.PlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? 
+        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.AIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
+        Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+        Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
         Ai_HP.text = $"{AiRole.MaxHP}/{AiRole.HP}";
-        ImageBind(PlayerRole.RoleImgUrl, Player);
-        ImageBind(AiRole.RoleImgUrl, Enemy);
+        Common.ImageBind(PlayerRole.RoleImgUrl, Player);
+        Common.ImageBind(AiRole.RoleImgUrl, Enemy);
         CreateEnergyImage(PlayerRole.MaxEnergy);
 
         #region 玩家卡池
@@ -102,7 +104,7 @@ public class GameScene : MonoBehaviour
             ATKBarCardList.Add(UnusedCardList[i]);
             UnusedCardList.Remove(UnusedCardList[i]);
         }
-        DealCards();
+        CardAssignment();
         Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.ATKBarCardPoolsFileName);
         Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
         #endregion
@@ -136,21 +138,12 @@ public class GameScene : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 图片绑定
-    /// </summary>
-    /// <param name="imgUrl">图片路径</param>
-    /// <param name="imgControl">图片控件</param>
-    public void ImageBind(string imgUrl, Image imgControl)
-    {
-        Sprite img = Resources.Load(imgUrl, typeof(Sprite)) as Sprite;
-        imgControl.sprite = img;
-    }
+
 
     /// <summary>
     /// 卡牌赋值
     /// </summary>
-    public void DealCards()
+    public void CardAssignment()
     {
         for (int i = 0; i < 5; i++)
         {
@@ -167,19 +160,19 @@ public class GameScene : MonoBehaviour
                 Card_ATK_icon = GameObject.Find($"img_Card{(i + 1)}/img_ATK/Image").GetComponent<Image>();
                 if (cardType == 1)
                 {
-                    ImageBind("Images/Defense", Card_ATK_icon);
+                    Common.ImageBind("Images/Defense", Card_ATK_icon);
                 }
                 else if (cardType == 2 || cardType == 3)
                 {
-                    ImageBind("Images/HP_Icon", Card_ATK_icon);
+                    Common.ImageBind("Images/HP_Icon", Card_ATK_icon);
                 }
                 else if (cardType == 5)
                 {
-                    ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
+                    Common.ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
                 }
                 else
                 {
-                    ImageBind("Images/Atk_Icon", Card_ATK_icon);
+                    Common.ImageBind("Images/Atk_Icon", Card_ATK_icon);
                 }
                 Card_ATKNumber = GameObject.Find($"img_Card{(i + 1)}/img_ATK/Text").GetComponent<Text>();
                 Card_ATKNumber.text = model.Effect.ToString();
@@ -191,7 +184,7 @@ public class GameScene : MonoBehaviour
                 Card_energy_img.transform.localScale = Vector3.zero;
             }
             Card_Skill_img = GameObject.Find($"Card/img_Card{(i + 1)}/img_Skill").GetComponent<Image>();
-            ImageBind(model.CardUrl, Card_Skill_img);
+            Common.ImageBind(model.CardUrl, Card_Skill_img);
             Card_Energy = GameObject.Find($"Card/img_Card{(i + 1)}/Image/Text").GetComponent<Text>();
             Card_Energy.text = model.Consume.ToString();
             Card_Title = GameObject.Find($"Card/img_Card{(i + 1)}/img_Title/Text").GetComponent<Text>();

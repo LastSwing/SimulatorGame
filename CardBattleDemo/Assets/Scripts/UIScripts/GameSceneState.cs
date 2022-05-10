@@ -35,7 +35,7 @@ namespace Assets.Scripts.UIScripts
 
         public override void Execute(GameScene entity)
         {
-            //Debug.Log("状态执行中");
+            //Debug.Log("GameScene状态执行中");
 
             #region 开始动画
             if (entity.GameStartAnimationState)

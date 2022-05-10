@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Assets.Scripts.Tools
 {
@@ -188,6 +189,7 @@ namespace Assets.Scripts.Tools
         /// <returns></returns>
         public static string ListToJson<T>(this List<T> list)
         {
+            if (list == null) return "";
             string result = "[";
             foreach (var item in list)
             {
@@ -332,7 +334,7 @@ namespace Assets.Scripts.Tools
 
         #endregion
 
-        #region 文件保存提取
+        #region 文本操作
 
         /// <summary>
         /// 保存字符串到文本
@@ -418,6 +420,25 @@ namespace Assets.Scripts.Tools
             return role;
         }
 
+        /// <summary>
+        /// 删除文本
+        /// </summary>
+        /// <param name="path">文件名称</param>
+        public static void DelereTxtFile(string pathName)
+        {
+
+            //json = GameHelper.DesEncrypt(json);//前期不加密
+            var path = Application.dataPath + "/Data/";
+            //文件夹是否存在
+            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+            if (!myDirectoryInfo.Exists)
+            {
+                Directory.CreateDirectory(path);
+            }
+            if (File.Exists($"{path}/{pathName}.txt"))
+                File.Delete($"{path}/{pathName}.txt");
+        }
+
         #endregion
 
 
@@ -451,6 +472,77 @@ namespace Assets.Scripts.Tools
                 go.layer = parent.gameObject.layer;
             }
             return go;
+        }
+
+        /// <summary>
+        /// 图片绑定
+        /// </summary>
+        /// <param name="imgUrl">图片路径</param>
+        /// <param name="imgControl">图片控件</param>
+        public static void ImageBind(string imgUrl, Image imgControl)
+        {
+            Sprite img = Resources.Load(imgUrl, typeof(Sprite)) as Sprite;
+            imgControl.sprite = img;
+        }
+
+        /// <summary>
+        /// 血量图片变化
+        /// </summary>
+        /// <param name="HpImg">血量图片控件</param>
+        /// <param name="InitHP">最大血量</param>
+        /// <param name="ChangeHp">变化血量值</param>
+        /// <param name="ChangeType">变化类型：1加血，0减血</param>
+        public static void HPImageChange(Image HpImg, float InitHP, float ChangeHp, int ChangeType)
+        {
+            RectTransform Irect = HpImg.GetComponent<RectTransform>();
+            float imgW = Irect.sizeDelta.x;
+            float OneHpWidth = 310 / InitHP;//图片一滴血的宽度
+            float ChangeImgW = ChangeHp * OneHpWidth;
+            if (ChangeType == 0)
+            {
+                float total = imgW - ChangeImgW;
+                if (total < 0)
+                {
+                    total = 0;
+                }
+                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
+            }
+            else
+            {
+                float total = imgW + ChangeImgW;
+                if (total > 310)//初始宽度310
+                {
+                    total = 310;
+                }
+                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
+            }
+        }
+
+        /// <summary>
+        ///  能量变化
+        /// </summary>
+        /// <param name="cEnergy">当前能量</param>
+        /// <param name="changeEnergy">变化的能量</param>
+        /// <param name="ChangeType">变化类型。0减能量，1加能量</param>
+        /// <param name="MaxEnergy">最大能量</param>
+        public static void EnergyImgChange(int cEnergy, int changeEnergy, int ChangeType, int MaxEnergy)
+        {
+            if (changeEnergy > cEnergy) return;
+            for (int i = 1; i <= changeEnergy; i++)
+            {
+                Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy - i}").GetComponent<Image>();
+                if (ChangeType == 0)
+                {
+                    EnergyI.transform.localScale = Vector3.zero;
+                }
+                else
+                {
+                    if (MaxEnergy == cEnergy) return;
+                    EnergyI.transform.localScale = Vector3.one;
+                }
+            }
         }
 
         #endregion

@@ -51,7 +51,7 @@ namespace Assets.Scripts.LogicalScripts.Models
         /// <summary>
         /// 玩家使用卡牌的消耗
         /// </summary>
-        public float Consume { get; set; }
+        public int Consume { get; set; }
 
         /// <summary>
         /// 效果值（如血量恢复、愤怒层数、攻击力、护甲）

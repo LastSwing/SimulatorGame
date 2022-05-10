@@ -56,7 +56,7 @@ public class PlayerCardScene : MonoBehaviour
         model.PlayerOrAI = dd_PlayerOrAI.value;
         model.CardType = dd_CardType.value;
         model.CardUrl = ipt_CardUrl.text;
-        model.Consume = string.IsNullOrWhiteSpace(ipt_Consume.text) ? 0 : Convert.ToInt64(ipt_Consume.text);
+        model.Consume = string.IsNullOrWhiteSpace(ipt_Consume.text) ? 0 : Convert.ToInt32(ipt_Consume.text);
         model.HasAOE = dd_HasAOE.value;
         model.Effect = string.IsNullOrWhiteSpace(ipt_Effect.text) ? 0 : Convert.ToInt64(ipt_Effect.text);
         model.CardLevel = string.IsNullOrWhiteSpace(ipt_CardLevel.text) ? 1 : Convert.ToInt32(ipt_CardLevel.text);

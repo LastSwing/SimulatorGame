@@ -34,14 +34,29 @@ namespace Assets.Scripts.UIScripts
         {
             //Debug.Log("状态执行中");
 
-            #region 开始动画
+            #region 动画
 
             if (entity.RecycleCardAnimationState)
             {
                 entity.RecycleCardAnimation();
             }
+            if (entity.CardListAnimationState)
+            {
+                entity.CardListAnimation();
+            }
+            if (entity.RoundOverState)
+            {
+                entity.RoundOverAnimation();
+            }
+            if (entity.RotationCardAnimationState)
+            {
+                entity.RotationCardAnimation();
+            }
+            if (entity.ShuffleAnimationState)
+            {
+                entity.ShuffleAnimation();
+            }
             #endregion
-
         }
 
         public override void OnExit(CardManage entity)
