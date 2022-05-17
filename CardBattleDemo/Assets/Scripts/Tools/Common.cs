@@ -529,17 +529,18 @@ namespace Assets.Scripts.Tools
         /// <param name="MaxEnergy">最大能量</param>
         public static void EnergyImgChange(int cEnergy, int changeEnergy, int ChangeType, int MaxEnergy)
         {
-            if (changeEnergy > cEnergy) return;
             for (int i = 1; i <= changeEnergy; i++)
             {
-                Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy - i}").GetComponent<Image>();
                 if (ChangeType == 0)
                 {
+                    if (changeEnergy > cEnergy) return;
+                    Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy - i}").GetComponent<Image>();
                     EnergyI.transform.localScale = Vector3.zero;
                 }
                 else
                 {
                     if (MaxEnergy == cEnergy) return;
+                    Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy + changeEnergy - i}").GetComponent<Image>();
                     EnergyI.transform.localScale = Vector3.one;
                 }
             }

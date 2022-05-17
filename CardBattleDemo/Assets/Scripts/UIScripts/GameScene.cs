@@ -26,8 +26,16 @@ public class GameScene : MonoBehaviour
     /// 已使用的卡池
     /// </summary>
     private List<CurrentCardPoolModel> UsedCardList = new List<CurrentCardPoolModel>();
-    private Image Player, Enemy, Card_ATK_img, Card_ATK_icon, Card_Skill_img, Card_energy_img;
-    private Text Player_HP, Ai_HP, txt_StartCardCount, txt_EndCardCount, Card_Energy, Card_ATKNumber, Card_Title;
+    /// <summary>
+    /// AI卡池
+    /// </summary>
+    private List<CurrentCardPoolModel> AiCardList = new List<CurrentCardPoolModel>();
+    /// <summary>
+    /// AI攻击牌池
+    /// </summary>
+    private List<CurrentCardPoolModel> AiATKCardList = new List<CurrentCardPoolModel>();
+    private Image Player, Enemy, Card_ATK_img, Card_ATK_icon, Card_Skill_img, Card_energy_img, Player_img_Armor, Enemy_img_Armor;
+    private Text Player_HP, Ai_HP, txt_StartCardCount, txt_EndCardCount, Card_Energy, Card_ATKNumber, Card_Title, Player_txt_Armor, Enemy_txt_Armor;
     public bool GameStartAnimationState = true;//初始动画
     public bool GameStartAnimationEndState, GameStartAnimationMoveState, CardListAnimationState, RotationCardAnimationState = false;
     // 定义每帧累加时间
@@ -42,7 +50,11 @@ public class GameScene : MonoBehaviour
 
         Player = transform.Find("Player/Player").GetComponent<Image>();
         Enemy = transform.Find("Enemy").GetComponent<Image>();
+        Player_img_Armor = transform.Find("Player/img_Armor").GetComponent<Image>();
+        Enemy_img_Armor = transform.Find("Enemy/img_Armor").GetComponent<Image>();
 
+        Enemy_txt_Armor = transform.Find("Enemy/img_Armor/Text").GetComponent<Text>();
+        Player_txt_Armor = transform.Find("Player/img_Armor/Text").GetComponent<Text>();
         Player_HP = transform.Find("Player/Text").GetComponent<Text>();
         Ai_HP = transform.Find("Enemy/Text").GetComponent<Text>();
         txt_StartCardCount = transform.Find("CardPool/left_Card/txt_StartCardCount").GetComponent<Text>();
@@ -62,52 +74,107 @@ public class GameScene : MonoBehaviour
 
     void Init()
     {
+        #region 数据源初始化
         Common.DelereTxtFile(GlobalAttr.UsedCardPoolsFileName);
         PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.PlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? 
         AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.AIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CardPoolFileName) ?? new List<CurrentCardPoolModel>();//卡池
+        #endregion
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
         Ai_HP.text = $"{AiRole.MaxHP}/{AiRole.HP}";
         Common.ImageBind(PlayerRole.RoleImgUrl, Player);
         Common.ImageBind(AiRole.RoleImgUrl, Enemy);
-        CreateEnergyImage(PlayerRole.MaxEnergy);
-
-        #region 玩家卡池
-
-        if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
+        if (PlayerRole.Armor > 0)
         {
-            var arr = PlayerRole.CardListStr.Split(';');
-            var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CardPoolFileName) ?? new List<CurrentCardPoolModel>();
-            for (int i = 0; i < arr.Length; i++)
-            {
-                CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
-                var id = arr[i].Split('|')[0].ToString().Trim();
-                if (!string.IsNullOrEmpty(id))
-                {
-                    cardModel = cardPoolList.Find(a => a.ID == id);
-                    UnusedCardList.Add(cardModel);
-                }
-            }
-            UnusedCardList.ListRandom();
-            txt_StartCardCount.text = UnusedCardList.Count.ToString();
+            Player_img_Armor.transform.localScale = Vector3.one;
+            Player_txt_Armor.text = PlayerRole.Armor.ToString();
         }
         else
         {
-            txt_StartCardCount.text = "0";
+            Player_img_Armor.transform.localScale = Vector3.zero;
         }
-        #endregion
-        #region 攻击栏卡池
-        for (int i = 0; i < 5; i++)
+        if (AiRole.Armor > 0)
         {
-            ATKBarCardList.Add(UnusedCardList[i]);
-            UnusedCardList.Remove(UnusedCardList[i]);
+            Enemy_img_Armor.transform.localScale = Vector3.one;
+            Enemy_txt_Armor.text = PlayerRole.Armor.ToString();
         }
-        CardAssignment();
-        Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.ATKBarCardPoolsFileName);
-        Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
-        #endregion
+        else
+        {
+            Enemy_img_Armor.transform.localScale = Vector3.zero;
+        }
+        CreateEnergyImage(PlayerRole.MaxEnergy);
+
+        if (cardPoolList != null && cardPoolList?.Count > 0)
+        {
+            #region 玩家卡池
+
+            if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
+            {
+                var arr = PlayerRole.CardListStr.Split(';');
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
+                    var id = arr[i].Split('|')[0].ToString().Trim();
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        cardModel = cardPoolList?.Find(a => a.ID == id);
+                        UnusedCardList.Add(cardModel);
+                    }
+                }
+                UnusedCardList.ListRandom();
+                txt_StartCardCount.text = UnusedCardList.Count.ToString();
+            }
+            else
+            {
+                txt_StartCardCount.text = "0";
+            }
+            #endregion
+
+            #region AI牌池
+            if (!string.IsNullOrEmpty(AiRole.CardListStr))
+            {
+                var arr = AiRole.CardListStr.Split(';');
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
+                    var id = arr[i].Split('|')[0].ToString().Trim();
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        cardModel = cardPoolList.Find(a => a.ID == id);
+                        AiCardList.Add(cardModel);
+                    }
+                }
+                AiCardList.ListRandom();
+                Common.SaveTxtFile(AiCardList.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+
+                #region AI攻击栏
+                //攻击栏最大五张牌
+                var AtkCardNum = AiRole.AILevel + 1;
+                if (AtkCardNum > 5) AtkCardNum = 5;
+                for (int i = 0; i < AtkCardNum; i++)
+                {
+                    AiATKCardList.Add(AiCardList[i]);
+                }
+                Common.SaveTxtFile(AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
+                #endregion
+            }
+            #endregion
+
+            #region 攻击栏卡池
+            for (int i = 0; i < 5; i++)
+            {
+                ATKBarCardList.Add(UnusedCardList[i]);
+                UnusedCardList.Remove(UnusedCardList[i]);
+            }
+            CardAssignment();
+            Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.ATKBarCardPoolsFileName);
+            Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
+            #endregion 
+        }
+        AIATKCardPoolsBind();
     }
 
     // Update is called once per frame
@@ -194,7 +261,24 @@ public class GameScene : MonoBehaviour
 
     }
 
-
+    /// <summary>
+    /// AI攻击牌池绑定
+    /// </summary>
+    public void AIATKCardPoolsBind()
+    {
+        if (AiATKCardList != null && AiATKCardList?.Count > 0)
+        {
+            GameObject parentObject = GameObject.Find("GanmeCanvas/Enemy/ATKBar");
+            foreach (var item in AiATKCardList)
+            {
+                GameObject tempObj = Resources.Load("Prefab/AI_ATKimg_Prefab") as GameObject;
+                tempObj.name = item.ID;
+                tempObj = Common.AddChild(parentObject.transform, tempObj);
+                var tempImg = parentObject.transform.Find(item.ID + "(Clone)").GetComponent<Image>();
+                Common.ImageBind(item.CardUrl, tempImg);
+            }
+        }
+    }
 
     #region Animation
     /// <summary>

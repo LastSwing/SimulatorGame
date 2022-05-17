@@ -97,5 +97,10 @@ namespace Assets.Scripts.LogicalScripts.Models
         /// </summary>
         public int TriggerValue { get; set; }
 
+        /// <summary>
+        /// Ai攻击顺序（在Ai有多次攻击时按排序攻击）
+        /// </summary>
+        public int AiAtkSort { get; set; }
+
     }
 }

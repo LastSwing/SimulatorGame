@@ -58,6 +58,11 @@ namespace Assets.Scripts.LogicalScripts.Models
         public int MaxEnergy { get; set; }
 
         /// <summary>
+        /// 护甲值
+        /// </summary>
+        public int Armor { get; set; }
+
+        /// <summary>
         /// 当前状态
         /// </summary>
         public float CurrentState { get; set; }

@@ -11,7 +11,7 @@ public class PlayerCardScene : MonoBehaviour
 {
     private Button btn_Player, btn_Save;
     private Dropdown dd_CardType, dd_EffectType, dd_PlayerOrAI, dd_HasAOE, dd_HasShoppingShow, dd_HasDeBuff, dd_TriggerState;
-    private InputField ipt_CardName, ipt_CardUrl, ipt_Consume, ipt_Effect, ipt_CardDetail, ipt_CardLevel, ipt_CardPrice, ipt_TriggerValue;
+    private InputField ipt_CardName, ipt_CardUrl, ipt_Consume, ipt_Effect, ipt_CardDetail, ipt_CardLevel, ipt_CardPrice, ipt_TriggerValue, ipt_AiAtkSort;
     // Start is called before the first frame update
     void Start()
     {
@@ -32,6 +32,7 @@ public class PlayerCardScene : MonoBehaviour
         ipt_CardLevel = transform.Find("ipt_CardLevel").GetComponent<InputField>();
         ipt_CardPrice = transform.Find("ipt_CardPrice").GetComponent<InputField>();
         ipt_TriggerValue = transform.Find("ipt_TriggerValue").GetComponent<InputField>();
+        ipt_AiAtkSort = transform.Find("ipt_AiAtkSort").GetComponent<InputField>();
 
         btn_Player = transform.Find("PageJump/btn_Roles").GetComponent<Button>();
         btn_Player.onClick.AddListener(delegate { Common.SceneJump("RoleScene"); });

@@ -34,7 +34,7 @@ namespace Assets.Scripts.UIScripts
         {
             //Debug.Log("状态执行中");
 
-            #region 动画
+            #region 卡牌攻击动画
 
             if (entity.RecycleCardAnimationState)
             {
@@ -55,6 +55,12 @@ namespace Assets.Scripts.UIScripts
             if (entity.ShuffleAnimationState)
             {
                 entity.ShuffleAnimation();
+            }
+            #endregion
+            #region Ai攻击
+            if (entity.AiAtkState)
+            {
+                entity.AIAtk();
             }
             #endregion
         }
