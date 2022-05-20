@@ -18,7 +18,7 @@ namespace Assets.Scripts.UIScripts
     {
         StateMachine<CardManage> myStateMachine; //状态机
         GameObject DefensePanel, ATKPanel, Shuffle, tempObj;
-        Animation Anim_Restore, Anim_ATK, Anim_Armor;
+        Animation Anim_Restore, Anim_ATK, Anim_Armor, Anim_EnergyRestore;
         Button btn_RoundOver;
         Image Card_img, Eimg_HP, Player_img_Armor, Pimg_HP, Enemy_img_Armor;
         Text txt_EndCardCount, txt_StartCardCount, Player_txt_Armor, Player_HP, Enemy_txt_Armor;
@@ -70,14 +70,22 @@ namespace Assets.Scripts.UIScripts
             tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Restore"));
             tempObj.name = "Anim_Restore";
             Anim_Restore = GameObject.Find("GanmeCanvas/Anim_Restore").GetComponent<Animation>();
+            tempObj.SetActive(false);
 
             tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_ATK"));
             tempObj.name = "Anim_ATK";
             Anim_ATK = GameObject.Find("GanmeCanvas/Anim_ATK").GetComponent<Animation>();
+            tempObj.SetActive(false);
 
             tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Armor"));
             tempObj.name = "Anim_Armor";
             Anim_Armor = GameObject.Find("GanmeCanvas/Anim_Armor").GetComponent<Animation>();
+            tempObj.SetActive(false);
+
+            tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_EnergyRestore"));
+            tempObj.name = "Anim_EnergyRestore";
+            Anim_EnergyRestore = GameObject.Find("GanmeCanvas/Anim_EnergyRestore").GetComponent<Animation>();
+            tempObj.SetActive(false);
             #endregion
 
             Pimg_HP = GameObject.Find("Player/Pimg_HP").GetComponent<Image>();
@@ -244,9 +252,27 @@ namespace Assets.Scripts.UIScripts
                                 Common.EnergyImgChange(PlayerRole.Energy, atkModel.Consume, 0, PlayerRole.MaxEnergy);
                                 PlayerRole.Energy -= atkModel.Consume;
                             }
-
-                            Common.HPImageChange(Eimg_HP, AiRole.MaxHP, atkModel.Effect, 0);
-                            AiRole.HP -= atkModel.Effect;
+                            float DeductionHp = atkModel.Effect;
+                            if (AiRole.Armor > 0)
+                            {
+                                if (AiRole.Armor >= atkModel.Effect)
+                                {
+                                    DeductionHp = 0;
+                                    AiRole.Armor -= Convert.ToInt32(atkModel.Effect);
+                                    Enemy_txt_Armor.text = PlayerRole.Armor.ToString();
+                                }
+                                else
+                                {
+                                    DeductionHp -= AiRole.Armor;
+                                    AiRole.Armor = 0;
+                                }
+                                if (AiRole.Armor == 0)
+                                {
+                                    Enemy_img_Armor.transform.localScale = Vector3.zero;
+                                }
+                            }
+                            Common.HPImageChange(Eimg_HP, AiRole.MaxHP, DeductionHp, 0);
+                            AiRole.HP -= DeductionHp;
                             if (AiRole.HP <= 0)
                             {
                                 AiRole.HP = 0;
@@ -287,6 +313,7 @@ namespace Assets.Scripts.UIScripts
                     if (stateType == 5)
                     {
                         atkModel.Proficiency++;
+                        Anim_EnergyRestore.Play("EnergyRestore");
                         Common.EnergyImgChange(PlayerRole.Energy, Convert.ToInt32(atkModel.Effect), 1, PlayerRole.MaxEnergy);
                         PlayerRole.Energy += Convert.ToInt32(atkModel.Effect);
                         if (PlayerRole.Energy > PlayerRole.MaxEnergy)
@@ -357,11 +384,14 @@ namespace Assets.Scripts.UIScripts
                                 PlayerRole.Energy -= atkModel.Consume;
                             }
                             PlayerRole.HP += atkModel.Effect;
-                            Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
-                            Common.HPImageChange(Eimg_HP, AiRole.MaxHP, atkModel.Effect, 1);
                             if (PlayerRole.HP > PlayerRole.MaxHP)
                             {
                                 PlayerRole.HP = PlayerRole.MaxHP;
+                            }
+                            Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
+                            if (PlayerRole.HP != PlayerRole.MaxHP)
+                            {
+                                Common.HPImageChange(Pimg_HP, AiRole.MaxHP, atkModel.Effect, 1);
                             }
                             Anim_Restore.transform.localPosition = new Vector3(-408, 0);
                             Anim_Restore.Play("Restore");
@@ -793,8 +823,27 @@ namespace Assets.Scripts.UIScripts
                         case 0:
                             Anim_ATK.transform.localPosition = new Vector3(-408, 0);
                             Anim_ATK.Play("ATK");
-                            PlayerRole.HP -= model.Effect;
-                            Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, model.Effect, 0);
+                            float DeductionHp = model.Effect;
+                            if (PlayerRole.Armor > 0)
+                            {
+                                if (PlayerRole.Armor >= model.Effect)
+                                {
+                                    DeductionHp = 0;
+                                    PlayerRole.Armor -= Convert.ToInt32(model.Effect);
+                                    Player_txt_Armor.text = PlayerRole.Armor.ToString();
+                                }
+                                else
+                                {
+                                    DeductionHp -= PlayerRole.Armor;
+                                    PlayerRole.Armor = 0;
+                                }
+                                if (PlayerRole.Armor == 0)
+                                {
+                                    Player_img_Armor.transform.localScale = Vector3.zero;
+                                }
+                            }
+                            PlayerRole.HP -= DeductionHp;
+                            Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, DeductionHp, 0);
                             Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
                             break;
                         case 1:

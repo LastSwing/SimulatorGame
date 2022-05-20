@@ -494,29 +494,32 @@ namespace Assets.Scripts.Tools
         /// <param name="ChangeType">变化类型：1加血，0减血</param>
         public static void HPImageChange(Image HpImg, float InitHP, float ChangeHp, int ChangeType)
         {
-            RectTransform Irect = HpImg.GetComponent<RectTransform>();
-            float imgW = Irect.sizeDelta.x;
-            float OneHpWidth = 310 / InitHP;//图片一滴血的宽度
-            float ChangeImgW = ChangeHp * OneHpWidth;
-            if (ChangeType == 0)
+            if (ChangeHp > 0)
             {
-                float total = imgW - ChangeImgW;
-                if (total < 0)
+                RectTransform Irect = HpImg.GetComponent<RectTransform>();
+                float imgW = Irect.sizeDelta.x;
+                float OneHpWidth = 310 / InitHP;//图片一滴血的宽度
+                float ChangeImgW = ChangeHp * OneHpWidth;
+                if (ChangeType == 0)
                 {
-                    total = 0;
+                    float total = imgW - ChangeImgW;
+                    if (total < 0)
+                    {
+                        total = 0;
+                    }
+                    Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
                 }
-                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
-                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
-            }
-            else
-            {
-                float total = imgW + ChangeImgW;
-                if (total > 310)//初始宽度310
+                else
                 {
-                    total = 310;
+                    float total = imgW + ChangeImgW;
+                    if (total > 310)//初始宽度310
+                    {
+                        total = 310;
+                    }
+                    Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
                 }
-                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
-                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
             }
         }
 

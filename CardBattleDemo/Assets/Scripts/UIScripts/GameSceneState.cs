@@ -38,18 +38,18 @@ namespace Assets.Scripts.UIScripts
             //Debug.Log("GameScene状态执行中");
 
             #region 开始动画
-            if (entity.GameStartAnimationState)
-            {
-                entity.GameStartAnimation();
-            }
-            if (entity.GameStartAnimationEndState)
-            {
-                entity.GameStartAnimationEnd();
-            }
-            if (entity.GameStartAnimationMoveState)
-            {
-                entity.GameStartAnimationMove();
-            }
+            //if (entity.GameStartAnimationState)
+            //{
+            //    entity.GameStartAnimation();
+            //}
+            //if (entity.GameStartAnimationEndState)
+            //{
+            //    entity.GameStartAnimationEnd();
+            //}
+            //if (entity.GameStartAnimationMoveState)
+            //{
+            //    entity.GameStartAnimationMove();
+            //}
             #endregion
 
             #region 显示卡牌
