@@ -1,0 +1,1 @@
+[{"Proficiency":0,"ID":"2022042516475183","CardType":0,"StateType":0,"HasAOE":0,"CardName":"冲拳","CardUrl":"Images/CardIcon/ChongQuan","CardDetail":"近战照成6点伤害","Consume":0,"Effect":6,"PlayerOrAI":1,"CardLevel":0,"CardPrice":0,"HasShoppingShow":0,"HasDeBuff":0,"TriggerState":0,"TriggerValue":0,"AiAtkSort":0}]
