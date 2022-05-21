@@ -1,0 +1,12 @@
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\bin\Release\ConclusionEditor.exe
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\bin\Release\ConclusionEditor.pdb
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\bin\Release\LitJson.dll
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.csprojAssemblyReference.cache
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.Form1.resources
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.Properties.Resources.resources
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.ThreadControl.resources
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.csproj.GenerateResource.cache
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.csproj.CoreCompileInputs.cache
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.csproj.CopyComplete
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.exe
+C:\Users\QY.C\source\repos\ConclusionEditor\ConclusionEditor\obj\Release\ConclusionEditor.pdb
