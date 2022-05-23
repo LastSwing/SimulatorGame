@@ -537,13 +537,13 @@ namespace Assets.Scripts.Tools
                 if (ChangeType == 0)
                 {
                     if (changeEnergy > cEnergy) return;
-                    Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy - i}").GetComponent<Image>();
+                    Image EnergyI = GameObject.Find($"GameCanvas/CardPool/img_Energy{cEnergy - i}").GetComponent<Image>();
                     EnergyI.transform.localScale = Vector3.zero;
                 }
                 else
                 {
                     if (MaxEnergy == cEnergy) return;
-                    Image EnergyI = GameObject.Find($"GanmeCanvas/CardPool/img_Energy{cEnergy + changeEnergy - i}").GetComponent<Image>();
+                    Image EnergyI = GameObject.Find($"GameCanvas/CardPool/img_Energy{cEnergy + changeEnergy - i}").GetComponent<Image>();
                     EnergyI.transform.localScale = Vector3.one;
                 }
             }
