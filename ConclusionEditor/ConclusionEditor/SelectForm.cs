@@ -15,14 +15,16 @@ namespace ConclusionEditor
         private Dictionary<Guid, Dictionary<Guid, string>> duihuadic = new Dictionary<Guid, Dictionary<Guid, string>>();
         public Dictionary<Guid, Dictionary<Guid, string>> duihuaDic { get { return duihuadic; } set{ duihuadic = value; } }
         private List<Fileid> fileids1 = new List<Fileid>();
+        private DataTable JieJuTable = new DataTable();
         public List<Fileid> fileids { get { return fileids1; } set { fileids1 = value; } }
-        public SelectForm(Guid guid,DataTable juesetable, Dictionary<Guid, Dictionary<Guid, string>> keyValues, List<Fileid> fileids2)
+        public SelectForm(Guid guid,DataTable juesetable, Dictionary<Guid, Dictionary<Guid, string>> keyValues, List<Fileid> fileids2,DataTable jiejuTable)
         {
             InitializeComponent();
             Guid = guid;
             JueseTable.Merge(juesetable);
             duihuadic = keyValues;
             fileids1 = fileids2;
+            JieJuTable.Merge(jiejuTable);
         }
         private void ThreadTable_RowChanged(object sender, DataRowChangeEventArgs e)
         {
@@ -37,6 +39,7 @@ namespace ConclusionEditor
                 thread.Number = dataTable1.Rows.Count;
                 thread.RoleTable.Rows.Clear();
                 thread.RoleTable.Merge(JueseTable);
+                thread.JiejuTable.Merge(JieJuTable);
                 thread.duihuaDic = duihuadic;
                 thread.fileids = fileids1;
                 TabPage tabPage = new TabPage();
@@ -60,6 +63,7 @@ namespace ConclusionEditor
                         thread.Number = dataTable1.Rows.Count;
                         thread.RoleTable.Rows.Clear();
                         thread.RoleTable.Merge(JueseTable);
+                        thread.JiejuTable.Merge(JieJuTable);
                         thread.duihuaDic = duihuadic;
                         thread.fileids = fileids1;
                         tabPage.Controls.Add(thread);

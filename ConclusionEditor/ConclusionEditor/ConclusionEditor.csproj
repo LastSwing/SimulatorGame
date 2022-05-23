@@ -62,6 +62,12 @@
     <Compile Include="BGMForm.Designer.cs">
       <DependentUpon>BGMForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="BranchForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BranchForm.Designer.cs">
+      <DependentUpon>BranchForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="EndingControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -110,6 +116,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="BGMForm.resx">
       <DependentUpon>BGMForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BranchForm.resx">
+      <DependentUpon>BranchForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="EndingControl.resx">
       <DependentUpon>EndingControl.cs</DependentUpon>

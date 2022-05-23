@@ -26,3 +26,4 @@ E:\unitygame\SimulatorGame\ConclusionEditor\ConclusionEditor\obj\Debug\Conclusio
 E:\unitygame\SimulatorGame\ConclusionEditor\ConclusionEditor\obj\Debug\ConclusionEditor.EndingForm.resources
 E:\unitygame\SimulatorGame\ConclusionEditor\ConclusionEditor\obj\Debug\ConclusionEditor.FleidInputForm.resources
 E:\unitygame\SimulatorGame\ConclusionEditor\ConclusionEditor\obj\Debug\ConclusionEditor.EndingControl.resources
+E:\unitygame\SimulatorGame\ConclusionEditor\ConclusionEditor\obj\Debug\ConclusionEditor.BranchForm.resources

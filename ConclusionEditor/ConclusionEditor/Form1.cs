@@ -154,7 +154,7 @@ namespace ConclusionEditor
                 else if (columns.HeaderText == "加")
                 {
                     Guid guid = new Guid(duihuatable.Rows[e.RowIndex]["Guid"].ToString());
-                    AddbranchForm addbranchForm = new AddbranchForm(guid, duihuatable.Rows[e.RowIndex]["duihua"].ToString(),juesetable);
+                    AddbranchForm addbranchForm = new AddbranchForm(guid, duihuatable.Rows[e.RowIndex]["duihua"].ToString(),juesetable,jiejutable);
                     addbranchForm.duihuaDic = Livelibrary.Dialogue;
                     addbranchForm.fileid = Livelibrary.Fileid;
                     addbranchForm.ShowDialog();
@@ -173,6 +173,8 @@ namespace ConclusionEditor
                 }
                 else if (columns.HeaderText == "支")
                 {
+                    BranchForm branchForm = new BranchForm(Livelibrary.Fileid, new Guid(duihuatable.Rows[e.RowIndex]["Guid"].ToString()));
+                    branchForm.ShowDialog();
                 }
             }
         }
@@ -223,9 +225,12 @@ namespace ConclusionEditor
             for (int i = 0; i < juesetable.Rows.Count; i++)
                 role += juesetable.Rows[i][0].ToString() + "|";
             Livelibrary.Role = role.Length == 0 ? "" : role.Remove(role.Length - 1, 1);
-            Livelibrary.YearDuration = Convert.ToInt32(textBox4.Text.Trim());
-            Livelibrary.YearJoin = Convert.ToInt32(textBox5.Text.Trim());
-            Livelibrary.Year = Convert.ToInt32(textBox6.Text.Trim());
+            if (textBox4.Text.Trim() != "")
+                Livelibrary.YearDuration = Convert.ToInt32(textBox4.Text.Trim());
+            if (textBox5.Text.Trim() != "")
+                Livelibrary.YearJoin = Convert.ToInt32(textBox5.Text.Trim());
+            if (textBox6.Text.Trim() != "")
+                Livelibrary.Year = Convert.ToInt32(textBox6.Text.Trim());
             Livelibrary.JoinName = comboBox1.SelectedItem.ToString() == "不衔接事件" ? "" : comboBox1.SelectedItem.ToString();
             Dictionary<Guid, string> keyValues = new Dictionary<Guid, string>();
             for (int i = 0; i < duihuatable.Rows.Count; i++)
@@ -259,9 +264,19 @@ namespace ConclusionEditor
                 MessageBox.Show("请输入年份时长！");
                 return false;
             }
-            if (!int.TryParse(textBox5.Text.Trim(), out int j) || !int.TryParse(textBox5.Text.Trim(), out int o))
+            if (!int.TryParse(textBox5.Text.Trim(), out int j) && !int.TryParse(textBox6.Text.Trim(), out int o))
             {
                 MessageBox.Show("衔接年份时长和开始时间至少要输入一个！");
+                return false;
+            }
+            if (Livelibrary.Dialogue == null || Livelibrary.Dialogue.Count == 0)
+            {
+                MessageBox.Show("没有对话！");
+                return false;
+            }
+            if (jiejutable.Rows.Count == 0)
+            {
+                MessageBox.Show("没有结局！");
                 return false;
             }
             return true;
@@ -339,6 +354,10 @@ namespace ConclusionEditor
         private void Clear()
         {
             textBox3.Text = "";
+            textBox4.Text = string.Empty;
+            textBox5.Text = string.Empty;
+            textBox6.Text = string.Empty;
+            jiejutable.Rows.Clear();
             juesetable.Rows.Clear();
             duihuatable.Rows.Clear();
             tabControl1.TabPages.Clear();
@@ -371,6 +390,7 @@ namespace ConclusionEditor
             Livelibrary.Dialogue = new Dictionary<Guid, Dictionary<Guid, string>>();
             Livelibrary.Fileid = new List<Fileid>();
             Livelibrary.Ending = new Dictionary<string, List<Ending>>();
+            Clear();
         }
 
         private void jiejutable_RowChanged(object sender, DataRowChangeEventArgs e)
