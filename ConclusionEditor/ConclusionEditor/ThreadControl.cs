@@ -13,6 +13,7 @@ namespace ConclusionEditor
         public Guid CGuid { get; set; }
         public List<Fileid> fileids = new List<Fileid>();
         private Dictionary<Guid, Dictionary<Guid, string>> duihua = new Dictionary<Guid, Dictionary<Guid, string>>();
+        public DataTable JiejuTable  = new DataTable(); 
         public Dictionary<Guid, Dictionary<Guid, string>> duihuaDic 
         {
             get
@@ -101,18 +102,18 @@ namespace ConclusionEditor
             if (e.RowIndex == -1) return;
             DataGridView view = sender as DataGridView;
             DataGridViewColumn columns = view.Columns[e.ColumnIndex];
-            if (view.RowCount - 1 == e.RowIndex || duihuatable.Rows.Count == 0)
+            if (view.RowCount - 1 == e.RowIndex || duihuatable.Rows.Count == 0 || e.RowIndex + 1 > duihuatable.Rows.Count)
                 return;
+            if (duihuatable.Rows[e.RowIndex]["Guid"].ToString() == "")
+                duihuatable.Rows[e.RowIndex]["Guid"] = Guid.NewGuid();
             if (columns.HeaderText == "删")
             {
                 view.Rows.Remove(view.Rows[e.RowIndex]);
             }
             else if (columns.HeaderText == "加")
             {
-                if (duihuatable.Rows[e.RowIndex]["Guid"].ToString() == "")
-                    duihuatable.Rows[e.RowIndex]["Guid"] = Guid.NewGuid();
                 Guid guid = new Guid(duihuatable.Rows[e.RowIndex]["Guid"].ToString());
-                AddbranchForm addbranchForm = new AddbranchForm(guid, duihuatable.Rows[e.RowIndex]["duihua"].ToString(), jueseTable);
+                AddbranchForm addbranchForm = new AddbranchForm(guid, duihuatable.Rows[e.RowIndex]["duihua"].ToString(), jueseTable, JiejuTable);
                 addbranchForm.fileid = fileids;
                 addbranchForm.duihuaDic = duihuaDic;
                 addbranchForm.ShowDialog();
@@ -124,6 +125,8 @@ namespace ConclusionEditor
             }
             else if (columns.HeaderText == "支")
             {
+                BranchForm branchForm = new BranchForm(fileids,new Guid(duihuatable.Rows[e.RowIndex]["Guid"].ToString()));
+                branchForm.ShowDialog();
             }
         }
 

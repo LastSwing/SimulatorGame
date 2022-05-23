@@ -234,64 +234,73 @@ namespace ConclusionEditor
             jd["Year"] = livelibrary.Year;
             jd["Dialogue"] = new JsonData();
             int q = 0;int w = 0; int e = 0; int r = 0;
-            foreach (var Dialogue in livelibrary.Dialogue)
+            if (livelibrary.Dialogue.Count > 0)
             {
-                jd["Dialogue"][q.ToString()] = new JsonData();
-                jd["Dialogue"][q.ToString()]["PGuid"] = Dialogue.Key.ToString();
-                w = 0;
-                foreach (var item in Dialogue.Value)
+                foreach (var Dialogue in livelibrary.Dialogue)
                 {
-                    jd["Dialogue"][q.ToString()][w.ToString()] = new JsonData();
-                    jd["Dialogue"][q.ToString()][w.ToString()]["CGuid"] = item.Key.ToString();
-                    jd["Dialogue"][q.ToString()][w.ToString()]["Dialogue"] = item.Value.ToString();
-                    w++;
-                }
-                q++;
-            }
-            jd["Ending"] = new JsonData();
-            foreach (var Ending in livelibrary.Ending)
-            {
-                jd["Ending"][e.ToString()] = new JsonData();
-                string[] a = Ending.Key.Split('|');
-                jd["Ending"][e.ToString()]["Result"] = a[0];
-                jd["Ending"][e.ToString()]["Guid"] = a[1];
-                w = 0;
-                foreach (var item in Ending.Value)
-                {
-                    jd["Ending"][e.ToString()][w.ToString()] = new JsonData();
-                    jd["Ending"][e.ToString()][w.ToString()]["PGuid"] = item.PGuid.ToString();
-                    jd["Ending"][e.ToString()][w.ToString()]["CGuid"] = item.CGuid.ToString();
-                    jd["Ending"][e.ToString()][w.ToString()]["Stellar"] = (int)item.Stellar;
-                    jd["Ending"][e.ToString()][w.ToString()]["Stars"] = (int)item.Stars;
-                    jd["Ending"][e.ToString()][w.ToString()]["Productivity"] = (int)item.Productivity;
-                    jd["Ending"][e.ToString()][w.ToString()]["Vintage"] = (int)item.Vintage;
-                    jd["Ending"][e.ToString()][w.ToString()]["Result"] = item.Result.ToString();
-                    w++;
-                }
-                e++;
-            }
-            jd["Fileid"] = new JsonData();
-            foreach (var item in livelibrary.Fileid)
-            {
-                jd["Fileid"][r.ToString()] = new JsonData();
-                jd["Fileid"][r.ToString()]["Id"] = item.Id.ToString();
-                jd["Fileid"][r.ToString()]["ParentId"] = item.ParentId.ToString();
-                jd["Fileid"][r.ToString()]["Fileidtype"] = (int)item.Fileidtype;
-                jd["Fileid"][r.ToString()]["InsertByte"] = (int)item.InsertByte;
-                jd["Fileid"][r.ToString()]["EndByte"] = (int)item.EndByte;
-                string Fileids = "";
-                if (item.Fileids != null)
-                {
-                    foreach (var items in item.Fileids)
+                    jd["Dialogue"][q.ToString()] = new JsonData();
+                    jd["Dialogue"][q.ToString()]["PGuid"] = Dialogue.Key.ToString();
+                    w = 0;
+                    foreach (var item in Dialogue.Value)
                     {
-                        Fileids += items + "|";
+                        jd["Dialogue"][q.ToString()][w.ToString()] = new JsonData();
+                        jd["Dialogue"][q.ToString()][w.ToString()]["CGuid"] = item.Key.ToString();
+                        jd["Dialogue"][q.ToString()][w.ToString()]["Dialogue"] = item.Value.ToString();
+                        w++;
                     }
-                    if (Fileids.Length > 1)
-                        Fileids = Fileids.Remove(Fileids.Length - 1, 1);
+                    q++;
                 }
-                jd["Fileid"][r.ToString()]["Fileids"] = Fileids;
-                jd["Fileid"][r.ToString()]["PathName"] = item.PathName.ToString();
-                r++;
+            }
+            if (livelibrary.Ending.Count > 0)
+            {
+                jd["Ending"] = new JsonData();
+                foreach (var Ending in livelibrary.Ending)
+                {
+                    jd["Ending"][e.ToString()] = new JsonData();
+                    string[] a = Ending.Key.Split('|');
+                    jd["Ending"][e.ToString()]["Result"] = a[0];
+                    jd["Ending"][e.ToString()]["Guid"] = a[1];
+                    w = 0;
+                    foreach (var item in Ending.Value)
+                    {
+                        jd["Ending"][e.ToString()][w.ToString()] = new JsonData();
+                        jd["Ending"][e.ToString()][w.ToString()]["PGuid"] = item.PGuid.ToString();
+                        jd["Ending"][e.ToString()][w.ToString()]["CGuid"] = item.CGuid.ToString();
+                        jd["Ending"][e.ToString()][w.ToString()]["Stellar"] = (int)item.Stellar;
+                        jd["Ending"][e.ToString()][w.ToString()]["Stars"] = (int)item.Stars;
+                        jd["Ending"][e.ToString()][w.ToString()]["Productivity"] = (int)item.Productivity;
+                        jd["Ending"][e.ToString()][w.ToString()]["Vintage"] = (int)item.Vintage;
+                        jd["Ending"][e.ToString()][w.ToString()]["Result"] = item.Result.ToString();
+                        w++;
+                    }
+                    e++;
+                }
+            }
+            if (livelibrary.Fileid.Count > 0)
+            {
+                jd["Fileid"] = new JsonData();
+                foreach (var item in livelibrary.Fileid)
+                {
+                    jd["Fileid"][r.ToString()] = new JsonData();
+                    jd["Fileid"][r.ToString()]["Id"] = item.Id.ToString();
+                    jd["Fileid"][r.ToString()]["ParentId"] = item.ParentId.ToString();
+                    jd["Fileid"][r.ToString()]["Fileidtype"] = (int)item.Fileidtype;
+                    jd["Fileid"][r.ToString()]["InsertByte"] = (int)item.InsertByte;
+                    jd["Fileid"][r.ToString()]["EndByte"] = (int)item.EndByte;
+                    string Fileids = "";
+                    if (item.Fileids != null)
+                    {
+                        foreach (var items in item.Fileids)
+                        {
+                            Fileids += items + "|";
+                        }
+                        if (Fileids.Length > 1)
+                            Fileids = Fileids.Remove(Fileids.Length - 1, 1);
+                    }
+                    jd["Fileid"][r.ToString()]["Fileids"] = Fileids;
+                    jd["Fileid"][r.ToString()]["PathName"] = item.PathName.ToString();
+                    r++;
+                }
             }
             string json = jd.ToJson();
             DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);

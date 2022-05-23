@@ -28,12 +28,12 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.label3 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
@@ -52,8 +52,6 @@
             this.dataColumn7 = new System.Data.DataColumn();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.ViewKu = new System.Windows.Forms.DataGridView();
-            this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column6 = new System.Windows.Forms.DataGridViewButtonColumn();
             this.button2 = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
             this.textBox2 = new System.Windows.Forms.TextBox();
@@ -75,11 +73,6 @@
             this.dataGridView4 = new System.Windows.Forms.DataGridView();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.dataGridView3 = new System.Windows.Forms.DataGridView();
-            this.Column7 = new System.Windows.Forms.DataGridViewComboBoxColumn();
-            this.Column8 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Add = new System.Windows.Forms.DataGridViewButtonColumn();
-            this.Column10 = new System.Windows.Forms.DataGridViewButtonColumn();
-            this.zhi = new System.Windows.Forms.DataGridViewButtonColumn();
             this.tabControl2 = new System.Windows.Forms.TabControl();
             this.label4 = new System.Windows.Forms.Label();
             this.textBox5 = new System.Windows.Forms.TextBox();
@@ -88,13 +81,15 @@
             this.label10 = new System.Windows.Forms.Label();
             this.textBox6 = new System.Windows.Forms.TextBox();
             this.button3 = new System.Windows.Forms.Button();
-            this.guidDataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.jueseDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.duihuaDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.threadNameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.lujinDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column7 = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.Column8 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Add = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.Column10 = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.zhi = new System.Windows.Forms.DataGridViewButtonColumn();
             this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewButtonColumn3 = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column6 = new System.Windows.Forms.DataGridViewButtonColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.shijiantable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.juesetable)).BeginInit();
@@ -239,9 +234,7 @@
             this.ViewKu.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.ViewKu.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Column4,
-            this.Column6,
-            this.threadNameDataGridViewTextBoxColumn,
-            this.lujinDataGridViewTextBoxColumn});
+            this.Column6});
             this.ViewKu.DataMember = "shijiantable";
             this.ViewKu.DataSource = this.dataSet1;
             this.ViewKu.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -255,26 +248,6 @@
             this.ViewKu.TabIndex = 0;
             this.ViewKu.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.ViewKu.CurrentCellChanged += new System.EventHandler(this.ViewKu_CurrentCellChanged);
-            // 
-            // Column4
-            // 
-            this.Column4.DataPropertyName = "ThreadName";
-            this.Column4.HeaderText = "事件名称";
-            this.Column4.Name = "Column4";
-            this.Column4.ReadOnly = true;
-            this.Column4.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.Column4.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.Column4.Width = 175;
-            // 
-            // Column6
-            // 
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("方正粗黑宋简体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            dataGridViewCellStyle1.NullValue = "-";
-            this.Column6.DefaultCellStyle = dataGridViewCellStyle1;
-            this.Column6.HeaderText = "删";
-            this.Column6.Name = "Column6";
-            this.Column6.Width = 30;
             // 
             // button2
             // 
@@ -508,10 +481,7 @@
             this.Column8,
             this.Add,
             this.Column10,
-            this.zhi,
-            this.guidDataGridViewTextBoxColumn1,
-            this.jueseDataGridViewTextBoxColumn,
-            this.duihuaDataGridViewTextBoxColumn});
+            this.zhi});
             this.dataGridView3.DataMember = "duihuatable";
             this.dataGridView3.DataSource = this.dataSet1;
             this.dataGridView3.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -524,55 +494,6 @@
             this.dataGridView3.TabIndex = 0;
             this.dataGridView3.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dataGridView3.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.dataGridView3_DataError);
-            // 
-            // Column7
-            // 
-            this.Column7.DataPropertyName = "juese";
-            this.Column7.DataSource = this.dataSet1;
-            this.Column7.DisplayMember = "juesetable.juese";
-            this.Column7.DisplayStyle = System.Windows.Forms.DataGridViewComboBoxDisplayStyle.ComboBox;
-            this.Column7.HeaderText = "角色";
-            this.Column7.MaxDropDownItems = 10;
-            this.Column7.Name = "Column7";
-            this.Column7.ValueMember = "juesetable.juese";
-            // 
-            // Column8
-            // 
-            this.Column8.DataPropertyName = "duihua";
-            this.Column8.HeaderText = "对话";
-            this.Column8.Name = "Column8";
-            this.Column8.Width = 547;
-            // 
-            // Add
-            // 
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.NullValue = "+";
-            this.Add.DefaultCellStyle = dataGridViewCellStyle4;
-            this.Add.HeaderText = "加";
-            this.Add.Name = "Add";
-            this.Add.Text = "+";
-            this.Add.Width = 35;
-            // 
-            // Column10
-            // 
-            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle5.NullValue = "-";
-            this.Column10.DefaultCellStyle = dataGridViewCellStyle5;
-            this.Column10.HeaderText = "删";
-            this.Column10.Name = "Column10";
-            this.Column10.Width = 35;
-            // 
-            // zhi
-            // 
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle6.NullValue = "分支";
-            this.zhi.DefaultCellStyle = dataGridViewCellStyle6;
-            this.zhi.HeaderText = "支";
-            this.zhi.Name = "zhi";
-            this.zhi.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.zhi.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.zhi.Text = "";
-            this.zhi.Width = 50;
             // 
             // tabControl2
             // 
@@ -650,35 +571,54 @@
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
-            // guidDataGridViewTextBoxColumn1
+            // Column7
             // 
-            this.guidDataGridViewTextBoxColumn1.DataPropertyName = "Guid";
-            this.guidDataGridViewTextBoxColumn1.HeaderText = "Guid";
-            this.guidDataGridViewTextBoxColumn1.Name = "guidDataGridViewTextBoxColumn1";
+            this.Column7.DataPropertyName = "juese";
+            this.Column7.DataSource = this.dataSet1;
+            this.Column7.DisplayMember = "juesetable.juese";
+            this.Column7.DisplayStyle = System.Windows.Forms.DataGridViewComboBoxDisplayStyle.ComboBox;
+            this.Column7.HeaderText = "角色";
+            this.Column7.MaxDropDownItems = 10;
+            this.Column7.Name = "Column7";
+            this.Column7.ValueMember = "juesetable.juese";
             // 
-            // jueseDataGridViewTextBoxColumn
+            // Column8
             // 
-            this.jueseDataGridViewTextBoxColumn.DataPropertyName = "juese";
-            this.jueseDataGridViewTextBoxColumn.HeaderText = "juese";
-            this.jueseDataGridViewTextBoxColumn.Name = "jueseDataGridViewTextBoxColumn";
+            this.Column8.DataPropertyName = "duihua";
+            this.Column8.HeaderText = "对话";
+            this.Column8.Name = "Column8";
+            this.Column8.Width = 547;
             // 
-            // duihuaDataGridViewTextBoxColumn
+            // Add
             // 
-            this.duihuaDataGridViewTextBoxColumn.DataPropertyName = "duihua";
-            this.duihuaDataGridViewTextBoxColumn.HeaderText = "duihua";
-            this.duihuaDataGridViewTextBoxColumn.Name = "duihuaDataGridViewTextBoxColumn";
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.NullValue = "+";
+            this.Add.DefaultCellStyle = dataGridViewCellStyle4;
+            this.Add.HeaderText = "加";
+            this.Add.Name = "Add";
+            this.Add.Text = "+";
+            this.Add.Width = 35;
             // 
-            // threadNameDataGridViewTextBoxColumn
+            // Column10
             // 
-            this.threadNameDataGridViewTextBoxColumn.DataPropertyName = "ThreadName";
-            this.threadNameDataGridViewTextBoxColumn.HeaderText = "ThreadName";
-            this.threadNameDataGridViewTextBoxColumn.Name = "threadNameDataGridViewTextBoxColumn";
+            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle5.NullValue = "-";
+            this.Column10.DefaultCellStyle = dataGridViewCellStyle5;
+            this.Column10.HeaderText = "删";
+            this.Column10.Name = "Column10";
+            this.Column10.Width = 35;
             // 
-            // lujinDataGridViewTextBoxColumn
+            // zhi
             // 
-            this.lujinDataGridViewTextBoxColumn.DataPropertyName = "lujin";
-            this.lujinDataGridViewTextBoxColumn.HeaderText = "lujin";
-            this.lujinDataGridViewTextBoxColumn.Name = "lujinDataGridViewTextBoxColumn";
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle6.NullValue = "分支";
+            this.zhi.DefaultCellStyle = dataGridViewCellStyle6;
+            this.zhi.HeaderText = "支";
+            this.zhi.Name = "zhi";
+            this.zhi.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.zhi.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.zhi.Text = "";
+            this.zhi.Width = 50;
             // 
             // dataGridViewTextBoxColumn1
             // 
@@ -695,6 +635,26 @@
             this.dataGridViewButtonColumn3.HeaderText = "删";
             this.dataGridViewButtonColumn3.Name = "dataGridViewButtonColumn3";
             this.dataGridViewButtonColumn3.Width = 35;
+            // 
+            // Column4
+            // 
+            this.Column4.DataPropertyName = "ThreadName";
+            this.Column4.HeaderText = "事件名称";
+            this.Column4.Name = "Column4";
+            this.Column4.ReadOnly = true;
+            this.Column4.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.Column4.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.Column4.Width = 175;
+            // 
+            // Column6
+            // 
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("方正粗黑宋简体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            dataGridViewCellStyle1.NullValue = "-";
+            this.Column6.DefaultCellStyle = dataGridViewCellStyle1;
+            this.Column6.HeaderText = "删";
+            this.Column6.Name = "Column6";
+            this.Column6.Width = 30;
             // 
             // Form1
             // 
@@ -802,18 +762,13 @@
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.DataGridViewButtonColumn Column6;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private System.Windows.Forms.DataGridViewButtonColumn dataGridViewButtonColumn3;
         private System.Windows.Forms.DataGridViewComboBoxColumn Column7;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column8;
         private System.Windows.Forms.DataGridViewButtonColumn Add;
         private System.Windows.Forms.DataGridViewButtonColumn Column10;
         private System.Windows.Forms.DataGridViewButtonColumn zhi;
-        private System.Windows.Forms.DataGridViewTextBoxColumn threadNameDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn lujinDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private System.Windows.Forms.DataGridViewButtonColumn dataGridViewButtonColumn3;
-        private System.Windows.Forms.DataGridViewTextBoxColumn guidDataGridViewTextBoxColumn1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn jueseDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn duihuaDataGridViewTextBoxColumn;
     }
 }
 

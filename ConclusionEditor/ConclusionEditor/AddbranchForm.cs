@@ -14,14 +14,16 @@ namespace ConclusionEditor
         private Guid Guid;
         public List<Fileid> fileid;
         private DataTable JueseTable = new DataTable();
+        private DataTable jiejuTable = new DataTable();
         public Dictionary<Guid,Dictionary<Guid, string>> duihuaDic = new Dictionary<Guid,Dictionary<Guid,string>>();
-        public AddbranchForm(Guid guid, string duihua, DataTable jueseTable)
+        public AddbranchForm(Guid guid, string duihua, DataTable jueseTable,DataTable JieJuTable)
         {
             InitializeComponent();
             Duihua = duihua;
             Guid = guid;
             fileid = new List<Fileid>();
             JueseTable.Merge(jueseTable);
+            jiejuTable.Merge(JieJuTable);
         }
         /// <summary>
         /// 添加选择分支
@@ -36,7 +38,7 @@ namespace ConclusionEditor
             {
                 fileid = new List<Fileid>();
             }
-            SelectForm selectForm = new SelectForm(Guid, JueseTable, duihuaDic, fileid);
+            SelectForm selectForm = new SelectForm(Guid, JueseTable, duihuaDic, fileid,jiejuTable);
             selectForm.ShowDialog();
             if (selectForm.DialogResult == DialogResult.OK)
             {
@@ -50,10 +52,11 @@ namespace ConclusionEditor
         /// </summary>
         private void button2_Click(object sender, EventArgs e)
         {
-            FleidInputForm selectForm = new FleidInputForm();
+            FleidInputForm selectForm = new FleidInputForm(Duihua,Guid,fileid);
             selectForm.ShowDialog();
             if (selectForm.DialogResult == DialogResult.OK)
             {
+                fileid = selectForm.fleids;
                 Closes();
             }
         }
@@ -62,10 +65,11 @@ namespace ConclusionEditor
         /// </summary>
         private void button3_Click(object sender, EventArgs e)
         {
-            BGMForm selectForm = new BGMForm();
+            BGMForm selectForm = new BGMForm(Guid,Duihua,fileid);
             selectForm.ShowDialog();
             if (selectForm.DialogResult == DialogResult.OK)
             {
+                fileid = selectForm.fileids;
                 Closes();
             }
         }
@@ -74,10 +78,11 @@ namespace ConclusionEditor
         /// </summary>
         private void button4_Click(object sender, EventArgs e)
         {
-            AnimationForm selectForm = new AnimationForm();
+            AnimationForm selectForm = new AnimationForm(Guid,fileid);
             selectForm.ShowDialog();
             if (selectForm.DialogResult == DialogResult.OK)
             {
+                fileid = selectForm.fileds;
                 Closes();
             }
         }
@@ -86,10 +91,16 @@ namespace ConclusionEditor
         /// </summary>
         private void button5_Click(object sender, EventArgs e)
         {
-            EndingForm selectForm = new EndingForm();
+            if (jiejuTable.Rows.Count == 0)
+            {
+                MessageBox.Show("请先添加结局！");
+                return;
+            }
+            EndingForm selectForm = new EndingForm(Duihua,jiejuTable,fileid,Guid);
             selectForm.ShowDialog();
             if (selectForm.DialogResult == DialogResult.OK)
             {
+                fileid = selectForm.Fileids;
                 Closes();
             }
         }
