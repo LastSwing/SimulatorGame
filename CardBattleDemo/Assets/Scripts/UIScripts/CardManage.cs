@@ -4,8 +4,6 @@ using Assets.Scripts.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,15 +15,15 @@ namespace Assets.Scripts.UIScripts
     public class CardManage : MonoBehaviour
     {
         StateMachine<CardManage> myStateMachine; //状态机
-        GameObject DefensePanel, ATKPanel, Shuffle, tempObj;
-        Animation Anim_Restore, Anim_ATK, Anim_Armor, Anim_EnergyRestore;
+        GameObject DefensePanel, ATKPanel, Shuffle_Obj, Restore_Obj, Atk_Obj, Armor_Obj, Energy_Obj, RecycleCard_Obj, AiRoundTitle_Obj;
+        Animation Anim_Restore, Anim_ATK, Anim_Armor, Anim_EnergyRestore, Anim_DealCards, Anim_RecycleCard, Anim_Shuffle, Anim_AiRoundTitle;
         Button btn_RoundOver;
         Image Card_img, Eimg_HP, Player_img_Armor, Pimg_HP, Enemy_img_Armor;
         Text txt_EndCardCount, txt_StartCardCount, Player_txt_Armor, Player_HP, Enemy_txt_Armor;
         public int clickCount, currrentIndex;//当前图片下标
-        private int RotationCount, CardCount, ShuffleCount, AiAtkCount;
+        private int DealCardCount, CardCount, ShuffleCount, AiAtkCount;
         private float totalTimer;// 定义每帧累加时间
-        private bool hasDrag = false;//是否拖拽
+        private bool hasDrag, CardAssignmentState, AiTitleAnimState;//是否拖拽
         public bool RecycleCardAnimationState, RecycleCardAnimationEndState,//回收卡牌动画
             CardListAnimationState, CardListAnimationEndState, //卡牌发牌动画
             RoundOverState, CardPoolsDataSave, HasUseCard, CardRecycleSuccess,//回合结束状态、卡池数据保存、是否使用了卡牌、卡牌回收成功
@@ -66,27 +64,6 @@ namespace Assets.Scripts.UIScripts
         {
             #region 控件初始化
 
-            #region 动画控件
-            tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Restore"));
-            tempObj.name = "Anim_Restore";
-            Anim_Restore = GameObject.Find("GanmeCanvas/Anim_Restore").GetComponent<Animation>();
-            tempObj.SetActive(false);
-
-            tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_ATK"));
-            tempObj.name = "Anim_ATK";
-            Anim_ATK = GameObject.Find("GanmeCanvas/Anim_ATK").GetComponent<Animation>();
-            tempObj.SetActive(false);
-
-            tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Armor"));
-            tempObj.name = "Anim_Armor";
-            Anim_Armor = GameObject.Find("GanmeCanvas/Anim_Armor").GetComponent<Animation>();
-            tempObj.SetActive(false);
-
-            tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_EnergyRestore"));
-            tempObj.name = "Anim_EnergyRestore";
-            Anim_EnergyRestore = GameObject.Find("GanmeCanvas/Anim_EnergyRestore").GetComponent<Animation>();
-            tempObj.SetActive(false);
-            #endregion
 
             Pimg_HP = GameObject.Find("Player/Pimg_HP").GetComponent<Image>();
             Eimg_HP = GameObject.Find("Enemy/Eimg_HP").GetComponent<Image>();
@@ -108,10 +85,49 @@ namespace Assets.Scripts.UIScripts
             DefensePanel.SetActive(false);
             ATKPanel.SetActive(false);
 
-            Shuffle = GameObject.Find("Shuffle");
-            Shuffle.SetActive(false);
             #endregion
 
+            #region 动画控件
+            Restore_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Restore"));
+            Restore_Obj.name = "Anim_Restore";
+            Anim_Restore = GameObject.Find("GameCanvas/Anim_Restore").GetComponent<Animation>();
+            Restore_Obj.SetActive(false);
+
+            Atk_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_ATK"));
+            Atk_Obj.name = "Anim_ATK";
+            Anim_ATK = GameObject.Find("GameCanvas/Anim_ATK").GetComponent<Animation>();
+            Atk_Obj.SetActive(false);
+
+            Armor_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Armor"));
+            Armor_Obj.name = "Anim_Armor";
+            Anim_Armor = GameObject.Find("GameCanvas/Anim_Armor").GetComponent<Animation>();
+            Armor_Obj.SetActive(false);
+
+            Energy_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_EnergyRestore"));
+            Energy_Obj.name = "Anim_EnergyRestore";
+            Anim_EnergyRestore = GameObject.Find("GameCanvas/Anim_EnergyRestore").GetComponent<Animation>();
+            Energy_Obj.SetActive(false);
+
+            //发牌
+            Anim_DealCards = GameObject.Find("GameCanvas/CardPool").GetComponent<Animation>();
+
+            RecycleCard_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_RecycleCard"));
+            RecycleCard_Obj.name = "Anim_RecycleCard";
+            Anim_RecycleCard = GameObject.Find("GameCanvas/Anim_RecycleCard").GetComponent<Animation>();
+            RecycleCard_Obj.transform.SetSiblingIndex(3);
+            RecycleCard_Obj.SetActive(false);
+
+            Shuffle_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Shuffle"));
+            Shuffle_Obj.name = "Shuffle";
+            Anim_Shuffle = GameObject.Find("GameCanvas/Shuffle").GetComponent<Animation>();
+            Shuffle_Obj.SetActive(false);
+
+            AiRoundTitle_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_AiRoundTitle"));
+            AiRoundTitle_Obj.name = "AiRoundTitle";
+            Anim_AiRoundTitle = GameObject.Find("GameCanvas/AiRoundTitle").GetComponent<Animation>();
+            AiRoundTitle_Obj.SetActive(false);
+
+            #endregion
 
             #region 状态机初始化
 
@@ -138,6 +154,28 @@ namespace Assets.Scripts.UIScripts
             if (AiRole == null)
             {
                 AiRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+            }
+            #endregion
+            #region 发牌动画减少牌池总数
+            if (DealCardCount != 0)
+            {
+                if (Anim_DealCards["DealCards"].normalizedTime != 0)
+                {
+                    totalTimer += Time.deltaTime;
+                    if (totalTimer >= 0.35f)
+                    {
+                        if (DealCardCount < 6)
+                        {
+                            txt_StartCardCount.text = (Convert.ToInt32(txt_StartCardCount.text) - 1).ToString();
+                            totalTimer = 0;
+                            DealCardCount++;
+                        }
+                        else
+                        {
+                            totalTimer = 0;
+                        }
+                    }
+                }
             }
             #endregion
         }
@@ -280,6 +318,7 @@ namespace Assets.Scripts.UIScripts
                             }
                             var HpTxt = GameObject.Find("Enemy/Text").GetComponent<Text>();
                             HpTxt.text = $"{AiRole.MaxHP}/{AiRole.HP}";
+                            Atk_Obj.SetActive(true);
                             Anim_ATK.transform.localPosition = new Vector3(373, 0);//攻击特效
                             Anim_ATK.Play("ATK");
                             #region 执行动画
@@ -288,8 +327,11 @@ namespace Assets.Scripts.UIScripts
                             UsedCardList.Add(atkModel);
                             CardPoolsDataSave = true;
                             RoundOverUnUseCardIndexList.Remove(index + 1);
+                            RecycleCard_Obj.SetActive(true);
+                            Anim_RecycleCard.Play("RecycleCard");
                             RecycleCardAnimationState = true;
                             HasUseCard = true;
+
                             #endregion
                         }
                         else
@@ -304,6 +346,10 @@ namespace Assets.Scripts.UIScripts
                         UsedCardList.Remove(atkModel);
                     }
                     #endregion
+                    else
+                    {
+                        Card_img.transform.localPosition = InitVector;
+                    }
                 }
                 //功能卡只能在玩家范围内使用
                 else if (cardPosition.x < Scope.x && cardPosition.y > Scope.y)
@@ -313,6 +359,7 @@ namespace Assets.Scripts.UIScripts
                     if (stateType == 5)
                     {
                         atkModel.Proficiency++;
+                        Energy_Obj.SetActive(true);
                         Anim_EnergyRestore.Play("EnergyRestore");
                         Common.EnergyImgChange(PlayerRole.Energy, Convert.ToInt32(atkModel.Effect), 1, PlayerRole.MaxEnergy);
                         PlayerRole.Energy += Convert.ToInt32(atkModel.Effect);
@@ -328,8 +375,11 @@ namespace Assets.Scripts.UIScripts
                         CardPoolsDataSave = true;
                         RoundOverUnUseCardIndexList.Remove(index + 1);
                         //执行动画
+                        RecycleCard_Obj.SetActive(true);
+                        Anim_RecycleCard.Play("RecycleCard");
                         RecycleCardAnimationState = true;
                         HasUseCard = true;
+
                         #endregion
                     }
                     #endregion
@@ -344,6 +394,7 @@ namespace Assets.Scripts.UIScripts
                                 Common.EnergyImgChange(PlayerRole.Energy, atkModel.Consume, 0, PlayerRole.MaxEnergy);
                                 PlayerRole.Energy -= atkModel.Consume;
                             }
+                            Armor_Obj.SetActive(true);
                             Anim_Armor.transform.localPosition = new Vector3(-408, 0);//攻击特效
                             Anim_Armor.Play("Armor");
                             Player_img_Armor.transform.localScale = Vector3.one;
@@ -361,8 +412,11 @@ namespace Assets.Scripts.UIScripts
                             CardPoolsDataSave = true;
                             RoundOverUnUseCardIndexList.Remove(index + 1);
                             //执行动画
+                            RecycleCard_Obj.SetActive(true);
+                            Anim_RecycleCard.Play("RecycleCard");
                             RecycleCardAnimationState = true;
                             HasUseCard = true;
+
                             #endregion
                         }
                         else
@@ -393,6 +447,7 @@ namespace Assets.Scripts.UIScripts
                             {
                                 Common.HPImageChange(Pimg_HP, AiRole.MaxHP, atkModel.Effect, 1);
                             }
+                            Restore_Obj.SetActive(true);
                             Anim_Restore.transform.localPosition = new Vector3(-408, 0);
                             Anim_Restore.Play("Restore");
                             #region 执行动画
@@ -402,8 +457,12 @@ namespace Assets.Scripts.UIScripts
                             CardPoolsDataSave = true;
                             RoundOverUnUseCardIndexList.Remove(index + 1);
                             //执行动画
+                            RecycleCard_Obj.SetActive(true);
+                            Anim_RecycleCard.Play("RecycleCard");
+
                             RecycleCardAnimationState = true;
                             HasUseCard = true;
+
                             #endregion
                         }
                         else
@@ -453,62 +512,14 @@ namespace Assets.Scripts.UIScripts
         {
             if (CardPoolsDataSave)
             {
-                Image rightImg = GameObject.Find($"CardPool/right_Card/right_Card9").GetComponent<Image>();
-                rightImg.transform.localScale = Vector3.one;
-                var x = rightImg.transform.position.x;
-                rightImg.transform.position = new Vector3(x + 1, rightImg.transform.position.y - 1);
-                rightImg.transform.Rotate(Vector3.up, -1);
-                if (x >= 1110)
+                if (!Anim_RecycleCard.isPlaying)//执行完成
                 {
                     txt_EndCardCount.text = UsedCardList.Count.ToString();
                     Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.UsedCardPoolsFileName);
                     RecycleCardAnimationState = false;
-                    rightImg.transform.localScale = Vector3.zero;
-                    rightImg.transform.localPosition = new Vector3(-90f, 130f);
                     RecycleCardAnimationEndState = true;
                     CardPoolsDataSave = false;
                 }
-            }
-        }
-
-        /// <summary>
-        /// 初始牌堆动画
-        /// </summary>
-        public void CardListAnimation()
-        {
-            Image leftImg = GameObject.Find($"CardPool/left_Card/left_Card9").GetComponent<Image>();
-            var x = leftImg.transform.position.x;
-            leftImg.transform.position = new Vector3(x + 1, leftImg.transform.position.y);
-            leftImg.transform.Rotate(Vector3.up, -10);
-            if (x >= 268)
-            {
-                CardListAnimationState = false;
-                leftImg.transform.localPosition = new Vector3(0, 9);
-                leftImg.transform.rotation = new Quaternion(0, 0, 0, 0);
-                CardListAnimationEndState = true;
-
-            }
-        }
-
-        /// <summary>
-        /// 翻转卡牌动画
-        /// </summary>
-        public void RotationCardAnimation()
-        {
-            totalTimer += Time.deltaTime;
-            if (totalTimer >= 0.01)
-            {
-                Image Card = GameObject.Find($"CardPool/Card/img_Card{CardCount + 1}").GetComponent<Image>();
-                Card.transform.localScale = Vector3.one;
-                Card.transform.Rotate(Vector3.up, -10);
-                RotationCount++;
-                if (RotationCount == 18)
-                {
-                    txt_StartCardCount.text = (Convert.ToInt32(txt_StartCardCount.text) - 1).ToString();
-                    RotationCount = 0;
-                    RotationCardAnimationEndState = true;
-                }
-                totalTimer = 0;
             }
         }
 
@@ -531,9 +542,12 @@ namespace Assets.Scripts.UIScripts
                 HasUseCard = false;
                 RecycleCardAnimationEndState = false;
             }
-            if (RoundOverUnUseCardIndexList != null && RoundOverUnUseCardIndexList.Count > 0)
+            else
             {
-                #region 添加动画
+                RecycleCard_Obj.SetActive(true);
+            }
+            if (RoundOverUnUseCardIndexList != null && RoundOverUnUseCardIndexList.Count > 0 && !Anim_RecycleCard.isPlaying)
+            {
                 if (RecycleCardAnimationEndState)
                 {
                     RoundOverUnUseCardIndexList.RemoveAt(0);
@@ -542,9 +556,8 @@ namespace Assets.Scripts.UIScripts
                 else
                 {
                     RecycleCardAnimationState = true;
+                    Anim_RecycleCard.Play("RecycleCard");
                 }
-                #endregion
-                #region 卡牌隐藏
                 if (!CardPoolsDataSave && RecycleCardAnimationState)
                 {
                     Card_img = GameObject.Find($"CardPool/Card/img_Card{RoundOverUnUseCardIndexList[0]}").GetComponent<Image>();
@@ -552,106 +565,80 @@ namespace Assets.Scripts.UIScripts
                     UsedCardList.Add(ATKList?[RoundOverUnUseCardIndexList[0] - 1]);
                     CardPoolsDataSave = true;
                 }
-                #endregion
             }
             else
             {
-                CardRecycleSuccess = true;
-                RecycleCardAnimationEndState = false;
-                RecycleCardAnimationState = false;
+                if (!Anim_RecycleCard.isPlaying)
+                {
+                    CardRecycleSuccess = true;
+                }
             }
             #endregion
-            #region 洗牌动画
+            #region 发牌动画
 
             if (CardRecycleSuccess)//回收动画结束
             {
                 if (txt_StartCardCount.text == "0" && CardCount == 0)
                 {
-                    ShuffleAnimationState = true;
-                    if (ShuffleAnimationSuccessState)
+                    #region 洗牌动画
+                    if (ShuffleCount == 0)//动画只开启一次
                     {
-                        #region 发牌动画
-                        if (CardCount < 5)
-                        {
-                            if (CardListAnimationEndState)//动画结束
-                            {
-                                #region 卡牌赋值
-                                #endregion
-                                if (RotationCardAnimationEndState)
-                                {
-                                    CardAssignment();
-                                    CardCount++;
-                                    RotationCardAnimationEndState = false;
-                                }
-                                else
-                                {
-                                    RotationCardAnimationState = true;//卡牌旋转动画
-                                }
-                            }
-                            else
-                            {
-                                CardListAnimationState = true;
-                            }
-                        }
-                        else
-                        {
-                            #region 状态初始化
-                            CardRecycleSuccess = false;
-                            CardPoolsDataSave = false;
-                            CardListAnimationState = false;
-                            CardListAnimationEndState = false;
-                            RotationCardAnimationState = false;
-                            RoundOverState = false;
-                            HasUseCard = false;
-                            AiAtkState = true;
-                            RoundOverUnUseCardIndexList = new List<int>() { 1, 2, 3, 4, 5 };
-                            CardCount = 0;
-                            #endregion
-
-                        }
-                        #endregion
+                        Shuffle_Obj.SetActive(true);
+                        Anim_Shuffle.Play("Shuffle");
                     }
+                    ShuffleCount++;
+                    if (!Anim_Shuffle.isPlaying)
+                    {
+                        Shuffle_Obj.SetActive(false);
+                        UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.UsedCardPoolsFileName).ListRandom();
+                        Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
+                        txt_StartCardCount.text = UnusedCardList.Count.ToString();
+
+                        UsedCardList = new List<CurrentCardPoolModel>();
+                        Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.UsedCardPoolsFileName);
+                        txt_EndCardCount.text = "0";
+                        ShuffleCount = 0;
+                    }
+                    #endregion
                 }
                 else
                 {
-                    #region 发牌动画
+                    #region 卡牌先赋值再执行动画
                     if (CardCount < 5)
                     {
-                        if (CardListAnimationEndState)//动画结束
-                        {
-                            #region 卡牌赋值
-                            #endregion
-                            if (RotationCardAnimationEndState)
-                            {
-                                CardAssignment();
-                                CardCount++;
-                                RotationCardAnimationEndState = false;
-                            }
-                            else
-                            {
-                                RotationCardAnimationState = true;//卡牌旋转动画
-                            }
-                        }
-                        else
-                        {
-                            CardListAnimationState = true;
-                        }
+                        CardAssignment();
+                        CardCount++;
                     }
                     else
                     {
-                        #region 状态初始化
-                        CardRecycleSuccess = false;
-                        CardPoolsDataSave = false;
-                        CardListAnimationState = false;
-                        CardListAnimationEndState = false;
-                        RotationCardAnimationState = false;
-                        RoundOverState = false;
-                        HasUseCard = false;
-                        AiAtkState = true;
-                        RoundOverUnUseCardIndexList = new List<int>() { 1, 2, 3, 4, 5 };
-                        CardCount = 0;
-                        #endregion
-
+                        CardAssignmentState = true;
+                    }
+                    #endregion
+                    #region 发牌动画
+                    if (CardAssignmentState)
+                    {
+                        if (DealCardCount == 0)
+                        {
+                            Anim_DealCards.Play("DealCards");
+                            DealCardCount++;
+                        }
+                        else
+                        {
+                            if (!Anim_DealCards.isPlaying)
+                            {
+                                #region 状态初始化
+                                CardPoolsDataSave = false;
+                                CardRecycleSuccess = false;
+                                RoundOverState = false;
+                                HasUseCard = false;
+                                AiAtkState = true;
+                                CardAssignmentState = false;
+                                RoundOverUnUseCardIndexList = new List<int>() { 1, 2, 3, 4, 5 };
+                                CardCount = 0;
+                                DealCardCount = 0;
+                                #endregion
+                            }
+                        }
                     }
                     #endregion
                 }
@@ -664,9 +651,9 @@ namespace Assets.Scripts.UIScripts
         /// </summary>
         public void CardAssignment()
         {
-            Image Card = GameObject.Find($"CardPool/Card/img_Card{CardCount + 1}").GetComponent<Image>();
-            Card.transform.localScale = Vector3.one;
-            Card.transform.localEulerAngles = new Vector3(0, 0, 0);//旋转初始化
+            //Image Card = GameObject.Find($"CardPool/Card/img_Card{CardCount + 1}").GetComponent<Image>();
+            //Card.transform.localScale = Vector3.one;
+            //Card.transform.localEulerAngles = new Vector3(0, 0, 0);//旋转初始化
             UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.UnUsedCardPoolsFileName);
             Image Card_ATK_img = GameObject.Find($"Card/img_Card{(CardCount + 1)}/img_ATK").GetComponent<Image>();
             var model = UnusedCardList[0];
@@ -726,78 +713,6 @@ namespace Assets.Scripts.UIScripts
             #endregion
         }
 
-        /// <summary>
-        /// 洗牌
-        /// </summary>
-        public void ShuffleAnimation()
-        {
-            if (!ShuffleAnimationSuccessState)
-            {
-                #region 洗牌动画
-                if (ShuffleCount < 4)
-                {
-                    Shuffle.SetActive(true);
-                    Image Top_Img = GameObject.Find("Shuffle/Top_CardPools/Top_CardPools1").GetComponent<Image>();
-                    var thisPosition = Top_Img.transform.localPosition;
-                    Top_Img.transform.localPosition = new Vector3(thisPosition.x - 1.2f, thisPosition.y - 1);
-                    if (thisPosition.x < -65)
-                    {
-                        ShuffleCount++;
-                        Top_Img.transform.localPosition = new Vector3(0, 1);
-                    }
-                }
-                else
-                {
-                    #region 叠牌
-
-                    Image Top_ImgPools = GameObject.Find("Shuffle/Top_CardPools").GetComponent<Image>();
-                    Image Down_ImgPools = GameObject.Find("Shuffle/Down_CardPools").GetComponent<Image>();
-                    var thisPosition = Down_ImgPools.transform.localPosition;
-                    if (!FoldCardAnimationState)
-                    {
-                        Top_ImgPools.transform.localEulerAngles = new Vector3(20, -30, 10);
-                        Down_ImgPools.transform.localEulerAngles = new Vector3(15, -30, 15);
-                        Down_ImgPools.transform.localPosition = new Vector3(thisPosition.x + 1f, thisPosition.y + 1.2f);
-                    }
-                    #endregion
-                    if (thisPosition.y > 17)
-                    {
-                        FoldCardAnimationState = true;
-                    }
-                    if (FoldCardAnimationState)
-                    {
-                        Top_ImgPools.transform.localPosition = new Vector3(thisPosition.x - 48, thisPosition.y - 30);
-                        Down_ImgPools.transform.localPosition = new Vector3(thisPosition.x - 48, thisPosition.y - 30);
-                        if (thisPosition.y < -300)
-                        {
-                            Top_ImgPools.transform.localPosition = new Vector3(18, 17);
-                            Down_ImgPools.transform.localPosition = new Vector3(-23, -33);
-                            Top_ImgPools.transform.localEulerAngles = new Vector3(30, -30, 0);
-                            Down_ImgPools.transform.localEulerAngles = new Vector3(30, -30, 0);
-                            ShuffleAnimationState = false;
-                            FoldCardAnimationState = false;
-                            ShuffleAnimationSuccessState = true;
-                            ShuffleCount = 0;
-                            Shuffle.SetActive(false);
-                        }
-                    }
-                }
-                #endregion
-            }
-            else
-            {
-                UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.UsedCardPoolsFileName).ListRandom();
-                Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
-                txt_StartCardCount.text = UnusedCardList.Count.ToString();
-
-                UsedCardList = new List<CurrentCardPoolModel>();
-                Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.UsedCardPoolsFileName);
-                txt_EndCardCount.text = "0";
-
-                ShuffleAnimationState = false;
-                ShuffleAnimationSuccessState = false;
-            }
-        }
         #endregion
 
         #region 玩家回合结束AI攻击
@@ -806,79 +721,91 @@ namespace Assets.Scripts.UIScripts
         /// </summary>
         public void AIAtk()
         {
-            if (AiCardList == null || AiAtkCardList == null)
+            if (!AiTitleAnimState)
             {
-                AiCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAiCardPoolsFileName);
-                AiAtkCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAIATKCardPoolsFileName).OrderByDescending(a => a.AiAtkSort).ToList();
-                AiAtkCount = AiAtkCardList.Count;
+                AiRoundTitle_Obj.SetActive(true);
+                Anim_AiRoundTitle.Play("AiRoundTitle");
+                AiTitleAnimState = true;
             }
-            else
+            else if (!Anim_AiRoundTitle.isPlaying)
             {
-                if (AiAtkCount > 0)
+                if (AiCardList == null || AiAtkCardList == null)
                 {
-                    AiAtkCount--;
-                    var model = AiAtkCardList[AiAtkCount];
-                    switch (model?.StateType)
-                    {
-                        case 0:
-                            Anim_ATK.transform.localPosition = new Vector3(-408, 0);
-                            Anim_ATK.Play("ATK");
-                            float DeductionHp = model.Effect;
-                            if (PlayerRole.Armor > 0)
-                            {
-                                if (PlayerRole.Armor >= model.Effect)
-                                {
-                                    DeductionHp = 0;
-                                    PlayerRole.Armor -= Convert.ToInt32(model.Effect);
-                                    Player_txt_Armor.text = PlayerRole.Armor.ToString();
-                                }
-                                else
-                                {
-                                    DeductionHp -= PlayerRole.Armor;
-                                    PlayerRole.Armor = 0;
-                                }
-                                if (PlayerRole.Armor == 0)
-                                {
-                                    Player_img_Armor.transform.localScale = Vector3.zero;
-                                }
-                            }
-                            PlayerRole.HP -= DeductionHp;
-                            Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, DeductionHp, 0);
-                            Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
-                            break;
-                        case 1:
-                            Anim_Armor.transform.localPosition = new Vector3(373, 0);//攻击特效
-                            Anim_Armor.Play("Armor");
-                            Enemy_img_Armor.transform.localScale = Vector3.one;
-                            AiRole.Armor += Convert.ToInt32(model.Effect);
-                            if (AiRole.Armor > AiRole.MaxHP)
-                            {
-                                AiRole.Armor = Convert.ToInt32(AiRole.MaxHP);
-                            }
-                            Enemy_txt_Armor.text = AiRole.Armor.ToString();
-                            break;
-                        default:
-                            break;
-                    }
-
-                    Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
-                    Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+                    AiCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAiCardPoolsFileName);
+                    AiAtkCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAIATKCardPoolsFileName).OrderByDescending(a => a.AiAtkSort).ToList();
+                    AiAtkCount = AiAtkCardList.Count;
                 }
                 else
                 {
-                    AiAtkState = false;
-                    AiAtkCardList = new List<CurrentCardPoolModel>();
-                    //攻击栏最大五张牌
-                    var AtkCardNum = AiRole.AILevel + 1;
-                    AiCardList.ListRandom();
-                    if (AtkCardNum > 5) AtkCardNum = 5;
-                    for (int i = 0; i < AtkCardNum; i++)
+                    if (AiAtkCount > 0)
                     {
-                        AiAtkCardList.Add(AiCardList[i]);
+                        AiAtkCount--;
+                        var model = AiAtkCardList[AiAtkCount];
+                        switch (model?.StateType)
+                        {
+                            case 0:
+                                Atk_Obj.SetActive(true);
+                                Anim_ATK.transform.localPosition = new Vector3(-408, 0);
+                                Anim_ATK.Play("ATK");
+                                float DeductionHp = model.Effect;
+                                if (PlayerRole.Armor > 0)
+                                {
+                                    if (PlayerRole.Armor >= model.Effect)
+                                    {
+                                        DeductionHp = 0;
+                                        PlayerRole.Armor -= Convert.ToInt32(model.Effect);
+                                        Player_txt_Armor.text = PlayerRole.Armor.ToString();
+                                    }
+                                    else
+                                    {
+                                        DeductionHp -= PlayerRole.Armor;
+                                        PlayerRole.Armor = 0;
+                                    }
+                                    if (PlayerRole.Armor == 0)
+                                    {
+                                        Player_img_Armor.transform.localScale = Vector3.zero;
+                                    }
+                                }
+                                PlayerRole.HP -= DeductionHp;
+                                Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, DeductionHp, 0);
+                                Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
+                                break;
+                            case 1:
+                                Armor_Obj.SetActive(true);
+                                Anim_Armor.transform.localPosition = new Vector3(373, 0);//攻击特效
+                                Anim_Armor.Play("Armor");
+                                Enemy_img_Armor.transform.localScale = Vector3.one;
+                                AiRole.Armor += Convert.ToInt32(model.Effect);
+                                if (AiRole.Armor > AiRole.MaxHP)
+                                {
+                                    AiRole.Armor = Convert.ToInt32(AiRole.MaxHP);
+                                }
+                                Enemy_txt_Armor.text = AiRole.Armor.ToString();
+                                break;
+                            default:
+                                break;
+                        }
+
+                        Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+                        Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
                     }
-                    Common.SaveTxtFile(AiAtkCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
-                    AIATKCardPoolsBind();
-                    AiAtkCardList = null;
+                    else
+                    {
+                        AiAtkState = false;
+                        AiTitleAnimState = false;
+                        AiAtkCardList = new List<CurrentCardPoolModel>();
+                        //攻击栏最大五张牌
+                        var AtkCardNum = AiRole.AILevel + 1;
+                        AiCardList.ListRandom();
+                        if (AtkCardNum > 5) AtkCardNum = 5;
+                        for (int i = 0; i < AtkCardNum; i++)
+                        {
+                            AiAtkCardList.Add(AiCardList[i]);
+                        }
+                        Common.SaveTxtFile(AiAtkCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
+                        AIATKCardPoolsBind();
+                        AiAtkCardList = null;
+                    }
                 }
             }
         }
@@ -890,7 +817,7 @@ namespace Assets.Scripts.UIScripts
         public void AIATKCardPoolsBind()
         {
             //删除原有的攻击栏图片
-            GameObject parentObject = GameObject.Find("GanmeCanvas/Enemy/ATKBar");
+            GameObject parentObject = GameObject.Find("GameCanvas/Enemy/ATKBar");
             for (int i = 0; i < parentObject.transform.childCount; i++)
             {
                 DestroyImmediate(parentObject.transform.GetChild(i).gameObject);//如不是删除后马上要使用则用Destroy方法

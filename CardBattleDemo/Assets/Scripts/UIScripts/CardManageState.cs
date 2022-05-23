@@ -27,7 +27,7 @@ namespace Assets.Scripts.UIScripts
 
         public override void OnEnter(CardManage entity)
         {
-            Debug.Log("进入状态");
+            //Debug.Log("进入状态");
         }
 
         public override void Execute(CardManage entity)
@@ -40,21 +40,9 @@ namespace Assets.Scripts.UIScripts
             {
                 entity.RecycleCardAnimation();
             }
-            if (entity.CardListAnimationState)
-            {
-                entity.CardListAnimation();
-            }
             if (entity.RoundOverState)
             {
                 entity.RoundOverAnimation();
-            }
-            if (entity.RotationCardAnimationState)
-            {
-                entity.RotationCardAnimation();
-            }
-            if (entity.ShuffleAnimationState)
-            {
-                entity.ShuffleAnimation();
             }
             #endregion
             #region Ai攻击

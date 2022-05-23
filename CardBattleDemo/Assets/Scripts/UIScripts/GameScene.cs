@@ -39,7 +39,7 @@ public class GameScene : MonoBehaviour
     private List<CurrentCardPoolModel> AiATKCardList = new List<CurrentCardPoolModel>();
     private Image Player, Enemy, Card_ATK_img, Card_ATK_icon, Card_Skill_img, Card_energy_img, Player_img_Armor, Enemy_img_Armor;
     private Text Player_HP, Ai_HP, txt_StartCardCount, txt_EndCardCount, Card_Energy, Card_ATKNumber, Card_Title, Player_txt_Armor, Enemy_txt_Armor;
-    public bool GameStartState, CardListAnimationState, RotationCardAnimationState = false;
+    public bool GameStartState, DealCardsState, CardListAnimationState, RotationCardAnimationState = false;
     // 定义每帧累加时间
     private float totalTimer;
     private int GameStartCount, RotationCount, CardCount;
@@ -70,24 +70,22 @@ public class GameScene : MonoBehaviour
         myStateMachine.SetGlobalState(GameScene_GlobalState.Instance);
         #endregion
         Init();
-        GameStartAnimaImgHide();
 
         #region 动画控件
 
         #region Animator
-        //tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
+        //tempObj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
         //tempObj.name = "Ainm_GameStart";
-        //Anim_GameStart = GameObject.Find("GanmeCanvas/Ainm_GameStart").GetComponent<Animator>();
+        //Anim_GameStart = GameObject.Find("GameCanvas/Ainm_GameStart").GetComponent<Animator>();
         //Anim_GameStart.Play(0);
-        //Anim_GameStart.speed = 1; 
+        //Anim_GameStart.speed = 1;
         #endregion
         #region Animation 可以使用
-        //tempObj = Common.AddChild(GameObject.Find("GanmeCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
-        //tempObj.name = "Ainm_GameStart";
-        //Anim_GameStart = GameObject.Find("GanmeCanvas/Ainm_GameStart").GetComponent<Animation>();
-        //Anim_GameStart.Play("GameStart");
-        //Anim_DealCards = GameObject.Find("GanmeCanvas/CardPool").GetComponent<Animation>();
-
+        tempObj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
+        tempObj.name = "Ainm_GameStart";
+        Anim_GameStart = GameObject.Find("GameCanvas/Ainm_GameStart").GetComponent<Animation>();
+        Anim_GameStart.Play("GameStart");
+        Anim_DealCards = GameObject.Find("GameCanvas/CardPool").GetComponent<Animation>();
         #endregion
         #endregion
     }
@@ -208,26 +206,53 @@ public class GameScene : MonoBehaviour
         //{
         //    Debug.Log("卡牌转动动画完成");
         //    Anim_GameStart.SetInteger("AniState", 3);
-        //    Anim_DealCards.Play("DealCards");
+        //    //Anim_DealCards.Play("DealCards");
         //    //Anim_GameStart.speed = 0;
-        //} 
-        #endregion
-        #region Animation 可以使用
-        //if (!Anim_GameStart.isPlaying && !GameStartState)
-        //{
-        //    //Anim_GameStart.Stop("GameStart");
-        //    Anim_DealCards.Play("DealCards");
-        //    GameStartState = true;
         //}
         #endregion
-    }
+        #region Animation 可以使用
+        if (!Anim_GameStart.isPlaying && !GameStartState)
+        {
+            //Anim_GameStart.Stop("GameStart");
+            Anim_DealCards.Play("DealCards");
+            GameStartState = true;
+            DealCardsState = true;
+        }
+        else
+        {
+            if (DealCardsState)
+            {
+                totalTimer += Time.deltaTime;
+                if (totalTimer >= 0.35f)
+                {
+                    if (GameStartCount < 5)
+                    {
+                        txt_StartCardCount.text = (Convert.ToInt32(txt_StartCardCount.text) - 1).ToString();
+                        totalTimer = 0;
+                        GameStartCount++;
+                    }
+                    else
+                    {
+                        GameStartCount = 0;
+                        totalTimer = 0;
+                        DealCardsState = false;
+                    }
+                }
+            }
 
+        }
+        #endregion
+    }
+    float Remap(float tex, float min, float max, float slefMin = 0, float slefMax = 1)
+    {
+        return (min + (tex - slefMin) * (max - min) / (slefMax - slefMin));
+    }
     /// <summary>
     /// 创建能量图片
     /// </summary>
     public void CreateEnergyImage(int count)
     {
-        GameObject parentObject = GameObject.Find("GanmeCanvas/CardPool");
+        GameObject parentObject = GameObject.Find("GameCanvas/CardPool");
         //Debug.Log(parentObject.transform.localPosition);
         for (int i = 0; i < count; i++)
         {
@@ -242,8 +267,6 @@ public class GameScene : MonoBehaviour
             tempObject.transform.localPosition = new Vector2(-553 + i * 33, 103);
         }
     }
-
-
 
     /// <summary>
     /// 卡牌赋值
@@ -306,7 +329,7 @@ public class GameScene : MonoBehaviour
     {
         if (AiATKCardList != null && AiATKCardList?.Count > 0)
         {
-            GameObject parentObject = GameObject.Find("GanmeCanvas/Enemy/ATKBar");
+            GameObject parentObject = GameObject.Find("GameCanvas/Enemy/ATKBar");
             foreach (var item in AiATKCardList)
             {
                 GameObject tempObj = Resources.Load("Prefab/AI_ATKimg_Prefab") as GameObject;
@@ -317,73 +340,5 @@ public class GameScene : MonoBehaviour
             }
         }
     }
-
-    #region 程序Animation
-    /// <summary>
-    /// 开始动画的图片隐藏
-    /// </summary>
-    private void GameStartAnimaImgHide()
-    {
-        //Image imgStartText = GameObject.Find($"GameStart/imgStartText").GetComponent<Image>();
-        Image rightImg = GameObject.Find($"CardPool/right_Card/right_Card9").GetComponent<Image>();
-        rightImg.transform.localScale = Vector3.zero;
-        //imgStartText.transform.localScale = Vector3.one;
-        //for (int i = 1; i < 6; i++)
-        //{
-        //    Image img = GameObject.Find($"GameStart/Image{i}").GetComponent<Image>();
-        //    img.transform.localScale = Vector3.zero;
-        //    Image Card = GameObject.Find($"CardPool/Card/img_Card{i}").GetComponent<Image>();
-        //    Card.transform.localScale = Vector3.zero;
-        //}
-    }
-
-    /// <summary>
-    /// 初始牌堆动画
-    /// </summary>
-    public void CardListAnimation()
-    {
-        Image leftImg = GameObject.Find($"CardPool/left_Card/left_Card9").GetComponent<Image>();
-        var x = leftImg.transform.position.x;
-        leftImg.transform.position = new Vector3(x + 1, leftImg.transform.position.y);
-        leftImg.transform.Rotate(Vector3.up, -10);
-        if (x >= 268)
-        {
-            CardListAnimationState = false;
-            leftImg.transform.localPosition = new Vector3(0, 9);
-            leftImg.transform.rotation = new Quaternion(0, 0, 0, 0);
-            RotationCardAnimationState = true;
-        }
-    }
-
-    /// <summary>
-    /// 翻转卡牌动画
-    /// </summary>
-    public void RotationCardAnimation()
-    {
-        totalTimer += Time.deltaTime;
-        if (totalTimer >= 0.01)
-        {
-            Image Card = GameObject.Find($"CardPool/Card/img_Card{CardCount + 1}").GetComponent<Image>();
-            Card.transform.localScale = Vector3.one;
-            Card.transform.Rotate(Vector3.up, -10);
-            RotationCount++;
-            if (RotationCount == 18)
-            {
-                CardListAnimationState = true;
-                CardCount++;
-                txt_StartCardCount.text = (Convert.ToInt32(txt_StartCardCount.text) - 1).ToString();
-                RotationCount = 0;
-            }
-            if (CardCount > 4)
-            {
-                CardListAnimationState = false;
-                RotationCardAnimationState = false;
-                CardCount = 0;
-            }
-            totalTimer = 0;
-        }
-    }
-    #endregion
-
 
 }

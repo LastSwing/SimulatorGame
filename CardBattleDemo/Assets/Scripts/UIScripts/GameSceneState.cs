@@ -30,38 +30,13 @@ namespace Assets.Scripts.UIScripts
 
         public override void OnEnter(GameScene entity)
         {
-            Debug.Log("进入状态");
+            //Debug.Log("进入状态");
         }
 
         public override void Execute(GameScene entity)
         {
             //Debug.Log("GameScene状态执行中");
 
-            #region 开始动画
-            //if (entity.GameStartAnimationState)
-            //{
-            //    entity.GameStartAnimation();
-            //}
-            //if (entity.GameStartAnimationEndState)
-            //{
-            //    entity.GameStartAnimationEnd();
-            //}
-            //if (entity.GameStartAnimationMoveState)
-            //{
-            //    entity.GameStartAnimationMove();
-            //}
-            #endregion
-
-            #region 显示卡牌
-            if (entity.CardListAnimationState)
-            {
-                entity.CardListAnimation();
-            }
-            if (entity.RotationCardAnimationState)
-            {
-                entity.RotationCardAnimation();
-            }
-            #endregion
         }
 
         public override void OnExit(GameScene entity)
