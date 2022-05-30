@@ -49,7 +49,7 @@ public class PlayerCardScene : MonoBehaviour
 
     public void Save()
     {
-        var list = Common.GetTxtFileToList<CardPoolModel>(GlobalAttr.CardPoolFileName) ?? new List<CardPoolModel>();
+        var list = Common.GetTxtFileToList<CardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CardPoolModel>();
         CardPoolModel model = new CardPoolModel();
         model.ID = $"{DateTime.Now.ToString("yyyyMMddHHmmssff")}";
         model.CardDetail = ipt_CardDetail.text.Trim();
@@ -71,7 +71,7 @@ public class PlayerCardScene : MonoBehaviour
         list.Add(model);
         string json = list.ListToJson();
 
-        Common.SaveTxtFile(json, GlobalAttr.CardPoolFileName);
+        Common.SaveTxtFile(json, GlobalAttr.GlobalCardPoolFileName);
         DataReset();
     }
 

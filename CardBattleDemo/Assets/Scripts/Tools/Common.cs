@@ -492,13 +492,13 @@ namespace Assets.Scripts.Tools
         /// <param name="InitHP">最大血量</param>
         /// <param name="ChangeHp">变化血量值</param>
         /// <param name="ChangeType">变化类型：1加血，0减血</param>
-        public static void HPImageChange(Image HpImg, float InitHP, float ChangeHp, int ChangeType)
+        public static void HPImageChange(Image HpImg, float InitHP, float ChangeHp, int ChangeType, int ImgWidth = 310)
         {
             if (ChangeHp > 0)
             {
                 RectTransform Irect = HpImg.GetComponent<RectTransform>();
                 float imgW = Irect.sizeDelta.x;
-                float OneHpWidth = 310 / InitHP;//图片一滴血的宽度
+                float OneHpWidth = ImgWidth / InitHP;//图片一滴血的宽度
                 float ChangeImgW = ChangeHp * OneHpWidth;
                 if (ChangeType == 0)
                 {
@@ -513,9 +513,9 @@ namespace Assets.Scripts.Tools
                 else
                 {
                     float total = imgW + ChangeImgW;
-                    if (total > 310)//初始宽度310
+                    if (total > ImgWidth)//初始宽度310
                     {
-                        total = 310;
+                        total = ImgWidth;
                     }
                     Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
                     HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);

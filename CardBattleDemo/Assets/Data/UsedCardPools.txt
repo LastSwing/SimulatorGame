@@ -1,1 +1,0 @@
-[{"Proficiency":1,"ID":"2022042516365099","CardType":2,"StateType":1,"HasAOE":0,"CardName":"木盾","CardUrl":"Images/CardIcon/MuDun","CardDetail":"防御+6；消耗1点能量","Consume":1,"Effect":6,"PlayerOrAI":0,"CardLevel":0,"CardPrice":0,"HasShoppingShow":0,"HasDeBuff":0,"TriggerState":0,"TriggerValue":0,"AiAtkSort":0}]

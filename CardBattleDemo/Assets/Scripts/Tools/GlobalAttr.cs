@@ -9,14 +9,29 @@ namespace Assets.Scripts.Tools
     public static class GlobalAttr
     {
         /// <summary>
-        /// 所有卡池文件的名称
+        /// 角色全局卡池文件的名称
         /// </summary>
-        public static string CardPoolFileName = "GlobalCardPools";
+        public static string GlobalPlayerCardPoolFileName = "GlobalPlayerCardPools";
+
+        /// <summary>
+        /// 游戏全局卡池文件的名称
+        /// </summary>
+        public static string GlobalCardPoolFileName = "GlobalCardPools";
 
         /// <summary>
         /// 玩家角色池文件名称
         /// </summary>
-        public static string PlayerRolePoolFileName = "PlayerRolePools";
+        public static string GlobalPlayerRolePoolFileName = "GlobalPlayerRolePools";
+
+        /// <summary>
+        /// AI角色池文件名称
+        /// </summary>
+        public static string GlobalAIRolePoolFileName = "GlobalAIRolePools";
+
+        /// <summary>
+        /// 全局角色
+        /// </summary>
+        public static string GlobalRoleFileName = "GlobalRole";
 
         /// <summary>
         /// 当局游戏内玩家角色文件名称
@@ -24,24 +39,24 @@ namespace Assets.Scripts.Tools
         public static string CurrentPlayerRoleFileName = "CurrentPlayerRole";
 
         /// <summary>
+        /// 当前玩家卡池
+        /// </summary>
+        public static string CurrentCardPoolsFileName = "CurrentPlayerCardPools";
+
+        /// <summary>
         /// 未使用卡池文件名称
         /// </summary>
-        public static string UnUsedCardPoolsFileName = "UnUsedCardPools";
+        public static string CurrentUnUsedCardPoolsFileName = "CurrentUnUsedCardPools";
 
         /// <summary>
         /// 已使用卡池文件名称
         /// </summary>
-        public static string UsedCardPoolsFileName = "UsedCardPools";
+        public static string CurrentUsedCardPoolsFileName = "CurrentUsedCardPools";
 
         /// <summary>
         /// 攻击栏卡池文件名称
         /// </summary>
-        public static string ATKBarCardPoolsFileName = "ATKBarCardPools";
-
-        /// <summary>
-        /// AI角色池文件名称
-        /// </summary>
-        public static string AIRolePoolFileName = "AIRolePools";
+        public static string CurrentATKBarCardPoolsFileName = "CurrentATKBarCardPools";
 
         /// <summary>
         /// 当局游戏内Ai角色文件名称

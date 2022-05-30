@@ -10,14 +10,14 @@ public class RoleScene : MonoBehaviour
 {
     private Button btn_CardPools, btn_Save;
     private Dropdown dd_CardSelect, dd_RoleType;
-    private InputField ipt_CardPools, ipt_RoleName, ipt_RoleImgUrl, ipt_HP, ipt_Wealth, ipt_Energy, ipt_AILevel;
+    private InputField ipt_CardPools, ipt_RoleName, ipt_RoleImgUrl, ipt_HP, ipt_Wealth, ipt_Energy, ipt_AILevel, ipt_HeadUrl;
     private List<CardPoolModel> Cardlist;
     // Start is called before the first frame update
     void Start()
     {
         #region 下拉框初始化
         dd_CardSelect = transform.Find("dd_CardSelect").GetComponent<Dropdown>();
-        Cardlist = Common.GetTxtFileToList<CardPoolModel>(GlobalAttr.CardPoolFileName) ?? new List<CardPoolModel>();
+        Cardlist = Common.GetTxtFileToList<CardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CardPoolModel>();
         CardPoolChange(0);
         dd_CardSelect.onValueChanged.AddListener(delegate { SelectChange(); });
         #endregion
@@ -33,6 +33,7 @@ public class RoleScene : MonoBehaviour
         ipt_Wealth = transform.Find("ipt_Wealth").GetComponent<InputField>();
         ipt_Energy = transform.Find("ipt_Energy").GetComponent<InputField>();
         ipt_AILevel = transform.Find("ipt_AILevel").GetComponent<InputField>();
+        ipt_HeadUrl = transform.Find("ipt_HeadUrl").GetComponent<InputField>();
 
         btn_CardPools = transform.Find("PageJump/btn_CardPools").GetComponent<Button>();
         btn_CardPools.onClick.AddListener(delegate { Common.SceneJump("PlayerCardScene"); });
@@ -62,11 +63,11 @@ public class RoleScene : MonoBehaviour
         List<CurrentRoleModel> list = null;
         if (dd_RoleType.value == 0)
         {
-            list = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.PlayerRolePoolFileName) ?? new List<CurrentRoleModel>();
+            list = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName) ?? new List<CurrentRoleModel>();
         }
         else if (dd_RoleType.value == 1)
         {
-            list = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.AIRolePoolFileName) ?? new List<CurrentRoleModel>();
+            list = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName) ?? new List<CurrentRoleModel>();
         }
         CurrentRoleModel model = new CurrentRoleModel();
         model.RoleID = DateTime.Now.ToString("yyyyMMddHHmmssff");
@@ -80,6 +81,7 @@ public class RoleScene : MonoBehaviour
         model.MaxEnergy = string.IsNullOrWhiteSpace(ipt_Energy.text) ? 0 : Convert.ToInt32(ipt_Energy.text);
         model.CardListStr = ipt_CardPools.text.Trim().Replace("\t", "");
         model.AILevel = string.IsNullOrWhiteSpace(ipt_AILevel.text) ? 0 : Convert.ToInt32(ipt_AILevel.text);
+        model.HeadPortraitUrl = ipt_HeadUrl.text.Trim().ToString();
 
         list.Add(model);
 
@@ -87,11 +89,11 @@ public class RoleScene : MonoBehaviour
         var aa = json.JsonToList<CurrentRoleModel>();
         if (dd_RoleType.value == 0)
         {
-            Common.SaveTxtFile(json, GlobalAttr.PlayerRolePoolFileName);
+            Common.SaveTxtFile(json, GlobalAttr.GlobalPlayerRolePoolFileName);
         }
         else if (dd_RoleType.value == 1)
         {
-            Common.SaveTxtFile(json, GlobalAttr.AIRolePoolFileName);
+            Common.SaveTxtFile(json, GlobalAttr.GlobalAIRolePoolFileName);
         }
         ResetData();
     }

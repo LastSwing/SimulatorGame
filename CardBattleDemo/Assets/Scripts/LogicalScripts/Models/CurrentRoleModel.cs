@@ -73,6 +73,11 @@ namespace Assets.Scripts.LogicalScripts.Models
         public string CardListStr { get; set; }
 
         /// <summary>
+        /// 头像Url
+        /// </summary>
+        public string HeadPortraitUrl { get; set; }
+
+        /// <summary>
         /// AI按等级出现
         /// </summary>
         public int AILevel { get; set; }

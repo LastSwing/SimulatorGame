@@ -93,12 +93,12 @@ public class GameScene : MonoBehaviour
     void Init()
     {
         #region 数据源初始化
-        Common.DelereTxtFile(GlobalAttr.UsedCardPoolsFileName);
-        PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.PlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? 
-        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.AIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
+        Common.DelereTxtFile(GlobalAttr.CurrentUsedCardPoolsFileName);
+        PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? 
+        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
-        var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CardPoolFileName) ?? new List<CurrentCardPoolModel>();//卡池
+        var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//卡池
         #endregion
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
@@ -142,6 +142,7 @@ public class GameScene : MonoBehaviour
                         UnusedCardList.Add(cardModel);
                     }
                 }
+                Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
                 UnusedCardList.ListRandom();
                 txt_StartCardCount.text = UnusedCardList.Count.ToString();
             }
@@ -188,8 +189,8 @@ public class GameScene : MonoBehaviour
                 UnusedCardList.Remove(UnusedCardList[i]);
             }
             CardAssignment();
-            Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.ATKBarCardPoolsFileName);
-            Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
+            Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+            Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
             #endregion 
         }
         AIATKCardPoolsBind();

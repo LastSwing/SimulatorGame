@@ -24,7 +24,12 @@ namespace Assets.Scripts.LogicalScripts.Models
         /// <summary>
         /// 所拥有的的角色
         /// </summary>
-        public List<CurrentRoleModel> RoleList { get; set; }
+        public string RoleList { get; set; }
+
+        /// <summary>
+        /// 所拥有的技能
+        /// </summary>
+        public string SkillList { get; set; }
 
         /// <summary>
         /// 财富值

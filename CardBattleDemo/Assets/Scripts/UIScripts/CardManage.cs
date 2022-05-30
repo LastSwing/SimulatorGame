@@ -143,7 +143,7 @@ namespace Assets.Scripts.UIScripts
             #region 攻击栏牌池初始化
             if (ATKList == null)
             {
-                ATKList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.ATKBarCardPoolsFileName);
+                ATKList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentATKBarCardPoolsFileName);
             }
             #endregion
             #region 角色数据初始化
@@ -515,7 +515,7 @@ namespace Assets.Scripts.UIScripts
                 if (!Anim_RecycleCard.isPlaying)//执行完成
                 {
                     txt_EndCardCount.text = UsedCardList.Count.ToString();
-                    Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.UsedCardPoolsFileName);
+                    Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
                     RecycleCardAnimationState = false;
                     RecycleCardAnimationEndState = true;
                     CardPoolsDataSave = false;
@@ -590,12 +590,12 @@ namespace Assets.Scripts.UIScripts
                     if (!Anim_Shuffle.isPlaying)
                     {
                         Shuffle_Obj.SetActive(false);
-                        UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.UsedCardPoolsFileName).ListRandom();
-                        Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
+                        UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName).ListRandom();
+                        Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
                         txt_StartCardCount.text = UnusedCardList.Count.ToString();
 
                         UsedCardList = new List<CurrentCardPoolModel>();
-                        Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.UsedCardPoolsFileName);
+                        Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
                         txt_EndCardCount.text = "0";
                         ShuffleCount = 0;
                     }
@@ -654,7 +654,7 @@ namespace Assets.Scripts.UIScripts
             //Image Card = GameObject.Find($"CardPool/Card/img_Card{CardCount + 1}").GetComponent<Image>();
             //Card.transform.localScale = Vector3.one;
             //Card.transform.localEulerAngles = new Vector3(0, 0, 0);//旋转初始化
-            UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.UnUsedCardPoolsFileName);
+            UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
             Image Card_ATK_img = GameObject.Find($"Card/img_Card{(CardCount + 1)}/img_ATK").GetComponent<Image>();
             var model = UnusedCardList[0];
             var cardType = model.StateType;
@@ -708,8 +708,8 @@ namespace Assets.Scripts.UIScripts
             ATKList.RemoveAt(0);
             ATKList.Add(model);
             UnusedCardList.RemoveAt(0);
-            Common.SaveTxtFile(ATKList.ListToJson(), GlobalAttr.ATKBarCardPoolsFileName);
-            Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.UnUsedCardPoolsFileName);
+            Common.SaveTxtFile(ATKList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+            Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
             #endregion
         }
 
@@ -818,9 +818,10 @@ namespace Assets.Scripts.UIScripts
         {
             //删除原有的攻击栏图片
             GameObject parentObject = GameObject.Find("GameCanvas/Enemy/ATKBar");
-            for (int i = 0; i < parentObject.transform.childCount; i++)
+            var parantCount = parentObject.transform.childCount;
+            for (int i = 0; i < parantCount; i++)
             {
-                DestroyImmediate(parentObject.transform.GetChild(i).gameObject);//如不是删除后马上要使用则用Destroy方法
+                DestroyImmediate(parentObject.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
             }
             if (AiAtkCardList != null && AiAtkCardList?.Count > 0)
             {
