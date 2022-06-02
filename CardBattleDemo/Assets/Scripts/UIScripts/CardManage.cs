@@ -15,8 +15,8 @@ namespace Assets.Scripts.UIScripts
     public class CardManage : MonoBehaviour
     {
         StateMachine<CardManage> myStateMachine; //状态机
-        GameObject DefensePanel, ATKPanel, Shuffle_Obj, Restore_Obj, Atk_Obj, Armor_Obj, Energy_Obj, RecycleCard_Obj, AiRoundTitle_Obj;
-        Animation Anim_Restore, Anim_ATK, Anim_Armor, Anim_EnergyRestore, Anim_DealCards, Anim_RecycleCard, Anim_Shuffle, Anim_AiRoundTitle;
+        GameObject DefensePanel, ATKPanel, Shuffle_Obj, Restore_Obj, Atk_Obj, Armor_Obj, Energy_Obj, RecycleCard_Obj, AiRoundTitle_Obj, Anim_GameOver_obj;
+        Animation Anim_Restore, Anim_ATK, Anim_Armor, Anim_EnergyRestore, Anim_DealCards, Anim_RecycleCard, Anim_Shuffle, Anim_AiRoundTitle, Anim_GameOver;
         Button btn_RoundOver;
         Image Card_img, Eimg_HP, Player_img_Armor, Pimg_HP, Enemy_img_Armor;
         Text txt_EndCardCount, txt_StartCardCount, Player_txt_Armor, Player_HP, Enemy_txt_Armor;
@@ -29,7 +29,7 @@ namespace Assets.Scripts.UIScripts
             RoundOverState, CardPoolsDataSave, HasUseCard, CardRecycleSuccess,//回合结束状态、卡池数据保存、是否使用了卡牌、卡牌回收成功
             RotationCardAnimationState, RotationCardAnimationEndState,//卡牌旋转动画
             ShuffleAnimationState, FoldCardAnimationState, ShuffleAnimationSuccessState,   //洗牌状态、叠牌状态、动画完成
-            AiAtkState
+            AiAtkState, GameOverStartState//Ai攻击状态,游戏结束动画开始
             = false;
 
         private CurrentRoleModel PlayerRole;    //玩家角色
@@ -88,22 +88,23 @@ namespace Assets.Scripts.UIScripts
             #endregion
 
             #region 动画控件
-            Restore_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Restore"));
+            var gameCanvas = GameObject.Find("GameCanvas");
+            Restore_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_Restore"));
             Restore_Obj.name = "Anim_Restore";
             Anim_Restore = GameObject.Find("GameCanvas/Anim_Restore").GetComponent<Animation>();
             Restore_Obj.SetActive(false);
 
-            Atk_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_ATK"));
+            Atk_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_ATK"));
             Atk_Obj.name = "Anim_ATK";
             Anim_ATK = GameObject.Find("GameCanvas/Anim_ATK").GetComponent<Animation>();
             Atk_Obj.SetActive(false);
 
-            Armor_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Armor"));
+            Armor_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_Armor"));
             Armor_Obj.name = "Anim_Armor";
             Anim_Armor = GameObject.Find("GameCanvas/Anim_Armor").GetComponent<Animation>();
             Armor_Obj.SetActive(false);
 
-            Energy_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_EnergyRestore"));
+            Energy_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_EnergyRestore"));
             Energy_Obj.name = "Anim_EnergyRestore";
             Anim_EnergyRestore = GameObject.Find("GameCanvas/Anim_EnergyRestore").GetComponent<Animation>();
             Energy_Obj.SetActive(false);
@@ -111,22 +112,26 @@ namespace Assets.Scripts.UIScripts
             //发牌
             Anim_DealCards = GameObject.Find("GameCanvas/CardPool").GetComponent<Animation>();
 
-            RecycleCard_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_RecycleCard"));
+            RecycleCard_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_RecycleCard"));
             RecycleCard_Obj.name = "Anim_RecycleCard";
             Anim_RecycleCard = GameObject.Find("GameCanvas/Anim_RecycleCard").GetComponent<Animation>();
             RecycleCard_Obj.transform.SetSiblingIndex(3);
             RecycleCard_Obj.SetActive(false);
 
-            Shuffle_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_Shuffle"));
+            Shuffle_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_Shuffle"));
             Shuffle_Obj.name = "Shuffle";
             Anim_Shuffle = GameObject.Find("GameCanvas/Shuffle").GetComponent<Animation>();
             Shuffle_Obj.SetActive(false);
 
-            AiRoundTitle_Obj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_AiRoundTitle"));
+            AiRoundTitle_Obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_AiRoundTitle"));
             AiRoundTitle_Obj.name = "AiRoundTitle";
             Anim_AiRoundTitle = GameObject.Find("GameCanvas/AiRoundTitle").GetComponent<Animation>();
             AiRoundTitle_Obj.SetActive(false);
 
+            Anim_GameOver_obj = Common.AddChild(gameCanvas.transform, (GameObject)Resources.Load("Prefab/Anim_GameOver"));
+            Anim_GameOver_obj.name = "GameOver";
+            Anim_GameOver = GameObject.Find("GameCanvas/GameOver").GetComponent<Animation>();
+            Anim_GameOver_obj.SetActive(false);
             #endregion
 
             #region 状态机初始化
@@ -135,6 +140,7 @@ namespace Assets.Scripts.UIScripts
             myStateMachine.SetCurrentState(CardManageState.Instance);
             myStateMachine.SetGlobalState(CardManage_GlobalState.Instance);
             #endregion
+
         }
 
         void Update()
@@ -178,6 +184,15 @@ namespace Assets.Scripts.UIScripts
                 }
             }
             #endregion
+
+            if (GameOverStartState)
+            {
+                if (!Anim_GameOver.isPlaying)
+                {
+                    Common.SceneJump("PlayerDieScene");
+                    GameOverStartState = false;
+                }
+            }
         }
 
         #region 卡牌操作
@@ -767,6 +782,11 @@ namespace Assets.Scripts.UIScripts
                                     }
                                 }
                                 PlayerRole.HP -= DeductionHp;
+                                if (PlayerRole.HP <= 0)
+                                {
+                                    PlayerRole.HP = 0;
+                                    GameOver();
+                                }
                                 Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, DeductionHp, 0);
                                 Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
                                 break;
@@ -844,9 +864,18 @@ namespace Assets.Scripts.UIScripts
         /// </summary>
         public void AiDieGameOver()
         {
-
+            Common.SceneJump("AiDieScene");
         }
 
+        /// <summary>
+        /// 玩家死亡
+        /// </summary>
+        public void GameOver()
+        {
+            Anim_GameOver_obj.SetActive(true);
+            Anim_GameOver.Play("GameOver");
+            GameOverStartState = true;
+        }
         #endregion
     }
 }

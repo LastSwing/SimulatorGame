@@ -17,6 +17,8 @@ namespace Assets.Scripts.Tools
     {
         public static int HasAgain;
 
+        public static string ReturnName;
+
         #region JSON格式化
 
         #region 作废
@@ -448,10 +450,12 @@ namespace Assets.Scripts.Tools
         /// 跳转页面
         /// </summary>
         /// <param name="SceneName">场景名称</param>
-        /// <param name="HasAgain">是否重新开始1、不重开，0重开</param>
-        public static void SceneJump(string SceneName, int Again = 1)
+        /// <param name="Again"></param>
+        /// <param name="Name">起始页面名称</param>
+        public static void SceneJump(string SceneName, int Again = 1, string Name = "")
         {
             HasAgain = Again;
+            ReturnName = Name;
             SceneManager.LoadScene(SceneName);
         }
 

@@ -6,12 +6,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class GameScene : MonoBehaviour
 {
+    //public static GameScene instance = null;
     StateMachine<GameScene> myStateMachine; //状态机
-    private GameObject tempObj;
+    private GameObject tempObj, Setting_Obj;
     private Animation Anim_GameStart, Anim_DealCards;
     //Animator Anim_GameStart;
     //AnimatorStateInfo animatorInfo;
@@ -37,22 +39,21 @@ public class GameScene : MonoBehaviour
     /// AI攻击牌池
     /// </summary>
     private List<CurrentCardPoolModel> AiATKCardList = new List<CurrentCardPoolModel>();
-    private Image Player, Enemy, Card_ATK_img, Card_ATK_icon, Card_Skill_img, Card_energy_img, Player_img_Armor, Enemy_img_Armor;
+    private Image Player, Enemy, Card_ATK_img, Card_ATK_icon, Card_Skill_img, Card_energy_img, Player_img_Armor, Enemy_img_Armor, img_Player_HP;
     private Text Player_HP, Ai_HP, txt_StartCardCount, txt_EndCardCount, Card_Energy, Card_ATKNumber, Card_Title, Player_txt_Armor, Enemy_txt_Armor;
     public bool GameStartState, DealCardsState, CardListAnimationState, RotationCardAnimationState = false;
     // 定义每帧累加时间
     private float totalTimer;
-    private int GameStartCount, RotationCount, CardCount;
-    private Vector3 GameStartPosition;
+    private int GameStartCount;
 
     void Start()
     {
         #region 控件初始化
-
         Player = transform.Find("Player/Player").GetComponent<Image>();
         Enemy = transform.Find("Enemy").GetComponent<Image>();
         Player_img_Armor = transform.Find("Player/img_Armor").GetComponent<Image>();
         Enemy_img_Armor = transform.Find("Enemy/img_Armor").GetComponent<Image>();
+        img_Player_HP = transform.Find("Player/Pimg_HP").GetComponent<Image>();
 
         Enemy_txt_Armor = transform.Find("Enemy/img_Armor/Text").GetComponent<Text>();
         Player_txt_Armor = transform.Find("Player/img_Armor/Text").GetComponent<Text>();
@@ -71,6 +72,17 @@ public class GameScene : MonoBehaviour
         #endregion
         Init();
 
+        #region 设置按钮点击事件
+        Setting_Obj = transform.Find("Setting").gameObject;
+        EventTrigger trigger2 = Setting_Obj.GetComponent<EventTrigger>();
+        if (trigger2 == null)
+        {
+            trigger2 = Setting_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry2 = new EventTrigger.Entry();
+        entry2.callback.AddListener(delegate { SettingClick(); });
+        trigger2.triggers.Add(entry2);
+        #endregion
         #region 动画控件
 
         #region Animator
@@ -90,18 +102,24 @@ public class GameScene : MonoBehaviour
         #endregion
     }
 
+    //void Awake()
+    //{
+    //    if (instance == null) { instance = this; }          //为这个类创建实例
+    //    else if (instance != this) { Destroy(gameObject); } //保证这个实例的唯一性
+    //    DontDestroyOnLoad(gameObject);                      //加载场景时不摧毁
+    //}
     void Init()
     {
         #region 数据源初始化
         Common.DelereTxtFile(GlobalAttr.CurrentUsedCardPoolsFileName);
-        PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == "2022042716410125");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName) ?? 
+        PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
         AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
-        Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//卡池
         #endregion
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
+        Common.HPImageChange(img_Player_HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0);
         Ai_HP.text = $"{AiRole.MaxHP}/{AiRole.HP}";
         Common.ImageBind(PlayerRole.RoleImgUrl, Player);
         Common.ImageBind(AiRole.RoleImgUrl, Enemy);
@@ -340,6 +358,11 @@ public class GameScene : MonoBehaviour
                 Common.ImageBind(item.CardUrl, tempImg);
             }
         }
+    }
+
+    public void SettingClick()
+    {
+        Common.SceneJump("SettingScene", 2, "GameScene");
     }
 
 }

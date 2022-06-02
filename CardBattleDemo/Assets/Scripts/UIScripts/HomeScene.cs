@@ -11,7 +11,7 @@ public class HomeScene : MonoBehaviour
 {
     Text txt_SkillsCount, txt_GoldCount;
     Button GameStart_Btn;
-    GameObject Skills_Obj;
+    GameObject Skills_Obj, Setting_Obj;
     Image Player;
     List<CurrentCardPoolModel> GlobalCardPools = new List<CurrentCardPoolModel>();//游戏全局卡池
     List<CurrentCardPoolModel> GlobalPlayerCardPools = new List<CurrentCardPoolModel>();//角色全局卡池
@@ -26,6 +26,7 @@ public class HomeScene : MonoBehaviour
         GameStart_Btn = transform.Find("GameStart_Btn").GetComponent<Button>();
         Skills_Obj = transform.Find("TopBar/Skills").gameObject;
         Player = transform.Find("Player/Image").GetComponent<Image>();
+        Setting_Obj = transform.Find("TopBar/Setting").gameObject;
         #endregion
 
         GameStart_Btn.onClick.AddListener(delegate { ClickGameStartBtn(); });
@@ -41,6 +42,16 @@ public class HomeScene : MonoBehaviour
         trigger1.triggers.Add(entry1);
         #endregion
 
+        #region 绑定点击设置
+        EventTrigger trigger = Setting_Obj.GetComponent<EventTrigger>();
+        if (trigger == null)
+        {
+            trigger = Setting_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry = new EventTrigger.Entry();
+        entry.callback.AddListener(delegate { ClickSetting(); });
+        trigger.triggers.Add(entry);
+        #endregion
         Init();
     }
 
@@ -74,11 +85,16 @@ public class HomeScene : MonoBehaviour
 
     public void ClickGameStartBtn()
     {
-        Debug.Log("点击游戏开始按钮");
+        Common.SceneJump("MapScene", 99);
     }
 
     public void ClickSkills()
     {
         Debug.Log("点击图鉴");
+    }
+
+    public void ClickSetting()
+    {
+        Common.SceneJump("SettingScene", 1, "HomeScene");
     }
 }

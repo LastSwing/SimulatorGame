@@ -72,5 +72,7 @@ namespace Assets.Scripts.Tools
         /// 当前AI攻击牌池
         /// </summary>
         public static string CurrentAIATKCardPoolsFileName = "CurrentAiATKCardPools";
+
+        public static string CurrentMapLocationFileName = "CurrentMapLocation";
     }
 }

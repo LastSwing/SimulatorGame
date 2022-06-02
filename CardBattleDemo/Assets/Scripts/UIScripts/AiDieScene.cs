@@ -257,6 +257,7 @@ public class AiDieScene : MonoBehaviour
         txt_CardPoolsCount.text = CurrentCardPools.Count.ToString();
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         //关闭当前页
+        Common.SceneJump("MapScene", 1);
     }
 
     /// <summary>
