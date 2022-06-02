@@ -17,10 +17,12 @@ namespace ConclusionEditor
         private List<Fileid> fileids1 = new List<Fileid>();
         private DataTable JieJuTable = new DataTable();
         public List<Fileid> fileids { get { return fileids1; } set { fileids1 = value; } }
+        private bool state = false;//判断是选择输入还是字段输入 false选择输入
         public SelectForm(Guid guid,DataTable juesetable, Dictionary<Guid, Dictionary<Guid, string>> keyValues, List<Fileid> fileids2,DataTable jiejuTable)
         {
             InitializeComponent();
             Guid = guid;
+            
             JueseTable.Merge(juesetable);
             duihuadic = keyValues;
             fileids1 = fileids2;
@@ -86,7 +88,14 @@ namespace ConclusionEditor
             for (int i = 0; i < dataTable1.Rows.Count; i++)
             {
                 Fileid fileid = new Fileid();
-                fileid.Fileidtype = FileidType.选择;
+                if (radioButton1.Checked)
+                    fileid.InsertByte = 0;
+                else
+                    fileid.InsertByte = 1;
+                if(state)
+                    fileid.Fileidtype = FileidType.判断对话;
+                else
+                    fileid.Fileidtype = FileidType.选择;
                 fileid.ParentId = Guid;
                 fileid.PathName = dataTable1.Rows[i]["xuanze"].ToString();
                 if (dataTable1.Rows[i]["Guid"].ToString() == "")
@@ -140,14 +149,46 @@ namespace ConclusionEditor
 
         private void SelectForm_Load(object sender, EventArgs e)
         {
+            bool aa = false;
             foreach (var item in fileids1)
             {
-                if (item.ParentId == Guid && item.Fileidtype == FileidType.选择)
+                if (item.ParentId == Guid && item.Fileidtype == FileidType.判断对话)
                 {
+                    state = true;
+                    if (item.InsertByte == 1)
+                        radioButton1.Checked = false;
                     DataRow dataRow = dataTable1.NewRow();
                     dataRow["Guid"] = item.Id;
                     dataRow["xuanze"] = item.PathName;
                     dataTable1.Rows.Add(dataRow);
+                    aa = true;
+                    continue;
+                }
+                if (item.ParentId == Guid && item.Fileidtype == FileidType.选择)
+                {
+                    if (item.InsertByte == 1)
+                        radioButton1.Checked = false;
+                    DataRow dataRow = dataTable1.NewRow();
+                    dataRow["Guid"] = item.Id;
+                    dataRow["xuanze"] = item.PathName;
+                    dataTable1.Rows.Add(dataRow);
+                }
+            }
+            if (!aa)
+            {
+                foreach (var item in fileids1)
+                {
+                    if (item.Id == Guid && item.Fileidtype == FileidType.字段)
+                    {
+                        state = true;
+                        foreach (var items in item.Fileids)
+                        {
+                            DataRow dataRow = dataTable1.NewRow();
+                            dataRow["Guid"] = Guid.NewGuid();
+                            dataRow["xuanze"] = items;
+                            dataTable1.Rows.Add(dataRow);
+                        }
+                    }
                 }
             }
         }

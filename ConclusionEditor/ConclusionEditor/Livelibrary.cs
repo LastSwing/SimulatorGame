@@ -86,6 +86,25 @@ namespace ConclusionEditor
     }
 
     /// <summary>
+    /// 事件列表
+    /// </summary>
+    public class Event
+    {
+        /// <summary>
+        /// 事件名称
+        /// </summary>
+        public string EventName { get; set; }
+        /// <summary>
+        /// 事件路径
+        /// </summary>
+        public string EventPath { get; set; }
+        /// <summary>
+        /// 发生年份
+        /// </summary>
+        public int Year { get; set; }
+    }
+
+    /// <summary>
     /// 绑定类
     /// </summary>
     public class Fileid
@@ -103,7 +122,7 @@ namespace ConclusionEditor
         /// </summary>
         public FileidType Fileidtype { get; set; }
         /// <summary>
-        /// 开始字节
+        /// 开始字节 or 选择中是否可循环0可循环1不可循环
         /// </summary>
         public int InsertByte { get; set; }
         /// <summary>
@@ -126,5 +145,7 @@ namespace ConclusionEditor
         结局=2,
         背景音乐=3,
         动画=4,
+        对话 = 5,
+        判断对话 = 6
     }
 }

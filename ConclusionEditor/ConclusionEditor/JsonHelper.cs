@@ -204,6 +204,10 @@ namespace ConclusionEditor
                             fileidType = FileidType.背景音乐;
                        else if (type == 4)
                             fileidType = FileidType.动画;
+                        else if (type == 5)
+                            fileidType = FileidType.对话;
+                        else if (type == 6)
+                            fileidType = FileidType.判断对话;
                         fileid.Fileidtype = fileidType;
                         fileid.InsertByte = (int)Fileiddata[i.ToString()]["InsertByte"];
                         fileid.EndByte = (int)Fileiddata[i.ToString()]["EndByte"];
@@ -311,6 +315,54 @@ namespace ConclusionEditor
             if (File.Exists($"{path}/{Name}.txt"))
                 File.Delete($"{path}/{Name}.txt");
             File.WriteAllText($"{path}/{Name}.txt", json);
+        }
+
+
+        /// <summary>
+        /// 获取事件列表
+        /// </summary>
+        /// <returns></returns>
+        public static List<Event> JsonToEvent(string PathName)
+        {
+            string path = PathName + "/sortjson.txt";
+            List<Event> events = new List<Event>();
+            if (File.Exists(path))
+            {
+                using (StreamReader tmpReader = File.OpenText(path))
+                {
+                    string result = tmpReader.ReadToEnd();
+                    JsonData json = JsonMapper.ToObject(result);
+                    if (result != "")
+                    {
+                        for (int i = 0; i < json.Count; i++)
+                        {
+                            Event event1 = new Event();
+                            event1.EventName = json[i]["Enevt"].ToString();
+                            event1.EventPath = json[i]["PathName"].ToString();
+                            event1.Year = (int)json[i]["Year"];
+                            events.Add(event1);
+                        }
+                    }
+                }
+            }
+            return events;
+        }
+
+        public static void EventToJson(string PathName,List<Event> events)
+        {
+            string path = PathName + "/sortjson.txt";
+            JsonData jd = new JsonData();
+            for (int i = 1; i < events.Count+1; i++)
+            {
+                jd["" + i] = new JsonData();
+                jd["" + i]["PathName"] = events[i-1].EventPath;
+                jd["" + i]["Enevt"] = events[i - 1].EventName;
+                jd["" + i]["Year"] = events[i - 1].Year;
+            }
+            string json = jd.ToJson();
+            if (File.Exists(path))
+                File.Delete(path);
+            File.WriteAllText(path, json);
         }
     }
 }

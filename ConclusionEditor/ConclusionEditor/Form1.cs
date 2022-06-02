@@ -64,14 +64,15 @@ namespace ConclusionEditor
             comboBox1.Items.Add("不衔接事件");
             comboBox1.SelectedIndex = 0;
             if (textBox1.Text == "") return;
-            Dictionary<string,string> keyValues =  JsonHelper.DataRead("sortjson.txt",textBox1.Text);
-            foreach (var item in keyValues)
+            List<Event> events = JsonHelper.JsonToEvent(textBox1.Text);
+            foreach (Event e in events)
             {
                 DataRow dr = dataSet1.Tables["shijiantable"].NewRow();
-                dr[0] = item.Key;
-                dr[1] = item.Value;
+                dr[0] = e.EventName;
+                dr[1] = e.EventPath;
+                dr[2] = e.Year;
                 dataSet1.Tables["shijiantable"].Rows.Add(dr);
-                comboBox1.Items.Add(item.Key);
+                comboBox1.Items.Add(e.EventName);
             }
         }
 
@@ -131,14 +132,16 @@ namespace ConclusionEditor
                 {
                     if (MessageBox.Show("确定要删除事件吗，不可恢复呦~", "提示", MessageBoxButtons.OKCancel) == DialogResult.OK)
                     {
-                        DataGridViewRow gridView = view.Rows[e.RowIndex];
-                        string name = gridView.Cells[0].Value.ToString();
-                        string filepath = gridView.Cells[1].Value.ToString();
-                        Dictionary<string, string> keyValues = JsonHelper.DataRead("sortjson.txt", textBox1.Text);
-                        keyValues.Remove(gridView.Cells[0].Value.ToString());
-                        File.Delete(textBox1.Text + "/" + filepath + ".txt");
-                        JsonHelper.DataExport(keyValues, "sortjson", textBox1.Text);
-                        view.Rows.Remove(view.Rows[e.RowIndex]);
+                         DataRow dataRow = shijiantable.Rows[e.RowIndex];
+                        File.Delete(textBox1.Text + "/" + dataRow["lujin"] + ".txt");
+                        List<Event> events = JsonHelper.JsonToEvent(textBox1.Text);
+                        for (int i = 0; i < events.Count; i++)
+                        {
+                            if (events[i].EventPath == dataRow["lujin"].ToString())
+                                events.Remove(events[i]);
+                        }
+                        shijiantable.Rows.Remove(dataRow);
+                        JsonHelper.EventToJson(textBox1.Text,events);
                         shijiantable.AcceptChanges();
                     }
                 }
@@ -184,27 +187,51 @@ namespace ConclusionEditor
         {
             if (!Judge())
                 return;
-            Dictionary<string, string> keyValues = JsonHelper.DataRead("sortjson.txt", textBox1.Text);
-            if (keyValues.ContainsKey(textBox2.Text))//修改
+            List<Event> events = JsonHelper.JsonToEvent(textBox1.Text);
+            bool state = false;
+            string FilePath = "";
+            foreach (var item in events)
             {
-                string FileName = "";
-                if (keyValues.TryGetValue(textBox2.Text, out FileName))
+                if (item.EventName == textBox2.Text)
                 {
-                    Save(FileName);
+                    state = true;
+                    FilePath = item.EventPath;
                 }
+            }
+            if (state)//修改
+            {
+                    Save(FilePath);
                 MessageBox.Show("修改事件成功");
             }
             else
             {
                 ViewKu.CurrentCellChanged -= ViewKu_CurrentCellChanged;
-                string fileName = "";
-                fileName = "case_" + (shijiantable.Rows.Count + 1);
-                keyValues.Add(textBox2.Text, fileName);
-                JsonHelper.DataExport(keyValues, "sortjson", textBox1.Text);
-                Save(fileName);
+                Event event1 = new Event();
+                event1.EventPath = "case_" + (shijiantable.Rows.Count + 1);
+                event1.EventName = textBox2.Text;
+                int year = 0;
+                if(textBox6.Text != "")
+                    year = int.Parse(textBox6.Text);
+                else
+                {
+                    if (textBox5.Text != "")
+                    {
+                        for (int i = 0; i < shijiantable.Rows.Count; i++)
+                        {
+                            if (shijiantable.Rows[i]["ThreadName"].ToString() == comboBox1.SelectedItem.ToString())
+                                year = int.Parse(shijiantable.Rows[i]["Year"].ToString()) + int.Parse(textBox5.Text);
+                        }
+                    }
+                }
+                event1.Year = year;
+                events.Add(event1);
+                //JsonHelper.DataExport(keyValues, "sortjson", textBox1.Text);
+                JsonHelper.EventToJson(textBox1.Text,events);
+                Save(event1.EventPath);
                 DataRow dataRow = shijiantable.NewRow();
                 dataRow["ThreadName"] = textBox2.Text;
-                dataRow["lujin"] = fileName;
+                dataRow["lujin"] = event1.EventPath;
+                dataRow["Year"] = event1.Year;
                 shijiantable.Rows.Add(dataRow);
                 shijiantable.AcceptChanges();
                 ViewKu.CurrentCellChanged += ViewKu_CurrentCellChanged;

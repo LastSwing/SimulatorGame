@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 案件库
+/// 事件库
 /// </summary>
 public class Livelibrary
 {
@@ -12,94 +13,137 @@ public class Livelibrary
     /// </summary>
     public string Name { get; set; }
     /// <summary>
-    /// 难度 0简单1一般2困难
-    /// </summary>
-    public int Dard { get; set; }
-    /// <summary>
-    /// 案发经过
+    /// 事件介绍
     /// </summary>
     public string Lifetime { get; set; }
     /// <summary>
-    /// 线索
+    /// 角色
     /// </summary>
-    public Dictionary<int, string> Lifetimes { get; set; }
+    public string Role { get; set; }
     /// <summary>
-    /// 使用大刑伺候犯人对每种线索的描述
+    /// 衔接事件
     /// </summary>
-    public Dictionary<int, string> Lifetimetrue { get; set; }
+    public string JoinName { get; set; }
     /// <summary>
-    /// 犯人证词
+    /// 年份时长
     /// </summary>
-    public Dictionary<int, string> Stestimony { get; set; }
+    public int YearDuration { get; set; }
     /// <summary>
-    /// 判官证词
+    /// 衔接年份时长-上个事件发生后多久再发生本事件
     /// </summary>
-    public Dictionary<int, string> Jtestimony { get; set; }
+    public int YearJoin { get; set; }
     /// <summary>
-    /// 犯人对每种结果的描述
+    /// 发生年份-填了衔接年份可不用填此项
     /// </summary>
-    public Dictionary<int,string> Sdescribed { get; set; }
+    public int Year { get; set; }
     /// <summary>
-    /// 判官对每种结果的描述
+    /// 对话 Dictionary<父ID,Dictionary<己ID, 角色|对话>>
     /// </summary>
-    public Dictionary<int, string> Jdescribed { get; set; }
+    public Dictionary<Guid, Dictionary<Guid, string>> Dialogue { get; set; }
     /// <summary>
-    /// 系统对每种结果的描述
+    /// 结局年份展示文字
     /// </summary>
-    public Dictionary<int, string> Pdescribed { get; set; }
+    public Dictionary<string, List<Ending>> Ending { get; set; }
     /// <summary>
-    /// 正确答案 ；分割0入狱1流放2当庭释放；服刑多少年
+    /// 对话绑定,选择,BGM,动画,字段,结局
     /// </summary>
-    public string Correct { get; set; }
+    public List<Fileid> Fileid { get; set; }
+}
+/// <summary>
+/// 结局类
+/// </summary>
+public class Ending
+{
+    /// <summary>
+    /// 绑定结局ID
+    /// </summary>
+    public Guid PGuid { get; set; }
+    /// <summary>
+    /// 主ID
+    /// </summary>
+    public Guid CGuid { get; set; }
+    /// <summary>
+    /// 星币
+    /// </summary>
+    public int Stellar { get; set; }
+    /// <summary>
+    /// 星力
+    /// </summary>
+    public int Stars { get; set; }
+    /// <summary>
+    /// 生产力
+    /// </summary>
+    public int Productivity { get; set; }
+    /// <summary>
+    /// 发生年份+描述
+    /// </summary>
+    public int Vintage { get; set; }
+    /// <summary>
+    /// 发生描述
+    /// </summary>
+    public string Result { get; set; }
+}
 
-    public Livelibrary(Dictionary<string,string> keyValues)
-    {
-        foreach (var item in keyValues)
-        {
-            string[] str = item.Value.Split('；');
-            switch (item.Key)
-            {
-                case "Lifetime":
-                    Lifetime = item.Value;
-                    break;
-                case "Lifetimes":
-                    for (int i = 0; i < str.Length; i++)
-                        Lifetimes.Add(i,str[i]);
-                    break;
-                case "Jtestimony":
-                    for (int i = 0; i < str.Length; i++)
-                        Jtestimony.Add(i, str[i]);
-                    break;
-                case "Name":
-                    Name = item.Value;
-                    break;
-                case "Dard":
-                    Dard = item.Value == "简单" ? 0 : item.Value == "一般" ? 1 : 2;
-                    break;
-                case "Lifetimetrue":
-                    for (int i = 0; i < str.Length; i++)
-                        Lifetimetrue.Add(i, str[i]);
-                    break;
-                case "Stestimony":
-                    for (int i = 0; i < str.Length; i++)
-                        Stestimony.Add(i, str[i]);
-                    break;
-                case "Sdescribed":
-                    for (int i = 0; i < str.Length; i++)
-                        Sdescribed.Add(i, str[i]);
-                    break;
-                case "Jdescribed":
-                    for (int i = 0; i < str.Length; i++)
-                        Jdescribed.Add(i, str[i]);
-                    break;
-                case "Correct":
-                    Correct = item.Value;
-                    break;
-            }
-        }
-        Pdescribed.Add(0, "量刑过少，无法对犯人足够的惩戒。");
-        Pdescribed.Add(1, "量刑过重，无法公正对待每一个犯人。");
-        Pdescribed.Add(2, "不经严谨论证，便草菅人命，忘记了为官造福百姓的初心。");
-        Pdescribed.Add(3, "有罪则罚，孰能放任之？");
-    }
+/// <summary>
+/// 事件列表
+/// </summary>
+public class Event
+{
+    /// <summary>
+    /// 事件名称
+    /// </summary>
+    public string EventName { get; set; }
+    /// <summary>
+    /// 事件路径
+    /// </summary>
+    public string EventPath { get; set; }
+    /// <summary>
+    /// 发生年份
+    /// </summary>
+    public int Year { get; set; }
+}
+
+/// <summary>
+/// 绑定类
+/// </summary>
+public class Fileid
+{
+    /// <summary>
+    /// 字段ID
+    /// </summary>
+    public Guid Id { get; set; }
+    /// <summary>
+    /// 父项ID
+    /// </summary>
+    public Guid ParentId { get; set; }
+    /// <summary>
+    /// 类型
+    /// </summary>
+    public FileidType Fileidtype { get; set; }
+    /// <summary>
+    /// 开始字节
+    /// </summary>
+    public int InsertByte { get; set; }
+    /// <summary>
+    /// 结束字节
+    /// </summary>
+    public int EndByte { get; set; }
+    /// <summary>
+    /// 字段集
+    /// </summary>
+    public string[] Fileids { get; set; }
+    /// <summary>
+    /// 路径名-选择项
+    /// </summary>
+    public string PathName { get; set; }
+}
+public enum FileidType
+{
+    选择 = 0,
+    字段 = 1,
+    结局 = 2,
+    背景音乐 = 3,
+    动画 = 4,
+    对话 = 5,
+    判断对话 = 6
 }

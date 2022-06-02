@@ -30,22 +30,27 @@ namespace ConclusionEditor
             {
                 if (item.ParentId == Guid)
                 {
+                    if (item.Fileidtype.ToString() == "")
+                        continue;
                     switch (item.Fileidtype)
                     {
                         case FileidType.选择:
                             label6.Text = label6.Text == "无"?"1":(Convert.ToInt32(label6.Text)+1).ToString();
                             break;
                         case FileidType.字段:
-                            label7.Text = label6.Text == "无" ? "1" : (Convert.ToInt32(label6.Text) + 1).ToString();
+                            label7.Text = label7.Text == "无" ? "1" : (Convert.ToInt32(label7.Text) + 1).ToString();
                             break;
                         case FileidType.结局:
-                            label8.Text = label6.Text == "无" ? "1" : (Convert.ToInt32(label6.Text) + 1).ToString();
+                            label8.Text = label8.Text == "无" ? "1" : (Convert.ToInt32(label8.Text) + 1).ToString();
                             break;
                         case FileidType.背景音乐:
-                            label9.Text = label6.Text == "无" ? "1" : (Convert.ToInt32(label6.Text) + 1).ToString();
+                            label9.Text = label9.Text == "无" ? "1" : (Convert.ToInt32(label9.Text) + 1).ToString();
                             break;
                         case FileidType.动画:
-                            label10.Text = label6.Text == "无" ? "1" : (Convert.ToInt32(label6.Text) + 1).ToString();
+                            label10.Text = label10.Text == "无" ? "1" : (Convert.ToInt32(label10.Text) + 1).ToString();
+                            break;
+                        case FileidType.判断对话:
+                            label12.Text = label12.Text == "无" ? "1" : (Convert.ToInt32(label12.Text) + 1).ToString();
                             break;
                         default:
                             break;
