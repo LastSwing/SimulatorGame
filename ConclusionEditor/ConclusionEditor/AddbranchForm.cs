@@ -110,5 +110,39 @@ namespace ConclusionEditor
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            if (duihuaDic == null)
+            {
+                duihuaDic = new Dictionary<Guid, Dictionary<Guid, string>>();
+            }
+            if (fileid == null)
+            {
+                fileid = new List<Fileid>();
+            }
+            bool aa = false;
+            foreach (var item in fileid)
+            {
+                if (item.ParentId == Guid && item.Fileidtype == FileidType.字段)
+                {
+                    Guid = item.Id;
+                    aa = true;
+                }
+            }
+            if (aa)
+            {
+                SelectForm selectForm = new SelectForm(Guid, JueseTable, duihuaDic, fileid, jiejuTable);
+                selectForm.ShowDialog();
+                if (selectForm.DialogResult == DialogResult.OK)
+                {
+                    duihuaDic = selectForm.duihuaDic;
+                    fileid = selectForm.fileids;
+                    Closes();
+                }
+            }
+            else
+                MessageBox.Show("先添加字段对话！");
+        }
     }
 }

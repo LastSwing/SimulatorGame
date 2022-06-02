@@ -15,7 +15,6 @@ namespace ConclusionEditor
         public FleidInputForm(string duihua,Guid guid, List<Fileid> fileids)
         {
             InitializeComponent();
-            textBox1.Text = duihua;
             Guid = guid;
             fleids = fileids;
         }
@@ -80,6 +79,7 @@ namespace ConclusionEditor
                         dr["xuanzexiang"] = str;
                         dataTable1.Rows.Add(dr);
                     }
+                    textBox1.Text = item.PathName;
                     textBox2.Text = item.InsertByte.ToString();
                 }
             }

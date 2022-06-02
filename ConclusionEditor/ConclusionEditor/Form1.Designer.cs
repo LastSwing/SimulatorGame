@@ -29,10 +29,10 @@
         private void InitializeComponent()
         {
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.label3 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
@@ -71,6 +71,8 @@
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.dataGridView4 = new System.Windows.Forms.DataGridView();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewButtonColumn3 = new System.Windows.Forms.DataGridViewButtonColumn();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.dataGridView3 = new System.Windows.Forms.DataGridView();
             this.tabControl2 = new System.Windows.Forms.TabControl();
@@ -81,13 +83,14 @@
             this.label10 = new System.Windows.Forms.Label();
             this.textBox6 = new System.Windows.Forms.TextBox();
             this.button3 = new System.Windows.Forms.Button();
+            this.jiejuDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.guidDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column7 = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.Column8 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Add = new System.Windows.Forms.DataGridViewButtonColumn();
             this.Column10 = new System.Windows.Forms.DataGridViewButtonColumn();
             this.zhi = new System.Windows.Forms.DataGridViewButtonColumn();
-            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewButtonColumn3 = new System.Windows.Forms.DataGridViewButtonColumn();
+            this.dataColumn9 = new System.Data.DataColumn();
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Column6 = new System.Windows.Forms.DataGridViewButtonColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet1)).BeginInit();
@@ -151,7 +154,8 @@
             // 
             this.shijiantable.Columns.AddRange(new System.Data.DataColumn[] {
             this.dataColumn1,
-            this.dataColumn2});
+            this.dataColumn2,
+            this.dataColumn9});
             this.shijiantable.TableName = "shijiantable";
             // 
             // dataColumn1
@@ -448,7 +452,9 @@
             this.dataGridView4.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView4.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.dataGridViewTextBoxColumn1,
-            this.dataGridViewButtonColumn3});
+            this.dataGridViewButtonColumn3,
+            this.jiejuDataGridViewTextBoxColumn,
+            this.guidDataGridViewTextBoxColumn});
             this.dataGridView4.DataMember = "jiejutable";
             this.dataGridView4.DataSource = this.dataSet1;
             this.dataGridView4.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -460,6 +466,22 @@
             this.dataGridView4.Size = new System.Drawing.Size(765, 152);
             this.dataGridView4.TabIndex = 1;
             this.dataGridView4.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "jieju";
+            this.dataGridViewTextBoxColumn1.HeaderText = "结局";
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.Width = 725;
+            // 
+            // dataGridViewButtonColumn3
+            // 
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle3.NullValue = "-";
+            this.dataGridViewButtonColumn3.DefaultCellStyle = dataGridViewCellStyle3;
+            this.dataGridViewButtonColumn3.HeaderText = "删";
+            this.dataGridViewButtonColumn3.Name = "dataGridViewButtonColumn3";
+            this.dataGridViewButtonColumn3.Width = 35;
             // 
             // tabPage1
             // 
@@ -571,6 +593,18 @@
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
+            // jiejuDataGridViewTextBoxColumn
+            // 
+            this.jiejuDataGridViewTextBoxColumn.DataPropertyName = "jieju";
+            this.jiejuDataGridViewTextBoxColumn.HeaderText = "jieju";
+            this.jiejuDataGridViewTextBoxColumn.Name = "jiejuDataGridViewTextBoxColumn";
+            // 
+            // guidDataGridViewTextBoxColumn
+            // 
+            this.guidDataGridViewTextBoxColumn.DataPropertyName = "Guid";
+            this.guidDataGridViewTextBoxColumn.HeaderText = "Guid";
+            this.guidDataGridViewTextBoxColumn.Name = "guidDataGridViewTextBoxColumn";
+            // 
             // Column7
             // 
             this.Column7.DataPropertyName = "juese";
@@ -620,21 +654,10 @@
             this.zhi.Text = "";
             this.zhi.Width = 50;
             // 
-            // dataGridViewTextBoxColumn1
+            // dataColumn9
             // 
-            this.dataGridViewTextBoxColumn1.DataPropertyName = "jieju";
-            this.dataGridViewTextBoxColumn1.HeaderText = "结局";
-            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            this.dataGridViewTextBoxColumn1.Width = 725;
-            // 
-            // dataGridViewButtonColumn3
-            // 
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.NullValue = "-";
-            this.dataGridViewButtonColumn3.DefaultCellStyle = dataGridViewCellStyle3;
-            this.dataGridViewButtonColumn3.HeaderText = "删";
-            this.dataGridViewButtonColumn3.Name = "dataGridViewButtonColumn3";
-            this.dataGridViewButtonColumn3.Width = 35;
+            this.dataColumn9.ColumnName = "Year";
+            this.dataColumn9.DataType = typeof(int);
             // 
             // Column4
             // 
@@ -760,15 +783,18 @@
         private System.Data.DataColumn dataColumn6;
         private System.Data.DataColumn dataColumn7;
         private System.Windows.Forms.TabControl tabControl1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
-        private System.Windows.Forms.DataGridViewButtonColumn Column6;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private System.Windows.Forms.DataGridViewButtonColumn dataGridViewButtonColumn3;
+        private System.Windows.Forms.DataGridViewTextBoxColumn jiejuDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn guidDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewComboBoxColumn Column7;
         private System.Windows.Forms.DataGridViewTextBoxColumn Column8;
         private System.Windows.Forms.DataGridViewButtonColumn Add;
         private System.Windows.Forms.DataGridViewButtonColumn Column10;
         private System.Windows.Forms.DataGridViewButtonColumn zhi;
+        private System.Data.DataColumn dataColumn9;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
+        private System.Windows.Forms.DataGridViewButtonColumn Column6;
     }
 }
 
