@@ -3,6 +3,7 @@ using Assets.Scripts.Tools;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,18 +12,17 @@ using UnityEngine.UI;
 
 public class MapScene : MonoBehaviour
 {
-    public static MapScene instance = null;
     Image img_map, img_Boss_Head, img_Player_Head, img_Init, Player_Head_Hp;
-    Text txt_Player_Head_Hp;
-    Button btn_GameStart;
-    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj;
+    Text txt_CardPoolsCount, txt_Player_Head_Hp;
+    Button btn_GameStart, btn_Return, btn_CardPoolsReturn;
+    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, CardPools_Obj;
 
     int OneUnitCount;
     int MapRow = 1;
     int OneRowY = -1640;
     int OnePathY = -1520;
     int PreviousType = 1;//上一张地图的类型
-    bool MoveUpState, MoveTopState, MapCraeteSate, MoveTopOneUnitState;
+    bool MoveUpState, MoveTopState, MoveTopOneUnitState, CreateMapState;
     List<int> ListPreviousRow = new List<int>() { 1 };//上一行模块的数量
     CurrentMapLocation mapLocation;
     /// <summary>
@@ -33,6 +33,9 @@ public class MapScene : MonoBehaviour
     CurrentRoleModel PlayerRole;
     GlobalPlayerModel GlobalRole;
 
+    List<MapCombatPoint> listCombatPoint;
+    List<MapPath> listPath;
+
     #region 地图移动
     private Vector2 first = Vector2.zero;//鼠标第一次落下点
     private Vector2 second = Vector2.zero;//鼠标第二次位置（拖拽位置）
@@ -41,15 +44,9 @@ public class MapScene : MonoBehaviour
     private bool IsNeedMove = false;//是否需要移动 
     #endregion
 
-    void Awake()
-    {
-        if (instance == null) { instance = this; }          //为这个类创建实例
-        else if (instance != this) { Destroy(gameObject); } //保证这个实例的唯一性
-        DontDestroyOnLoad(gameObject);                      //加载场景时不摧毁
-    }
-
     void Start()
     {
+        #region 控件初始化
         img_map = transform.Find("Map/img_map").GetComponent<Image>();
         img_Init = transform.Find("Map/img_map/Map_Row0/Atk_img0").GetComponent<Image>();
         InitPos = img_map.transform.position;
@@ -62,6 +59,11 @@ public class MapScene : MonoBehaviour
         img_Player_Head = transform.Find("Map/Suspension_Player/img_Round/img_Head").GetComponent<Image>();
         Suspension_Boss_obj = transform.Find("Map/Suspension_Boss").gameObject;
         Suspension_Player_obj = transform.Find("Map/Suspension_Player").gameObject;
+        Setting_Canvas = GameObject.Find("SettingCanvas");
+        CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
+        txt_CardPoolsCount = transform.Find("Map/CardPools_Obj/Image/Text").GetComponent<Text>();
+        txt_CardPoolsCount.text = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName)?.Count.ToString();
+        #endregion
 
         #region 数据初始化
         var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom();//ailevel==boss等级
@@ -72,14 +74,6 @@ public class MapScene : MonoBehaviour
         //txt_Player_Head_Hp.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
         //Common.HPImageChange(Player_Head_Hp, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0, 150);
 
-        mapLocation = new CurrentMapLocation();
-        mapLocation.Column = 0;
-        mapLocation.Row = 0;
-        mapLocation.CurrentImgUrl = $"Images/Map_Atk{Random.Range(0, 4)}";
-        if (mapLocation.Row == 0 && mapLocation.Column == 0)
-        {
-            Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Init);
-        }
         Common.ImageBind(CurrentAiModel.HeadPortraitUrl, img_Boss_Head);
         Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Player_Head);
         #endregion
@@ -105,6 +99,7 @@ public class MapScene : MonoBehaviour
         entry1.callback.AddListener(delegate { Suspension_PayerClick(); });
         trigger1.triggers.Add(entry1);
         #endregion
+
         #region 地图点击隐藏title
         EventTrigger trigger2 = img_map.GetComponent<EventTrigger>();
         if (trigger2 == null)
@@ -117,6 +112,10 @@ public class MapScene : MonoBehaviour
         #endregion
 
         #region 设置按钮点击事件
+        btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
+        btn_Return.onClick.AddListener(ReturnScene);
+        Setting_Canvas.SetActive(false);
+
         Setting_Obj = transform.Find("Map/TopBar/Setting").gameObject;
         EventTrigger trigger3 = Setting_Obj.GetComponent<EventTrigger>();
         if (trigger3 == null)
@@ -127,6 +126,24 @@ public class MapScene : MonoBehaviour
         entry3.callback.AddListener(delegate { SettingClick(); });
         trigger3.triggers.Add(entry3);
         #endregion
+
+        #region 卡池按钮点击事件
+        btn_CardPoolsReturn = GameObject.Find("CardPoolsCanvas/Button").GetComponent<Button>();
+        btn_CardPoolsReturn.onClick.AddListener(ReturnScene);
+        CardPoolsCanvas.SetActive(false);
+
+        CardPools_Obj = transform.Find("Map/CardPools_Obj").gameObject;
+        EventTrigger trigger4 = CardPools_Obj.GetComponent<EventTrigger>();
+        if (trigger4 == null)
+        {
+            trigger4 = CardPools_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry4 = new EventTrigger.Entry();
+        entry4.callback.AddListener(delegate { SettingClick(2); });
+        trigger4.triggers.Add(entry4);
+        #endregion
+
+        MapInit();
     }
 
     public void OnGUI()
@@ -151,7 +168,6 @@ public class MapScene : MonoBehaviour
             IsNeedMove = false;
         }
         #endregion
-
     }
 
     void Update()
@@ -233,35 +249,639 @@ public class MapScene : MonoBehaviour
         #endregion
 
         #region 地图生成
-        //第一行玩家
-        if (MapRow < 13)
+        if (CreateMapState)
         {
-            CreateMap(0);
-        }
-        else
-        {
-            MapCraeteSate = true;
-        }
-        //boss
-        if (MapRow == 13)
-        {
-            CreateMap(99);
-        }
-        //boss
-        if (MapRow == 12)
-        {
-            CreateMap(1);
+            //第一行玩家
+            if (MapRow < 13)
+            {
+                CreateMap(0);
+            }
+            //boss
+            if (MapRow == 13)
+            {
+                CreateMap(99);
+            }
+            //boss
+            if (MapRow == 12)
+            {
+                CreateMap(1);
+            }
         }
         #endregion
 
-        if (MapCraeteSate)
-        {
+    }
 
+    void MapInit()
+    {
+        listCombatPoint = Common.GetTxtFileToList<MapCombatPoint>(GlobalAttr.CurrentMapCombatPointFileName, "Map");
+        listPath = Common.GetTxtFileToList<MapPath>(GlobalAttr.CurrentMapPathFileName, "Map");
+        mapLocation = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
+        if (listCombatPoint?.Count > 0)
+        {
+            var map_Row0 = transform.Find("Map/img_map/Map_Row0").gameObject;
+            DestroyImmediate(map_Row0);
+            //map_Row0.SetActive(false);
+            //读取地图
+            ReadMap();
+            ReadPath();
+            //头像绑定
+            var map_Player_Head = transform.Find($"Map/img_map/Map_Row{mapLocation.Row}").gameObject;
+            for (int i = 0; i < map_Player_Head?.transform.childCount; i++)
+            {
+                if (i == mapLocation.Column)
+                {
+                    var child = map_Player_Head.transform.GetChild(mapLocation.Column).GetComponent<Image>();
+                    Common.ImageBind(PlayerRole.HeadPortraitUrl, child);
+                }
+            }
+            //地图初始位置
+            img_map.transform.position = new Vector3(InitPos.x, 1880 - (mapLocation.Row) * 240, 0);
+        }
+        else
+        {
+            listCombatPoint = new List<MapCombatPoint>();
+            listPath = new List<MapPath>();
+            mapLocation = new CurrentMapLocation();//生成地图
+            mapLocation.Column = 0;
+            mapLocation.Row = 0;
+            mapLocation.CurrentImgUrl = $"Images/Map_Atk{Random.Range(0, 4)}";
+            Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName, "Map");
+            listCombatPoint.Add(new MapCombatPoint
+            {
+                Row = 0,
+                Column = 0,
+                Name = "Atk_img0",
+                Url = mapLocation.CurrentImgUrl,
+                Type = 1
+            });
+            Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Init);
+            CreateMapState = true;
+        }
+    }
+
+    #region 地图读取
+
+    /// <summary>
+    /// 读取地图
+    /// </summary>
+    public void ReadMap()
+    {
+        var listRow = listCombatPoint.GroupBy(a => a.Row).ToList();
+        foreach (var item in listRow)
+        {
+            if (item.Key == 13)
+            {
+                //图片生成
+                GameObject Atkimg = Resources.Load("Prefab/Map/Map_Atk_img") as GameObject;
+                Atkimg = Common.AddChild(img_map.transform, Atkimg);
+                var column = item.ToList()[0];
+                Atkimg.name = column.Name;
+                Atkimg.transform.localPosition = new Vector2(0, OneRowY + item.Key * 240 + 70);
+                var tempImg = img_map.transform.Find(column.Name).GetComponent<Image>();
+                var rect = img_map.transform.Find(column.Name).GetComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(500, 250);
+                Common.ImageBind(column.Url, tempImg);
+
+                #region 添加头像
+                GameObject img_head = Resources.Load("Prefab/Map/Map_Head_Box") as GameObject;
+                img_head = Common.AddChild(Atkimg.transform, img_head);
+                img_head.name = "Map_Head_Box";
+                var tempHead = Atkimg.transform.Find($"Map_Head_Box/img_Round/img_Head").GetComponent<Image>();
+
+                Common.ImageBind(CurrentAiModel.HeadPortraitUrl, tempHead);
+                #endregion
+
+                #region 点击事件
+                EventTrigger trigger2 = Atkimg.GetComponent<EventTrigger>();
+                if (trigger2 == null)
+                {
+                    trigger2 = Atkimg.AddComponent<EventTrigger>();
+                }
+                EventTrigger.Entry entry2 = new EventTrigger.Entry();
+                int currentRow = item.Key;
+                entry2.callback.AddListener(delegate { MapAtkImgClick(column.Type, 0, Atkimg, column.Row, column.Url); });
+                trigger2.triggers.Add(entry2);
+                #endregion
+            }
+            else
+            {
+                GameObject tempObject = Resources.Load("Prefab/Map/Map_Row") as GameObject;
+                tempObject = Common.AddChild(img_map.transform, tempObject);
+                tempObject.name = "Map_Row" + item.Key;
+                tempObject.transform.localPosition = new Vector2(0, OneRowY + item.Key * 240);
+                var listColumn = item.ToList();
+                foreach (var column in listColumn)
+                {
+                    //图片生成
+                    GameObject Atkimg = Resources.Load("Prefab/Map/Map_Atk_img") as GameObject;
+                    Atkimg = Common.AddChild(tempObject.transform, Atkimg);
+                    Atkimg.name = column.Name;
+                    var tempImg = tempObject.transform.Find(column.Name).GetComponent<Image>();
+                    Common.ImageBind(column.Url, tempImg);
+                    #region 点击事件
+                    EventTrigger trigger2 = Atkimg.GetComponent<EventTrigger>();
+                    if (trigger2 == null)
+                    {
+                        trigger2 = Atkimg.AddComponent<EventTrigger>();
+                    }
+                    EventTrigger.Entry entry2 = new EventTrigger.Entry();
+                    entry2.callback.AddListener(delegate { MapAtkImgClick(column.Type, column.Type == 1 ? System.Convert.ToInt32(column.Name.Substring(7)) : 0, Atkimg, column.Row, column.Url); });
+                    trigger2.triggers.Add(entry2);
+                    #endregion
+                }
+            }
         }
     }
 
     /// <summary>
-    /// 生成地图行
+    /// 路线读取
+    /// </summary>
+    public void ReadPath()
+    {
+        foreach (var row in listPath)
+        {
+            GameObject tempObject = Resources.Load($"Prefab/Map/Path_NullObj") as GameObject;
+            tempObject = Common.AddChild(img_map.transform, tempObject);
+            tempObject.name = $"Path_{row.Row}";
+            tempObject.transform.localPosition = new Vector2(0, OnePathY + (row.Row - 1) * 240);
+            tempObject.transform.SetAsFirstSibling();
+
+            //row.Row _初始位置_线对应的模块
+            if (row.PreviousRow == 1)
+            {
+                if (row.CurrentRow == 2)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj1.transform.localPosition = new Vector2(-62, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.localPosition = new Vector2(62, 0);
+                    obj2.transform.name = $"img_{row.Row}_0_1";
+                }
+                if (row.CurrentRow == 3)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj1.transform.localPosition = new Vector2(-124, -24);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.localPosition = new Vector2(0, -6);
+                    obj2.transform.name = $"img_{row.Row}_0_1";
+                    obj3.transform.localPosition = new Vector2(124, -24);
+                    obj3.transform.name = $"img_{row.Row}_0_2";
+                }
+                if (row.CurrentRow == 4)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_3") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_3_y") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj1.transform.localPosition = new Vector2(-186, -24);
+                    obj2.transform.localPosition = new Vector2(-62, 0);
+                    obj3.transform.localPosition = new Vector2(62, 0);
+                    obj4.transform.localPosition = new Vector2(186, -24);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.name = $"img_{row.Row}_0_1";
+                    obj3.transform.name = $"img_{row.Row}_0_2";
+                    obj4.transform.name = $"img_{row.Row}_0_3";
+                }
+            }
+            else if (row.PreviousRow == 2)
+            {
+                if (row.CurrentRow == 1)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1_xy") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj1.transform.localPosition = new Vector2(-62, 0);
+                    obj2.transform.localPosition = new Vector2(62, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.name = $"img_{row.Row}_1_0";
+                }
+                if (row.CurrentRow == 2)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_0_y") as GameObject;
+                    var random = row.RandomNum;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj1.transform.localPosition = new Vector2(-100, 0);
+                    obj2.transform.localPosition = new Vector2(100, 0);
+                    obj3.transform.localPosition = new Vector2(0, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.name = $"img_{row.Row}_1_1";
+                    obj3.transform.name = $"img_{row.Row}_{(random == 0 ? "1" : "0")}_{random}";
+                }
+                if (row.CurrentRow == 3)
+                {
+                    var random = row.RandomNum;//1不带y，0带y
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj1.transform.localPosition = new Vector2(-176, 0);
+                    obj2.transform.localPosition = new Vector2(random == 0 ? -40 : 40, 0);
+                    obj3.transform.localPosition = new Vector2(176, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj3.transform.name = $"img_{row.Row}_1_2";
+                    obj2.transform.name = $"img_{row.Row}_{random}_1";
+                }
+                if (row.CurrentRow == 4)
+                {
+                    int random = row.RandomNum;
+                    if (random == 0)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj1.transform.localPosition = new Vector2(-230, -5);
+                        obj2.transform.localPosition = new Vector2(-105, -5);
+                        obj3.transform.localPosition = new Vector2(0, -5);
+                        obj4.transform.localPosition = new Vector2(230, -5);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_0_1";
+                        obj3.transform.name = $"img_{row.Row}_0_2";
+                        obj4.transform.name = $"img_{row.Row}_1_3";
+                    }
+                    else if (random == 1)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj1.transform.localPosition = new Vector2(-230, -5);
+                        obj2.transform.localPosition = new Vector2(0, -5);
+                        obj3.transform.localPosition = new Vector2(120, -5);
+                        obj4.transform.localPosition = new Vector2(230, -5);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_1_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_1_3";
+                    }
+                    else if (random == 2)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_0_y") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj1.transform.localPosition = new Vector2(-230, -5);
+                        obj2.transform.localPosition = new Vector2(-105, -5);
+                        obj3.transform.localPosition = new Vector2(105, -5);
+                        obj4.transform.localPosition = new Vector2(230, -5);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_0_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_1_3";
+                    }
+                }
+            }
+            else if (row.PreviousRow == 3)
+            {
+                if (row.CurrentRow == 1)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj1.transform.localPosition = new Vector2(-133, 14);
+                    obj2.transform.localPosition = new Vector2(18, 0);
+                    obj3.transform.localPosition = new Vector2(133, 14);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.name = $"img_{row.Row}_1_0";
+                    obj3.transform.name = $"img_{row.Row}_2_0";
+                }
+                if (row.CurrentRow == 2)
+                {
+                    var random = row.RandomNum;
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    switch (random)
+                    {
+                        case 1:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj2.transform.localPosition = new Vector2(-45, 6);
+                            obj2.transform.name = $"img_{row.Row}_1_0";
+                            break;
+                        case 2:
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj3.transform.localPosition = new Vector2(66, 6);
+                            obj3.transform.name = $"img_{row.Row}_1_1";
+                            break;
+                        default:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj2.transform.localPosition = new Vector2(-45, 6);
+                            obj3.transform.localPosition = new Vector2(66, 6);
+                            obj2.transform.name = $"img_{row.Row}_1_0";
+                            obj3.transform.name = $"img_{row.Row}_1_1";
+                            break;
+                    }
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj1.transform.localPosition = new Vector2(-156, 6);
+                    obj4.transform.localPosition = new Vector2(174, 6);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj4.transform.name = $"img_{row.Row}_2_1";
+                }
+                if (row.CurrentRow == 3)
+                {
+                    var random = row.RandomNum;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    switch (random)
+                    {
+                        case 0:
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj3.transform.localPosition = new Vector2(107, 0);
+                            obj3.transform.name = $"img_{row.Row}_1_2";
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj2.transform.localPosition = new Vector2(-105, 0);
+                            obj2.transform.name = $"img_{row.Row}_0_1";
+                            break;
+                        case 1:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj2.transform.localPosition = new Vector2(-105, 0);
+                            obj2.transform.name = $"img_{row.Row}_0_1";
+
+                            var obj6 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                            obj6 = Common.AddChild(tempObject.transform, obj6);
+                            obj6.transform.localPosition = new Vector2(20, 0);
+                            obj6.transform.name = $"img_{row.Row}_1_1";
+                            break;
+                        case 2:
+                            var obj5 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                            obj5 = Common.AddChild(tempObject.transform, obj5);
+                            obj5.transform.localPosition = new Vector2(20, 0);
+                            obj5.transform.name = $"img_{row.Row}_1_1";
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj2.transform.localPosition = new Vector2(-105, 0);
+                            obj2.transform.name = $"img_{row.Row}_0_1";
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj3.transform.localPosition = new Vector2(107, 0);
+                            obj3.transform.name = $"img_{row.Row}_1_2";
+                            break;
+                        default:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj2.transform.localPosition = new Vector2(-105, 0);
+                            obj2.transform.name = $"img_{row.Row}_0_1";
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj3.transform.localPosition = new Vector2(107, 0);
+                            obj3.transform.name = $"img_{row.Row}_1_2";
+                            break;
+                    }
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj1.transform.localPosition = new Vector2(-214, 0);
+                    obj4.transform.localPosition = new Vector2(237, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj4.transform.name = $"img_{row.Row}_2_2";
+                }
+                if (row.CurrentRow == 4)
+                {
+                    int random = row.RandomNum;
+                    if (random == 0)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj1.transform.localPosition = new Vector2(-285, 0);
+                        obj2.transform.localPosition = new Vector2(-143, 0);
+                        obj3.transform.localPosition = new Vector2(63, 0);
+                        obj4.transform.localPosition = new Vector2(280, 0);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_0_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_2_3";
+                    }
+                    else if (random == 1)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_1_xy") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj1.transform.localPosition = new Vector2(-285, 0);
+                        obj2.transform.localPosition = new Vector2(-63, 0);
+                        obj3.transform.localPosition = new Vector2(63, 0);
+                        obj4.transform.localPosition = new Vector2(280, 0);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_1_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_2_3";
+                    }
+                    else if (random == 2)
+                    {
+                        var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                        var obj2 = Resources.Load($"Prefab/Map/Path_img_1_xy") as GameObject;
+                        var obj3 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        var obj4 = Resources.Load($"Prefab/Map/Path_img_1_x") as GameObject;
+                        var obj5 = Resources.Load($"Prefab/Map/Path_img_1_xy") as GameObject;
+                        obj1 = Common.AddChild(tempObject.transform, obj1);
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj3 = Common.AddChild(tempObject.transform, obj3);
+                        obj4 = Common.AddChild(tempObject.transform, obj4);
+                        obj5 = Common.AddChild(tempObject.transform, obj5);
+                        obj1.transform.localPosition = new Vector2(-285, 0);
+                        obj2.transform.localPosition = new Vector2(-63, 0);
+                        obj3.transform.localPosition = new Vector2(63, 0);
+                        obj4.transform.localPosition = new Vector2(280, 0);
+                        obj5.transform.localPosition = new Vector2(175, 0);
+                        obj1.transform.name = $"img_{row.Row}_0_0";
+                        obj2.transform.name = $"img_{row.Row}_1_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_2_3";
+                        obj5.transform.name = $"img_{row.Row}_2_2";
+                    }
+                }
+            }
+            else if (row.PreviousRow == 4)
+            {
+                if (row.CurrentRow == 1)
+                {
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_3_y") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_3") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj1.transform.localPosition = new Vector2(-205, -6);
+                    obj2.transform.localPosition = new Vector2(-65, 0);
+                    obj3.transform.localPosition = new Vector2(47, 14);
+                    obj4.transform.localPosition = new Vector2(219, -6);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj2.transform.name = $"img_{row.Row}_1_0";
+                    obj3.transform.name = $"img_{row.Row}_2_0";
+                    obj4.transform.name = $"img_{row.Row}_3_0";
+                }
+                if (row.CurrentRow == 2)
+                {
+                    var random = row.RandomNum;
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
+                    var obj5 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj6 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
+                    switch (random)
+                    {
+                        case 0:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj2.transform.localPosition = new Vector2(-100, 0);
+                            obj3.transform.localPosition = new Vector2(0, 0);
+                            obj2.transform.name = $"img_{row.Row}_1_0";
+                            obj3.transform.name = $"img_{row.Row}_2_0";
+                            break;
+                        case 1:
+                            obj4 = Common.AddChild(tempObject.transform, obj4);
+                            obj5 = Common.AddChild(tempObject.transform, obj5);
+                            obj4.transform.localPosition = new Vector2(0, 0);
+                            obj5.transform.localPosition = new Vector2(124, 0);
+                            obj4.transform.name = $"img_{row.Row}_1_1";
+                            obj5.transform.name = $"img_{row.Row}_2_1";
+                            break;
+                        case 2:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj3 = Common.AddChild(tempObject.transform, obj3);
+                            obj5 = Common.AddChild(tempObject.transform, obj5);
+                            obj2.transform.localPosition = new Vector2(-100, 0);
+                            obj3.transform.localPosition = new Vector2(0, 0);
+                            obj5.transform.localPosition = new Vector2(124, 0);
+                            obj2.transform.name = $"img_{row.Row}_1_0";
+                            obj3.transform.name = $"img_{row.Row}_2_0";
+                            obj5.transform.name = $"img_{row.Row}_2_1";
+                            break;
+                        case 3:
+                            obj2 = Common.AddChild(tempObject.transform, obj2);
+                            obj4 = Common.AddChild(tempObject.transform, obj4);
+                            obj5 = Common.AddChild(tempObject.transform, obj5);
+                            obj2.transform.localPosition = new Vector2(-100, 0);
+                            obj4.transform.localPosition = new Vector2(0, 0);
+                            obj5.transform.localPosition = new Vector2(124, 0);
+                            obj2.transform.name = $"img_{row.Row}_1_0";
+                            obj4.transform.name = $"img_{row.Row}_1_1";
+                            obj5.transform.name = $"img_{row.Row}_2_1";
+                            break;
+                    }
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj6 = Common.AddChild(tempObject.transform, obj6);
+                    obj1.transform.localPosition = new Vector2(-222, 0);
+                    obj6.transform.localPosition = new Vector2(222, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj6.transform.name = $"img_{row.Row}_3_1";
+                }
+                if (row.CurrentRow == 3)
+                {
+                    var random = row.RandomNum;
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    var obj5 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
+                    if (random == 1)
+                    {
+                        obj2 = Common.AddChild(tempObject.transform, obj2);
+                        obj2.transform.localPosition = new Vector2(-162, 10);
+                        obj2.transform.name = $"img_{row.Row}_1_0";
+                    }
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj5 = Common.AddChild(tempObject.transform, obj5);
+                    obj1.transform.localPosition = new Vector2(-274, 10);
+                    obj3.transform.localPosition = new Vector2(-40, 10);
+                    obj4.transform.localPosition = new Vector2(79, 10);
+                    obj5.transform.localPosition = new Vector2(259, 10);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    obj3.transform.name = $"img_{row.Row}_1_1";
+                    obj4.transform.name = $"img_{row.Row}_2_1";
+                    obj5.transform.name = $"img_{row.Row}_3_2";
+                }
+                if (row.CurrentRow == 4)
+                {
+                    int random = row.RandomNum;
+                    var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    var obj2 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj3 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj4 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj5 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
+                    obj1 = Common.AddChild(tempObject.transform, obj1);
+                    obj2 = Common.AddChild(tempObject.transform, obj2);
+                    obj3 = Common.AddChild(tempObject.transform, obj3);
+                    obj4 = Common.AddChild(tempObject.transform, obj4);
+                    obj5 = Common.AddChild(tempObject.transform, obj5);
+                    obj1.transform.localPosition = new Vector2(-330, 0);
+                    obj2.transform.localPosition = new Vector2(-210, 9);
+                    obj3.transform.localPosition = new Vector2(0, 9);
+                    obj4.transform.localPosition = new Vector2(222, 9);
+                    obj5.transform.localPosition = new Vector2(340, 0);
+                    obj1.transform.name = $"img_{row.Row}_0_0";
+                    if (random == 1)
+                    {
+                        obj2.transform.name = $"img_{row.Row}_0_1";
+                        obj3.transform.name = $"img_{row.Row}_1_2";
+                        obj4.transform.name = $"img_{row.Row}_2_3";
+                    }
+                    else if (random == 0)
+                    {
+                        obj2.transform.name = $"img_{row.Row}_1_0";
+                        obj3.transform.name = $"img_{row.Row}_2_1";
+                        obj4.transform.name = $"img_{row.Row}_3_2";
+                    }
+                    obj5.transform.name = $"img_{row.Row}_3_3";
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region 地图生成
+    /// <summary>
+    /// 生成地图
     /// </summary>
     /// <param name="type">0普通地图，99boss,1商店</param>
     public void CreateMap(int type)
@@ -285,6 +905,9 @@ public class MapScene : MonoBehaviour
             for (int i = 0; i < rowCount; i++)
             {
                 int atkType = Random.Range(1, 11);
+                string tempImgName = "";
+                string tempImgUrl = "";
+                int tempType = 0;
                 if (MapRow == 1)
                 {
                     atkType = 1;
@@ -304,9 +927,11 @@ public class MapScene : MonoBehaviour
                     int imgIndex = Random.Range(0, 4);
                     GameObject Atkimg = Resources.Load("Prefab/Map/Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
-                    Atkimg.name = "Atk_img" + i;
-                    var tempImg = tempObject.transform.Find($"Atk_img{i}").GetComponent<Image>();
-                    Common.ImageBind("Images/Map_Atk" + imgIndex, tempImg);
+                    tempImgName = "Atk_img" + i;
+                    Atkimg.name = tempImgName;
+                    tempImgUrl = "Images/Map_Atk" + imgIndex;
+                    var tempImg = tempObject.transform.Find(tempImgName).GetComponent<Image>();
+                    Common.ImageBind(tempImgUrl, tempImg);
                     #region 点击事件
                     EventTrigger trigger2 = Atkimg.GetComponent<EventTrigger>();
                     if (trigger2 == null)
@@ -315,7 +940,8 @@ public class MapScene : MonoBehaviour
                     }
                     EventTrigger.Entry entry2 = new EventTrigger.Entry();
                     int currentRow = MapRow;
-                    entry2.callback.AddListener(delegate { MapAtkImgClick(1, imgIndex, Atkimg, currentRow, "Images/Map_Atk" + imgIndex); });
+                    tempType = 1;
+                    entry2.callback.AddListener(delegate { MapAtkImgClick(tempType, imgIndex, Atkimg, currentRow, tempImgUrl); });
                     trigger2.triggers.Add(entry2);
                     #endregion
                 }
@@ -326,9 +952,11 @@ public class MapScene : MonoBehaviour
                     int imgIndex = Random.Range(0, 2);
                     GameObject Atkimg = Resources.Load("Prefab/Map/Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
-                    Atkimg.name = "Adventure_img" + i;
-                    var tempImg = tempObject.transform.Find($"Adventure_img{i}").GetComponent<Image>();
-                    Common.ImageBind("Images/Map_Adventrue" + imgIndex, tempImg);
+                    tempImgName = "Adventure_img" + i;
+                    Atkimg.name = tempImgName;
+                    tempImgUrl = "Images/Map_Adventrue" + imgIndex;
+                    var tempImg = tempObject.transform.Find(tempImgName).GetComponent<Image>();
+                    Common.ImageBind(tempImgUrl, tempImg);
                     #region 点击事件
                     EventTrigger trigger2 = Atkimg.GetComponent<EventTrigger>();
                     if (trigger2 == null)
@@ -337,7 +965,8 @@ public class MapScene : MonoBehaviour
                     }
                     EventTrigger.Entry entry2 = new EventTrigger.Entry();
                     int currentRow = MapRow;
-                    entry2.callback.AddListener(delegate { MapAtkImgClick(4, imgIndex, Atkimg, currentRow, "Images/Map_Adventrue" + imgIndex); });
+                    tempType = 4;
+                    entry2.callback.AddListener(delegate { MapAtkImgClick(tempType, imgIndex, Atkimg, currentRow, tempImgUrl); });
                     trigger2.triggers.Add(entry2);
                     #endregion
                 }
@@ -347,9 +976,11 @@ public class MapScene : MonoBehaviour
                     //图片生成
                     GameObject Atkimg = Resources.Load("Prefab/Map/Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
-                    Atkimg.name = "Atk_imgShop" + i;
-                    var tempImg = tempObject.transform.Find($"Atk_imgShop{i}").GetComponent<Image>();
-                    Common.ImageBind("Images/Map_Shop", tempImg);
+                    tempImgName = "Atk_imgShop" + i;
+                    Atkimg.name = tempImgName;
+                    tempImgUrl = "Images/Map_Shop";
+                    var tempImg = tempObject.transform.Find(tempImgName).GetComponent<Image>();
+                    Common.ImageBind(tempImgUrl, tempImg);
                     #region 点击事件
                     EventTrigger trigger2 = Atkimg.GetComponent<EventTrigger>();
                     if (trigger2 == null)
@@ -358,10 +989,19 @@ public class MapScene : MonoBehaviour
                     }
                     EventTrigger.Entry entry2 = new EventTrigger.Entry();
                     int currentRow = MapRow;
-                    entry2.callback.AddListener(delegate { MapAtkImgClick(2, 0, Atkimg, currentRow, "Images/Map_Shop"); });
+                    tempType = 2;
+                    entry2.callback.AddListener(delegate { MapAtkImgClick(tempType, 0, Atkimg, currentRow, tempImgUrl); });
                     trigger2.triggers.Add(entry2);
                     #endregion
                 }
+                listCombatPoint.Add(new MapCombatPoint
+                {
+                    Row = MapRow,
+                    Column = i,
+                    Name = tempImgName,
+                    Type = tempType,
+                    Url = tempImgUrl
+                });
             }
             ListPreviousRow.Add(rowCount);
             CreatePath(ListPreviousRow[MapRow - 1], rowCount);
@@ -402,7 +1042,17 @@ public class MapScene : MonoBehaviour
             entry2.callback.AddListener(delegate { MapAtkImgClick(3, 0, Atkimg, currentRow, "Images/Map_AtkBoss"); });
             trigger2.triggers.Add(entry2);
             #endregion
+
+            listCombatPoint.Add(new MapCombatPoint
+            {
+                Row = MapRow,
+                Column = 0,
+                Name = "Atk_imgBoss",
+                Type = 3,
+                Url = "Images/Map_AtkBoss"
+            });
             MapRow++;
+            Common.SaveTxtFile(listCombatPoint.ListToJson(), GlobalAttr.CurrentMapCombatPointFileName, "Map");
         }
         #endregion
         #region 商店
@@ -410,7 +1060,7 @@ public class MapScene : MonoBehaviour
         {
             GameObject tempObject = Resources.Load("Prefab/Map/Map_Row") as GameObject;
             tempObject = Common.AddChild(img_map.transform, tempObject);
-            tempObject.name = "Map_RowShop";
+            tempObject.name = "Map_Row" + MapRow; ;
             tempObject.transform.localPosition = new Vector2(0, OneRowY + MapRow * 240);
             //当前行战斗数量
             int rowCount = Random.Range(2, 5);
@@ -434,6 +1084,15 @@ public class MapScene : MonoBehaviour
                 entry2.callback.AddListener(delegate { MapAtkImgClick(2, 0, Atkimg, currentRow, "Images/Map_Shop"); });
                 trigger2.triggers.Add(entry2);
                 #endregion
+
+                listCombatPoint.Add(new MapCombatPoint
+                {
+                    Row = MapRow,
+                    Column = i,
+                    Name = "Atk_imgShop" + i,
+                    Type = 2,
+                    Url = "Images/Map_Shop"
+                });
             }
             ListPreviousRow.Add(rowCount);
             CreatePath(ListPreviousRow[MapRow - 1], rowCount);
@@ -454,19 +1113,6 @@ public class MapScene : MonoBehaviour
         //2-4、2-3、2-2
         //3-4、3-3、3-2
         //4-4、4-3、4-2
-        #region 直接用死的路线
-        //GameObject tempObject = Resources.Load($"Prefab/Map/Path_{PreviousRow}-{CurrentRow}") as GameObject;
-        //tempObject = Common.AddChild(img_map.transform, tempObject);
-        //tempObject.name = $"Path_{MapRow - 1}";
-        //tempObject.transform.localPosition = new Vector2(0, OnePathY + (MapRow - 1) * 240);
-        //tempObject.transform.SetAsFirstSibling();
-        ////MapRow _角色位置_线对应的模块(怎么知道对应的是哪个列) 
-        //for (int i = 0; i < tempObject.transform.childCount; i++)
-        //{
-        //    var child = tempObject.transform.GetChild(i).gameObject;
-        //    child.transform.name = $"img_{mapLocation.Column}_{i}";
-        //}
-        #endregion
         GameObject tempObject = Resources.Load($"Prefab/Map/Path_NullObj") as GameObject;
         tempObject = Common.AddChild(img_map.transform, tempObject);
         tempObject.name = $"Path_{MapRow}";
@@ -474,7 +1120,7 @@ public class MapScene : MonoBehaviour
         tempObject.transform.SetAsFirstSibling();
 
         //MapRow _初始位置_线对应的模块
-
+        int tempRandom = -1;
         if (PreviousRow == 1)
         {
             if (CurrentRow == 2)
@@ -541,6 +1187,7 @@ public class MapScene : MonoBehaviour
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_0_y") as GameObject;
                 var random = Random.Range(0, 2);
+                tempRandom = random;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
@@ -555,6 +1202,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 3)
             {
                 var random = Random.Range(0, 2);//1不带y，0带y
+                tempRandom = random;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
@@ -571,6 +1219,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 4)
             {
                 int random = Random.Range(0, 3);
+                tempRandom = random;
                 if (random == 0)
                 {
                     var obj1 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
@@ -650,6 +1299,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 2)
             {
                 var random = Random.Range(0, 3);
+                tempRandom = random;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
@@ -685,6 +1335,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 3)
             {
                 var random = Random.Range(0, 3);
+                tempRandom = random;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
@@ -740,6 +1391,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 4)
             {
                 int random = Random.Range(0, 3);
+                tempRandom = random;
                 if (random == 0)
                 {
                     var obj1 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
@@ -827,6 +1479,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 2)
             {
                 var random = Random.Range(0, 4);
+                tempRandom = random;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_2") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_2_y") as GameObject;
@@ -884,6 +1537,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 3)
             {
                 var random = Random.Range(0, 2);
+                tempRandom = random;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_1") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_1_y") as GameObject;
@@ -911,6 +1565,7 @@ public class MapScene : MonoBehaviour
             if (CurrentRow == 4)
             {
                 int random = Random.Range(0, 2);
+                tempRandom = random;
                 var obj1 = Resources.Load($"Prefab/Map/Path_img_0") as GameObject;
                 var obj2 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
                 var obj3 = Resources.Load($"Prefab/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
@@ -942,7 +1597,20 @@ public class MapScene : MonoBehaviour
                 obj5.transform.name = $"img_{MapRow}_3_3";
             }
         }
+
+        listPath.Add(new MapPath
+        {
+            Row = MapRow,
+            PreviousRow = PreviousRow,
+            CurrentRow = CurrentRow,
+            RandomNum = tempRandom
+        });
+        if (MapRow == 13)
+        {
+            Common.SaveTxtFile(listPath.ListToJson(), GlobalAttr.CurrentMapPathFileName, "Map");
+        }
     }
+    #endregion
 
     /// <summary>
     /// 战斗点击事件
@@ -1029,7 +1697,7 @@ public class MapScene : MonoBehaviour
 
         }
         btn_GameStart.transform.localScale = Vector3.zero;
-        for (int i = 1; i < 12; i++)
+        for (int i = 0; i < 13; i++)
         {
             var obj = transform.Find($"Map/img_map/Map_Row{i}").gameObject;
             for (int j = 0; j < obj.transform.childCount; j++)
@@ -1040,17 +1708,6 @@ public class MapScene : MonoBehaviour
                 {
                     childTitle.transform.localScale = Vector3.zero;
                 }
-            }
-        }
-        //商店
-        var shop_obj = transform.Find($"Map/img_map/Map_RowShop").gameObject;
-        for (int j = 0; j < shop_obj.transform.childCount; j++)
-        {
-            var child = shop_obj.transform.GetChild(j).gameObject;
-            var childTitle = child.transform.Find("Map_Title_img")?.GetComponent<Image>();
-            if (childTitle != null)
-            {
-                childTitle.transform.localScale = Vector3.zero;
             }
         }
         //Boss
@@ -1105,7 +1762,7 @@ public class MapScene : MonoBehaviour
         mapLocation.Column = currentColumn;
         mapLocation.Row = currentRow;
         mapLocation.CurrentImgUrl = currentImgUrl;
-        Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName);
+        Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName, "Map");
         var thisImg = obj.GetComponent<Image>();
         if (currentRow == 13)
         {
@@ -1140,11 +1797,36 @@ public class MapScene : MonoBehaviour
         MoveUpState = true;
     }
 
-    public void SettingClick()
+    /// <summary>
+    /// 画布跳转方法
+    /// </summary>
+    /// <param name="type">1设置，2卡池</param>
+    public void SettingClick(int type = 1)
     {
-        Common.SceneJump("SettingScene", 2, "MapScene");
+        transform.gameObject.SetActive(false);
+        if (type == 1)
+        {
+            Setting_Canvas.SetActive(true);
+            CardPoolsCanvas.SetActive(false);
+        }
+        else if (type == 2)
+        {
+            Setting_Canvas.SetActive(false);
+            CardPoolsCanvas.SetActive(true);
+        }
     }
+    /// <summary>
+    /// 画布返回主页面
+    /// </summary>
+    public void ReturnScene()
+    {
+        transform.gameObject.SetActive(true);
+        Setting_Canvas.SetActive(false);
+        CardPoolsCanvas.SetActive(false);
+    }
+
 }
+
 /// <summary>
 /// 当前角色在地图上的位置
 /// </summary>
@@ -1163,4 +1845,58 @@ public class CurrentMapLocation
     /// 当前位置的图片地址
     /// </summary>
     public string CurrentImgUrl { get; set; }
+}
+
+/// <summary>
+/// 地图战斗点
+/// </summary>
+public class MapCombatPoint
+{
+    /// <summary>
+    /// 所在行
+    /// </summary>
+    public int Row { get; set; }
+    /// <summary>
+    /// 所在列
+    /// </summary>
+    public int Column { get; set; }
+    /// <summary>
+    /// 战斗点名称
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// 战斗点Url
+    /// </summary>
+    public string Url { get; set; }
+
+    /// <summary>
+    /// 1普通战斗、2商店、3Boss、4冒险
+    /// </summary>
+    public int Type { get; set; }
+}
+
+/// <summary>
+/// 地图路线
+/// </summary>
+public class MapPath
+{
+    /// <summary>
+    /// 当前行
+    /// </summary>
+    public int Row { get; set; }
+
+    /// <summary>
+    /// 上一行数量
+    /// </summary>
+    public int PreviousRow { get; set; }
+
+    /// <summary>
+    /// 当前行数量
+    /// </summary>
+    public int CurrentRow { get; set; }
+    /// <summary>
+    /// 随机数
+    /// </summary>
+    public int RandomNum { get; set; }
 }

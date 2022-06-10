@@ -11,23 +11,12 @@ public class SettingScene : MonoBehaviour
     {
         btn_GameOver = transform.Find("Content/btn_GameOver").GetComponent<Button>();
         btn_GameOver.onClick.AddListener(GameOver);
-        if (Common.HasAgain == 1)
-        {
-            btn_GameOver.transform.localScale = Vector3.zero;
-        }
-        btn_Return = transform.Find("Content/btn_Return").GetComponent<Button>();
-        btn_Return.onClick.AddListener(ReturnScene);
 
     }
 
     public void GameOver()
-    {
-        Common.SceneJump("HomeScene");
+    {        
+        Common.SceneJump("PlayerDieScene");
     }
 
-    public void ReturnScene()
-    {
-        Debug.Log(Common.ReturnName);
-        Common.SceneJump(Common.ReturnName != null ? Common.ReturnName : "HomeScene");
-    }
 }

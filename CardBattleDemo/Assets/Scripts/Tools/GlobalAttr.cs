@@ -73,6 +73,21 @@ namespace Assets.Scripts.Tools
         /// </summary>
         public static string CurrentAIATKCardPoolsFileName = "CurrentAiATKCardPools";
 
+        #region Map
+        /// <summary>
+        /// 当前角色在地图上的位置
+        /// </summary>
         public static string CurrentMapLocationFileName = "CurrentMapLocation";
+
+        /// <summary>
+        /// 当前地图的所有战斗点
+        /// </summary>
+        public static string CurrentMapCombatPointFileName = "CurrentMapCombatPoint";
+
+        /// <summary>
+        /// 当前地图的路线
+        /// </summary>
+        public static string CurrentMapPathFileName = "CurrentMapPath";
+        #endregion
     }
 }

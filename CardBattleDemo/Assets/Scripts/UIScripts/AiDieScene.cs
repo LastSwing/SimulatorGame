@@ -8,7 +8,8 @@ using UnityEngine.UI;
 
 public class AiDieScene : MonoBehaviour
 {
-    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj;
+    Button btn_Return, btn_GameOver;
+    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj;
     Text txt_Silver, txt_AwardSilver, txt_ResetSilver, txt_CardPoolsCount;
     CurrentRoleModel PlayerRole;
     List<CurrentCardPoolModel> CurrentCardPools = new List<CurrentCardPoolModel>();
@@ -21,11 +22,11 @@ public class AiDieScene : MonoBehaviour
         txt_Silver = transform.Find("TopBar/img_Silver/txt_Silver").GetComponent<Text>();
         txt_AwardSilver = transform.Find("AwardSilver/Text").GetComponent<Text>();
         txt_ResetSilver = transform.Find("ResetAward/Image/Text").GetComponent<Text>();
-        txt_CardPoolsCount = transform.Find("CardPools/Image/Text").GetComponent<Text>();
+        txt_CardPoolsCount = transform.Find("CardPools_Obj/Image/Text").GetComponent<Text>();
 
         Award_Obj = transform.Find("Award").gameObject;
         ResetAward_Obj = transform.Find("ResetAward").gameObject;
-        CardPools_Obj = transform.Find("CardPools").gameObject;
+        CardPools_Obj = transform.Find("CardPools_Obj").gameObject;
         #endregion
         #region 给画布添加隐藏技能详细事件
 
@@ -58,6 +59,23 @@ public class AiDieScene : MonoBehaviour
         entry2.callback.AddListener(delegate { ShowCardPools(); });
         trigger2.triggers.Add(entry2);
         #endregion
+
+        #region 绑定点击设置
+
+        Setting_Obj = transform.Find("TopBar/Setting").gameObject;
+        btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
+        btn_Return.onClick.AddListener(ReturnScene);
+        btn_GameOver = GameObject.Find("SettingCanvas/Content/btn_GameOver").GetComponent<Button>();
+        btn_GameOver.transform.localScale = Vector3.zero;
+        EventTrigger trigger3 = Setting_Obj.GetComponent<EventTrigger>();
+        if (trigger3 == null)
+        {
+            trigger3 = Setting_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry3 = new EventTrigger.Entry();
+        entry3.callback.AddListener(delegate { ClickSetting(); });
+        trigger3.triggers.Add(entry3);
+        #endregion
         Init();
     }
 
@@ -73,31 +91,16 @@ public class AiDieScene : MonoBehaviour
 
         list = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName)?.FindAll(a => a.CardLevel == 1).ListRandom();
 
-        #region 当前卡池总数
+        CurrentCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
 
-        if (list != null && list?.Count > 0)
+        #region 玩家卡池
+        if (CurrentCardPools?.Count > 0)
         {
-            #region 玩家卡池
-            if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
-            {
-                var arr = PlayerRole.CardListStr.Split(';');
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
-                    var id = arr[i].Split('|')[0].ToString().Trim();
-                    if (!string.IsNullOrEmpty(id))
-                    {
-                        cardModel = list?.Find(a => a.ID == id);
-                        CurrentCardPools.Add(cardModel);
-                    }
-                }
-                txt_CardPoolsCount.text = CurrentCardPools.Count.ToString();
-            }
-            else
-            {
-                txt_CardPoolsCount.text = "0";
-            }
-            #endregion
+            txt_CardPoolsCount.text = CurrentCardPools.Count.ToString();
+        }
+        else
+        {
+            txt_CardPoolsCount.text = "0";
         }
         #endregion
 
@@ -256,6 +259,11 @@ public class AiDieScene : MonoBehaviour
         CurrentCardPools.Add(model);
         txt_CardPoolsCount.text = CurrentCardPools.Count.ToString();
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+
+        var cardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+        cardList.Add(model);
+        Common.SaveTxtFile(cardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+
         //关闭当前页
         Common.SceneJump("MapScene", 1);
     }
@@ -309,5 +317,15 @@ public class AiDieScene : MonoBehaviour
     public void ShowCardPools()
     {
         Debug.Log("显示卡池");
+    }
+
+    public void ClickSetting()
+    {
+        //Common.SceneJump("SettingScene", 1, "HomeScene");
+        transform.gameObject.SetActive(false);
+    }
+    public void ReturnScene()
+    {
+        transform.gameObject.SetActive(true);
     }
 }

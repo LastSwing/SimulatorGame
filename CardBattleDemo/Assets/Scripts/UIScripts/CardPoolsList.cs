@@ -10,13 +10,17 @@ public class CardPoolsList : MonoBehaviour
 {
     List<CurrentCardPoolModel> CardList = new List<CurrentCardPoolModel>();
     GameObject Content_Obj;
+    Text txt_CardType;
     RectTransform Content_Rect;
+    public bool CreateState = true;
     void Start()
     {
         Content_Obj = transform.Find("CardPoolsArea/CardPools/Content").gameObject;
         Content_Rect = transform.Find("CardPoolsArea/CardPools/Content").GetComponent<RectTransform>();
-        CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
 
+        txt_CardType = transform.Find("txt_CardType")?.GetComponent<Text>();
+
+        CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         #region 给画布添加隐藏技能详细事件
 
         EventTrigger trigger = transform.GetComponent<EventTrigger>();
@@ -29,17 +33,64 @@ public class CardPoolsList : MonoBehaviour
         trigger.triggers.Add(entry);
         #endregion
 
-        if (CardList != null && CardList?.Count > 0)
+    }
+
+    /// <summary>
+    /// 不可用时执行
+    /// </summary>
+    private void OnDisable()
+    {
+        CreateState = true;
+    }
+
+    private void Update()
+    {
+        if (CreateState)
         {
-            float height = (float)(210 * System.Math.Ceiling((float)CardList.Count / 3f));
-            for (int i = 0; i < CardList?.Count; i++)
+            //每次进来创建一次足矣
+            if (txt_CardType != null)
             {
-                CreateAwardCrad(CardList[i], i);
+                txt_CardType.transform.localScale = Vector3.zero;
+                if (txt_CardType.text == "1")
+                {
+                    CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                    CreateCardPools();
+                }
+                else if (txt_CardType.text == "2")
+                {
+                    CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName);
+                    CreateCardPools();
+                }
+                else
+                {
+                    CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+                    CreateCardPools();
+                }
             }
-            Content_Rect.sizeDelta = new Vector2(0, height);
         }
     }
 
+    public void CreateCardPools()
+    {
+        if (Content_Obj != null)
+        {
+            int childCount = Content_Obj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(Content_Obj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+            if (CardList != null && CardList?.Count > 0)
+            {
+                float height = (float)(210 * System.Math.Ceiling((float)CardList.Count / 3f));
+                for (int i = 0; i < CardList?.Count; i++)
+                {
+                    CreateAwardCrad(CardList[i], i);
+                }
+                Content_Rect.sizeDelta = new Vector2(0, height);
+            }
+            CreateState = false;
+        }
+    }
 
     /// <summary>
     /// 创建卡

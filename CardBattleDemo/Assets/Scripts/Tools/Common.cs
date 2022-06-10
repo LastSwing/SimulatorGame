@@ -343,11 +343,12 @@ namespace Assets.Scripts.Tools
         /// </summary>
         /// <param name="json">字符串</param>
         /// <param name="path">文件名称</param>
-        public static void SaveTxtFile(string json, string pathName)
+        /// <param name="Folder">Data/文件夹</param>
+        public static void SaveTxtFile(string json, string pathName, string Folder = "")
         {
 
             //json = GameHelper.DesEncrypt(json);//前期不加密
-            var path = Application.dataPath + "/Data/";
+            var path = Application.dataPath + "/Data/" + Folder + "/";
             //文件夹是否存在
             DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
             if (!myDirectoryInfo.Exists)
@@ -365,9 +366,9 @@ namespace Assets.Scripts.Tools
         /// <typeparam name="T"></typeparam>
         /// <param name="pathName"></param>
         /// <returns>单个实体</returns>
-        public static T GetTxtFileToModel<T>(string pathName)
+        public static T GetTxtFileToModel<T>(string pathName, string Folder = "")
         {
-            var path = Application.dataPath + "/Data/";
+            var path = Application.dataPath + "/Data/" + Folder + "/";
             T role = Activator.CreateInstance<T>();
             //文件夹是否存在
             DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
@@ -397,9 +398,9 @@ namespace Assets.Scripts.Tools
         /// <typeparam name="T"></typeparam>
         /// <param name="pathName"></param>
         /// <returns>实体泛型</returns>
-        public static List<T> GetTxtFileToList<T>(string pathName)
+        public static List<T> GetTxtFileToList<T>(string pathName, string Folder = "")
         {
-            var path = Application.dataPath + "/Data/";
+            var path = Application.dataPath + "/Data/" + Folder + "/";
             List<T> role = Activator.CreateInstance<List<T>>();
             //文件夹是否存在
             DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
@@ -426,7 +427,7 @@ namespace Assets.Scripts.Tools
         /// 删除文本
         /// </summary>
         /// <param name="path">文件名称</param>
-        public static void DelereTxtFile(string pathName)
+        public static void DeleteTxtFile(string pathName)
         {
 
             //json = GameHelper.DesEncrypt(json);//前期不加密

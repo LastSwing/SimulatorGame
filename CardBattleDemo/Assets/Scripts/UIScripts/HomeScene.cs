@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class HomeScene : MonoBehaviour
 {
     Text txt_SkillsCount, txt_GoldCount;
-    Button GameStart_Btn;
+    Button GameStart_Btn, btn_Return, btn_GameOver;
     GameObject Skills_Obj, Setting_Obj;
     Image Player;
     List<CurrentCardPoolModel> GlobalCardPools = new List<CurrentCardPoolModel>();//游戏全局卡池
@@ -43,6 +43,11 @@ public class HomeScene : MonoBehaviour
         #endregion
 
         #region 绑定点击设置
+
+        btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
+        btn_Return.onClick.AddListener(ReturnScene);
+        btn_GameOver = GameObject.Find("SettingCanvas/Content/btn_GameOver").GetComponent<Button>();
+        btn_GameOver.transform.localScale = Vector3.zero;
         EventTrigger trigger = Setting_Obj.GetComponent<EventTrigger>();
         if (trigger == null)
         {
@@ -95,6 +100,12 @@ public class HomeScene : MonoBehaviour
 
     public void ClickSetting()
     {
-        Common.SceneJump("SettingScene", 1, "HomeScene");
+        //Common.SceneJump("SettingScene", 1, "HomeScene");
+        transform.gameObject.SetActive(false);
     }
+    public void ReturnScene()
+    {
+        transform.gameObject.SetActive(true);
+    }
+
 }

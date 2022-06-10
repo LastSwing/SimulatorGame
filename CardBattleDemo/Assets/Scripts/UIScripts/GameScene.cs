@@ -11,18 +11,16 @@ using UnityEngine.UI;
 
 public class GameScene : MonoBehaviour
 {
-    //public static GameScene instance = null;
     StateMachine<GameScene> myStateMachine; //状态机
-    private GameObject tempObj, Setting_Obj;
+    private GameObject tempObj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, left_Card_Obj, right_Card_Obj;
+    Button btn_Return, btn_CardPoolsReturn;
     private Animation Anim_GameStart, Anim_DealCards;
-    //Animator Anim_GameStart;
-    //AnimatorStateInfo animatorInfo;
     private CurrentRoleModel PlayerRole;    //玩家角色
     private CurrentRoleModel AiRole;        //Ai角色
     /// <summary>
     /// 未使用的卡池
     /// </summary>
-    private List<CurrentCardPoolModel> UnusedCardList = new List<CurrentCardPoolModel>();
+    private List<CurrentCardPoolModel> UnusedCardList;
     /// <summary>
     /// 当前攻击栏卡池
     /// </summary>
@@ -62,6 +60,9 @@ public class GameScene : MonoBehaviour
         txt_StartCardCount = transform.Find("CardPool/left_Card/txt_StartCardCount").GetComponent<Text>();
         txt_EndCardCount = transform.Find("CardPool/right_Card/txt_EndCardCount").GetComponent<Text>();
 
+        Setting_Canvas = GameObject.Find("SettingCanvas");
+        CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
+
         //GameStart = transform.Find("GameStart").gameObject;
         #endregion
         #region 状态机初始化
@@ -73,6 +74,10 @@ public class GameScene : MonoBehaviour
         Init();
 
         #region 设置按钮点击事件
+        btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
+        btn_Return.onClick.AddListener(ReturnScene);
+        Setting_Canvas.SetActive(false);
+
         Setting_Obj = transform.Find("Setting").gameObject;
         EventTrigger trigger2 = Setting_Obj.GetComponent<EventTrigger>();
         if (trigger2 == null)
@@ -83,15 +88,34 @@ public class GameScene : MonoBehaviour
         entry2.callback.AddListener(delegate { SettingClick(); });
         trigger2.triggers.Add(entry2);
         #endregion
+
+        #region 卡池按钮点击事件
+        btn_CardPoolsReturn = GameObject.Find("CardPoolsCanvas/Button").GetComponent<Button>();
+        btn_CardPoolsReturn.onClick.AddListener(ReturnScene);
+        CardPoolsCanvas.SetActive(false);
+
+        left_Card_Obj = transform.Find("CardPool/left_Card").gameObject;
+        EventTrigger trigger3 = left_Card_Obj.GetComponent<EventTrigger>();
+        if (trigger3 == null)
+        {
+            trigger3 = left_Card_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry3 = new EventTrigger.Entry();
+        entry3.callback.AddListener(delegate { CardPoolsClick(1); });
+        trigger3.triggers.Add(entry3);
+
+        right_Card_Obj = transform.Find("CardPool/right_Card").gameObject;
+        EventTrigger trigger4 = right_Card_Obj.GetComponent<EventTrigger>();
+        if (trigger4 == null)
+        {
+            trigger4 = right_Card_Obj.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry4 = new EventTrigger.Entry();
+        entry4.callback.AddListener(delegate { CardPoolsClick(2); });
+        trigger4.triggers.Add(entry4);
+        #endregion
         #region 动画控件
 
-        #region Animator
-        //tempObj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
-        //tempObj.name = "Ainm_GameStart";
-        //Anim_GameStart = GameObject.Find("GameCanvas/Ainm_GameStart").GetComponent<Animator>();
-        //Anim_GameStart.Play(0);
-        //Anim_GameStart.speed = 1;
-        #endregion
         #region Animation 可以使用
         tempObj = Common.AddChild(GameObject.Find("GameCanvas").transform, (GameObject)Resources.Load("Prefab/Anim_GameStart"));
         tempObj.name = "Ainm_GameStart";
@@ -102,20 +126,15 @@ public class GameScene : MonoBehaviour
         #endregion
     }
 
-    //void Awake()
-    //{
-    //    if (instance == null) { instance = this; }          //为这个类创建实例
-    //    else if (instance != this) { Destroy(gameObject); } //保证这个实例的唯一性
-    //    DontDestroyOnLoad(gameObject);                      //加载场景时不摧毁
-    //}
     void Init()
     {
         #region 数据源初始化
-        Common.DelereTxtFile(GlobalAttr.CurrentUsedCardPoolsFileName);
+        Common.SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
-        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName) ?? 
+        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//由等级随机一个AI
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
-        var cardPoolList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//卡池
+        var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
+        UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         #endregion
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         Player_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
@@ -141,32 +160,43 @@ public class GameScene : MonoBehaviour
         {
             Enemy_img_Armor.transform.localScale = Vector3.zero;
         }
-        CreateEnergyImage(PlayerRole.MaxEnergy);
+        //能量恢复最大值
+        PlayerRole.Energy = PlayerRole.MaxEnergy;
+        CreateEnergyImage(PlayerRole.Energy);
+        Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
 
-        if (cardPoolList != null && cardPoolList?.Count > 0)
+        if (GlobalCardPools != null && GlobalCardPools?.Count > 0)
         {
             #region 玩家卡池
-
-            if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
+            if (UnusedCardList?.Count > 0)
             {
-                var arr = PlayerRole.CardListStr.Split(';');
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
-                    var id = arr[i].Split('|')[0].ToString().Trim();
-                    if (!string.IsNullOrEmpty(id))
-                    {
-                        cardModel = cardPoolList?.Find(a => a.ID == id);
-                        UnusedCardList.Add(cardModel);
-                    }
-                }
-                Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
-                UnusedCardList.ListRandom();
                 txt_StartCardCount.text = UnusedCardList.Count.ToString();
+                UnusedCardList.ListRandom();
             }
             else
             {
-                txt_StartCardCount.text = "0";
+                UnusedCardList = new List<CurrentCardPoolModel>();
+                if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
+                {
+                    var arr = PlayerRole.CardListStr.Split(';');
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
+                        var id = arr[i].Split('|')[0].ToString().Trim();
+                        if (!string.IsNullOrEmpty(id))
+                        {
+                            cardModel = GlobalCardPools?.Find(a => a.ID == id);
+                            UnusedCardList.Add(cardModel);
+                        }
+                    }
+                    Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                    UnusedCardList.ListRandom();
+                    txt_StartCardCount.text = UnusedCardList.Count.ToString();
+                }
+                else
+                {
+                    txt_StartCardCount.text = "0";
+                }
             }
             #endregion
 
@@ -180,7 +210,7 @@ public class GameScene : MonoBehaviour
                     var id = arr[i].Split('|')[0].ToString().Trim();
                     if (!string.IsNullOrEmpty(id))
                     {
-                        cardModel = cardPoolList.Find(a => a.ID == id);
+                        cardModel = GlobalCardPools.Find(a => a.ID == id);
                         AiCardList.Add(cardModel);
                     }
                 }
@@ -219,16 +249,6 @@ public class GameScene : MonoBehaviour
     {
         //数据初始化后开始发牌
         myStateMachine.FSMUpdate();
-        #region Animator
-        //animatorInfo = Anim_GameStart.GetCurrentAnimatorStateInfo(0);
-        //if (animatorInfo.normalizedTime > 0.99f)
-        //{
-        //    Debug.Log("卡牌转动动画完成");
-        //    Anim_GameStart.SetInteger("AniState", 3);
-        //    //Anim_DealCards.Play("DealCards");
-        //    //Anim_GameStart.speed = 0;
-        //}
-        #endregion
         #region Animation 可以使用
         if (!Anim_GameStart.isPlaying && !GameStartState)
         {
@@ -349,12 +369,13 @@ public class GameScene : MonoBehaviour
         if (AiATKCardList != null && AiATKCardList?.Count > 0)
         {
             GameObject parentObject = GameObject.Find("GameCanvas/Enemy/ATKBar");
-            foreach (var item in AiATKCardList)
+            for (int i = 0; i < AiATKCardList.Count; i++)
             {
+                var item = AiATKCardList[i];
                 GameObject tempObj = Resources.Load("Prefab/AI_ATKimg_Prefab") as GameObject;
-                tempObj.name = item.ID;
+                tempObj.name = item.ID + "_" + i;
                 tempObj = Common.AddChild(parentObject.transform, tempObj);
-                var tempImg = parentObject.transform.Find(item.ID + "(Clone)").GetComponent<Image>();
+                var tempImg = parentObject.transform.Find($"{item.ID}_{i}(Clone)").GetComponent<Image>();
                 Common.ImageBind(item.CardUrl, tempImg);
             }
         }
@@ -362,7 +383,32 @@ public class GameScene : MonoBehaviour
 
     public void SettingClick()
     {
-        Common.SceneJump("SettingScene", 2, "GameScene");
+        //Common.SceneJump("SettingScene", 2, "MapScene");
+        transform.gameObject.SetActive(false);
+        Setting_Canvas.SetActive(true);
+        CardPoolsCanvas.SetActive(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="type">1未使用卡池left，2已使用卡池right</param>
+    public void CardPoolsClick(int type)
+    {
+        transform.gameObject.SetActive(false);
+        Setting_Canvas.SetActive(false);
+        CardPoolsCanvas.SetActive(true);
+        GameObject.Find("CardPoolsCanvas/txt_CardType").GetComponent<Text>().text = type.ToString();
+    }
+
+    /// <summary>
+    /// 画布返回主页面
+    /// </summary>
+    public void ReturnScene()
+    {
+        transform.gameObject.SetActive(true);
+        Setting_Canvas.SetActive(false);
+        CardPoolsCanvas.SetActive(false);
     }
 
 }
