@@ -13,7 +13,6 @@ public class TopBar : MonoBehaviour
     CurrentRoleModel PlayerRole;
     void Start()
     {
-
         Player_HeadPortrait = transform.Find("Player_HeadPortrait").GetComponent<Image>();
         HP = transform.Find("HP/img_HP").GetComponent<Image>();
 
@@ -28,12 +27,15 @@ public class TopBar : MonoBehaviour
     {
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
 
-        Common.ImageBind(PlayerRole.HeadPortraitUrl, Player_HeadPortrait);
-        CreateEnergyImage(PlayerRole.MaxEnergy);
-        txt_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
+        if (PlayerRole != null)
+        {
+            Common.ImageBind(PlayerRole.HeadPortraitUrl, Player_HeadPortrait);
+            CreateEnergyImage(PlayerRole.MaxEnergy);
+            txt_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
 
-        txt_Silver.text = PlayerRole.Wealth.ToString();
-        Common.HPImageChange(HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0, 150);
+            txt_Silver.text = PlayerRole.Wealth.ToString();
+            Common.HPImageChange(HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0, 150);
+        }
     }
     /// <summary>
     /// 创建能量图片

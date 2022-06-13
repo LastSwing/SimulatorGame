@@ -163,6 +163,8 @@ public class GameScene : MonoBehaviour
         //能量恢复最大值
         PlayerRole.Energy = PlayerRole.MaxEnergy;
         CreateEnergyImage(PlayerRole.Energy);
+        //防御值清空
+        PlayerRole.Armor = 0;
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
 
         if (GlobalCardPools != null && GlobalCardPools?.Count > 0)
@@ -173,31 +175,7 @@ public class GameScene : MonoBehaviour
                 txt_StartCardCount.text = UnusedCardList.Count.ToString();
                 UnusedCardList.ListRandom();
             }
-            else
-            {
-                UnusedCardList = new List<CurrentCardPoolModel>();
-                if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
-                {
-                    var arr = PlayerRole.CardListStr.Split(';');
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
-                        var id = arr[i].Split('|')[0].ToString().Trim();
-                        if (!string.IsNullOrEmpty(id))
-                        {
-                            cardModel = GlobalCardPools?.Find(a => a.ID == id);
-                            UnusedCardList.Add(cardModel);
-                        }
-                    }
-                    Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
-                    UnusedCardList.ListRandom();
-                    txt_StartCardCount.text = UnusedCardList.Count.ToString();
-                }
-                else
-                {
-                    txt_StartCardCount.text = "0";
-                }
-            }
+            
             #endregion
 
             #region AI牌池

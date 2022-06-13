@@ -12,16 +12,15 @@ using UnityEngine.UI;
 
 public class MapScene : MonoBehaviour
 {
-    Image img_map, img_Boss_Head, img_Player_Head, img_Init, Player_Head_Hp;
-    Text txt_CardPoolsCount, txt_Player_Head_Hp;
+    Image img_map, img_Boss_Head, img_Player_Head, img_Init;
+    Text txt_CardPoolsCount;
     Button btn_GameStart, btn_Return, btn_CardPoolsReturn;
-    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, CardPools_Obj;
+    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, CardPools_Obj, Map_Obj;
 
-    int OneUnitCount;
+    int OneUnitCount, MoveType;
     int MapRow = 1;
     int OneRowY = -1640;
     int OnePathY = -1520;
-    int PreviousType = 1;//上一张地图的类型
     bool MoveUpState, MoveTopState, MoveTopOneUnitState, CreateMapState;
     List<int> ListPreviousRow = new List<int>() { 1 };//上一行模块的数量
     CurrentMapLocation mapLocation;
@@ -52,8 +51,6 @@ public class MapScene : MonoBehaviour
         InitPos = img_map.transform.position;
         btn_GameStart = transform.Find("Map/btn_Map_StartGame").GetComponent<Button>();
         btn_GameStart.transform.localScale = Vector3.zero;
-        //Player_Head_Hp = transform.Find("Map/TopBar/HP/img_HP").GetComponent<Image>();
-        //txt_Player_Head_Hp = transform.Find("Map/TopBar/HP/Text").GetComponent<Text>();
 
         img_Boss_Head = transform.Find("Map/Suspension_Boss/img_Round/img_Head").GetComponent<Image>();
         img_Player_Head = transform.Find("Map/Suspension_Player/img_Round/img_Head").GetComponent<Image>();
@@ -61,21 +58,58 @@ public class MapScene : MonoBehaviour
         Suspension_Player_obj = transform.Find("Map/Suspension_Player").gameObject;
         Setting_Canvas = GameObject.Find("SettingCanvas");
         CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
+        Map_Obj = transform.Find("Map").gameObject;
         txt_CardPoolsCount = transform.Find("Map/CardPools_Obj/Image/Text").GetComponent<Text>();
-        txt_CardPoolsCount.text = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName)?.Count.ToString();
         #endregion
 
         #region 数据初始化
         var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom();//ailevel==boss等级
         CurrentAiModel = listAi[0];
         GlobalRole = Common.GetTxtFileToModel<GlobalPlayerModel>(GlobalAttr.GlobalRoleFileName);
-        PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == GlobalRole.CurrentRoleID);
+        //游戏打完回到地图满血问题
+        PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
+        if (PlayerRole == null)
+        {
+            PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == GlobalRole.CurrentRoleID);
+        }
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         //txt_Player_Head_Hp.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
         //Common.HPImageChange(Player_Head_Hp, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0, 150);
 
         Common.ImageBind(CurrentAiModel.HeadPortraitUrl, img_Boss_Head);
         Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Player_Head);
+        #region 玩家卡池
+        var cardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+        if (cardPools?.Count > 0)
+        {
+            txt_CardPoolsCount.text = cardPools?.Count.ToString();
+        }
+        else
+        {
+            cardPools = new List<CurrentCardPoolModel>();
+            var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
+            if (!string.IsNullOrEmpty(PlayerRole.CardListStr))
+            {
+                var arr = PlayerRole.CardListStr.Split(';');
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    CurrentCardPoolModel cardModel = new CurrentCardPoolModel();
+                    var id = arr[i].Split('|')[0].ToString().Trim();
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        cardModel = GlobalCardPools?.Find(a => a.ID == id);
+                        cardPools.Add(cardModel);
+                    }
+                }
+                Common.SaveTxtFile(cardPools.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                txt_CardPoolsCount.text = cardPools?.Count.ToString();
+            }
+            else
+            {
+                txt_CardPoolsCount.text = "0";
+            }
+        }
+        #endregion
         #endregion
 
         #region Boss悬浮框点击事件
@@ -111,10 +145,20 @@ public class MapScene : MonoBehaviour
         trigger2.triggers.Add(entry2);
         #endregion
 
+        #region 加载TopBar预制件
+
+        //加载TopBar预制件
+        GameObject topBar = Resources.Load("Prefab/TopBar") as GameObject;
+        topBar = Common.AddChild(Map_Obj.transform, topBar);
+        topBar.name = "TopBar";
+        #endregion
+
         #region 设置按钮点击事件
         btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
         btn_Return.onClick.AddListener(ReturnScene);
         Setting_Canvas.SetActive(false);
+
+
 
         Setting_Obj = transform.Find("Map/TopBar/Setting").gameObject;
         EventTrigger trigger3 = Setting_Obj.GetComponent<EventTrigger>();
@@ -177,6 +221,14 @@ public class MapScene : MonoBehaviour
         if (img_map.transform.position.y < 1880 - (mapLocation.Row + 1) * 240)
         {
             Suspension_Player_obj.SetActive(true);
+            //加
+            MoveType = 0;
+        }
+        else if (img_map.transform.position.y > 1880 - (mapLocation.Row - 2) * 240)
+        {
+            Suspension_Player_obj.SetActive(true);
+            //减
+            MoveType = 1;
         }
         else
         {
@@ -208,15 +260,32 @@ public class MapScene : MonoBehaviour
         }
         if (MoveUpState)
         {
-            float y = img_map.transform.position.y + 10;
-            if (y < InitPos.y && y < 1800 - mapLocation.Row * 240)
+            float y = 0;
+            if (MoveType == 0)
             {
-                img_map.transform.position = new Vector3(InitPos.x, y, 0);
+                y = img_map.transform.position.y + 10;
+                if (y < InitPos.y && y < 1800 - mapLocation.Row * 240)
+                {
+                    img_map.transform.position = new Vector3(InitPos.x, y, 0);
+                }
+                else
+                {
+                    MoveUpState = false;
+                }
             }
             else
             {
-                MoveUpState = false;
+                y = img_map.transform.position.y - 10;
+                if (y < InitPos.y && y > 1800 - mapLocation.Row * 240)
+                {
+                    img_map.transform.position = new Vector3(InitPos.x, y, 0);
+                }
+                else
+                {
+                    MoveUpState = false;
+                }
             }
+
         }
         #endregion
 
@@ -1624,12 +1693,13 @@ public class MapScene : MonoBehaviour
         HideTitle();
         //点击后展示title
         var title = thisObj.transform.Find("Map_Title_img")?.GetComponent<Image>();
+        Text title_txt = null;
         if (title == null)
         {
             GameObject Atkimg = Resources.Load("Prefab/Map/Map_Title_img") as GameObject;
             Atkimg = Common.AddChild(thisObj.transform, Atkimg);
             Atkimg.name = "Map_Title_img";
-            var title_txt = Atkimg.transform.GetChild(0).GetComponent<Text>();
+            title_txt = Atkimg.transform.GetChild(0).GetComponent<Text>();
             switch (type)
             {
                 case 2:
@@ -1652,22 +1722,23 @@ public class MapScene : MonoBehaviour
         }
 
         //如果是按路线点击、则改变路线颜色、且显示按钮
+        string thisIndex = null;
+        if (type == 2)
+        {
+            thisIndex = thisObj.name.Split('_')[1].Substring(7);
+
+        }
+        else if (type == 3)
+        {
+            thisIndex = "0";
+        }
+        else
+        {
+            thisIndex = thisObj.name.Split('_')[1].Substring(3);
+        }
         if (mapLocation.Row + 1 == CurrentRow)
         {
-            string thisIndex = null;
-            if (type == 2)
-            {
-                thisIndex = thisObj.name.Split('_')[1].Substring(7);
 
-            }
-            else if (type == 3)
-            {
-                thisIndex = "0";
-            }
-            else
-            {
-                thisIndex = thisObj.name.Split('_')[1].Substring(3);
-            }
             var thisPath = transform.Find($"Map/img_map/Path_{CurrentRow}/img_{CurrentRow}_{mapLocation.Column}_{thisIndex}")?.GetComponent<Image>();
             if (thisPath != null)
             {
@@ -1677,7 +1748,18 @@ public class MapScene : MonoBehaviour
                 btn_GameStart.onClick.AddListener(delegate { GameStartClick(type, level, CurrentRow, System.Convert.ToInt32(thisIndex), thisObj, currentImgUrl); });
             }
         }
-
+        //如果点击的是角色头像，展示角色名称
+        if (mapLocation.Row == CurrentRow && mapLocation.Column == System.Convert.ToInt32(thisIndex))
+        {
+            if (title_txt == null)
+            {
+                title.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                title_txt.text = PlayerRole.Name;
+            }
+        }
     }
 
     /// <summary>
@@ -1731,11 +1813,8 @@ public class MapScene : MonoBehaviour
         MoveTopOneUnitState = true;
         OneUnitCount = 0;
         string imgColumnName = "";
-        switch (PreviousType)
+        switch (mapLocation.MapType)
         {
-            case 1:
-                imgColumnName = $"Atk_img{mapLocation.Column}";
-                break;
             case 2:
                 imgColumnName = $"Atk_imgShop{mapLocation.Column}";
                 break;
@@ -1744,6 +1823,9 @@ public class MapScene : MonoBehaviour
             //    break;
             case 4:
                 imgColumnName = $"Adventure_img{mapLocation.Column}";
+                break;
+            default:
+                imgColumnName = $"Atk_img{mapLocation.Column}";
                 break;
         }
         string imgRowName = "";
@@ -1762,6 +1844,7 @@ public class MapScene : MonoBehaviour
         mapLocation.Column = currentColumn;
         mapLocation.Row = currentRow;
         mapLocation.CurrentImgUrl = currentImgUrl;
+        mapLocation.MapType = type;
         Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName, "Map");
         var thisImg = obj.GetComponent<Image>();
         if (currentRow == 13)
@@ -1777,7 +1860,6 @@ public class MapScene : MonoBehaviour
         {
             Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
         }
-        PreviousType = type;
         //进入游戏
         Common.SceneJump("GameScene");
     }
@@ -1845,6 +1927,11 @@ public class CurrentMapLocation
     /// 当前位置的图片地址
     /// </summary>
     public string CurrentImgUrl { get; set; }
+
+    /// <summary>
+    /// 地图类型 1普通，2商店，3Boss,4冒险
+    /// </summary>
+    public int MapType { get; set; }
 }
 
 /// <summary>

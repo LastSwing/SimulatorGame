@@ -11,7 +11,7 @@ public class HomeScene : MonoBehaviour
 {
     Text txt_SkillsCount, txt_GoldCount;
     Button GameStart_Btn, btn_Return, btn_GameOver;
-    GameObject Skills_Obj, Setting_Obj;
+    GameObject Skills_Obj, Setting_Obj, SettingCanvas;
     Image Player;
     List<CurrentCardPoolModel> GlobalCardPools = new List<CurrentCardPoolModel>();//游戏全局卡池
     List<CurrentCardPoolModel> GlobalPlayerCardPools = new List<CurrentCardPoolModel>();//角色全局卡池
@@ -27,6 +27,7 @@ public class HomeScene : MonoBehaviour
         Skills_Obj = transform.Find("TopBar/Skills").gameObject;
         Player = transform.Find("Player/Image").GetComponent<Image>();
         Setting_Obj = transform.Find("TopBar/Setting").gameObject;
+        SettingCanvas = GameObject.Find("SettingCanvas");
         #endregion
 
         GameStart_Btn.onClick.AddListener(delegate { ClickGameStartBtn(); });
@@ -48,6 +49,7 @@ public class HomeScene : MonoBehaviour
         btn_Return.onClick.AddListener(ReturnScene);
         btn_GameOver = GameObject.Find("SettingCanvas/Content/btn_GameOver").GetComponent<Button>();
         btn_GameOver.transform.localScale = Vector3.zero;
+        SettingCanvas.SetActive(false);
         EventTrigger trigger = Setting_Obj.GetComponent<EventTrigger>();
         if (trigger == null)
         {
@@ -90,6 +92,7 @@ public class HomeScene : MonoBehaviour
 
     public void ClickGameStartBtn()
     {
+        Common.GameOverDataReset();
         Common.SceneJump("MapScene", 99);
     }
 
@@ -100,12 +103,13 @@ public class HomeScene : MonoBehaviour
 
     public void ClickSetting()
     {
-        //Common.SceneJump("SettingScene", 1, "HomeScene");
         transform.gameObject.SetActive(false);
+        SettingCanvas.SetActive(true);
     }
     public void ReturnScene()
     {
         transform.gameObject.SetActive(true);
+        SettingCanvas.SetActive(false);
     }
 
 }

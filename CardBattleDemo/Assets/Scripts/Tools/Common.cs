@@ -596,6 +596,20 @@ namespace Assets.Scripts.Tools
             }
             return result;
         }
+
+        /// <summary>
+        /// 游戏结束数据重置
+        /// </summary>
+        /// <returns></returns>
+        public static void GameOverDataReset()
+        {
+            SaveTxtFile(null, GlobalAttr.CurrentMapCombatPointFileName, "Map");
+            SaveTxtFile(null, GlobalAttr.CurrentMapLocationFileName, "Map");
+            SaveTxtFile(null, GlobalAttr.CurrentMapPathFileName, "Map");
+            SaveTxtFile(null, GlobalAttr.CurrentCardPoolsFileName);
+            SaveTxtFile(null, GlobalAttr.CurrentPlayerRoleFileName);
+
+        }
         #endregion
     }
 }

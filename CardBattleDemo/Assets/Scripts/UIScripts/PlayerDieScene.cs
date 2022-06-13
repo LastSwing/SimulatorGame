@@ -33,12 +33,7 @@ public class PlayerDieScene : MonoBehaviour
         trigger.triggers.Add(entry);
         #endregion
 
-        #region 数据初始化
-        Common.SaveTxtFile(null, GlobalAttr.CurrentMapCombatPointFileName, "Map");
-        Common.SaveTxtFile(null, GlobalAttr.CurrentMapLocationFileName, "Map");
-        Common.SaveTxtFile(null, GlobalAttr.CurrentMapPathFileName, "Map");
-        Common.SaveTxtFile(null, GlobalAttr.CurrentCardPoolsFileName); 
-        #endregion
+        Common.GameOverDataReset();
     }
 
 

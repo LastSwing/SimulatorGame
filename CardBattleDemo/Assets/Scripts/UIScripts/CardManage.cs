@@ -171,7 +171,7 @@ namespace Assets.Scripts.UIScripts
                 if (Anim_DealCards["DealCards"].normalizedTime != 0)
                 {
                     totalTimer += Time.deltaTime;
-                    if (totalTimer >= 0.37f)
+                    if (totalTimer >= 0.377f)
                     {
                         if (DealCardCount < 6 && DealCardsAnimState)
                         {
@@ -206,36 +206,34 @@ namespace Assets.Scripts.UIScripts
         /// <param name="index"></param>
         public void ShowCardSkillDetail(int index)
         {
-            if (!hasDrag)
+            //Debug.Log(hasDrag);
+            if (clickCount == 0 || index != currrentIndex)
             {
-                if (clickCount == 0 || index != currrentIndex)
+                HideCardSkill();
+                Card_img = GameObject.Find($"Card/img_Card{index + 1}/img_Detail")?.GetComponent<Image>();
+                if (Card_img != null)
                 {
-                    HideCardSkill();
-                    Card_img = GameObject.Find($"Card/img_Card{index + 1}/img_Detail")?.GetComponent<Image>();
-                    if (Card_img != null)
-                    {
-                        Card_img.transform.localScale = Vector3.one;
-                    }
-                    else
-                    {
-                        Card_img = GameObject.Find($"Card/img_Card{(index + 1)}").GetComponent<Image>();
-                        GameObject tempImg = Resources.Load("Prefab/img_Detail") as GameObject;
-                        tempImg = Common.AddChild(Card_img.transform, tempImg);
-                        tempImg.name = "img_Detail";
-                        tempImg.transform.localPosition = new Vector2(0, 160);
-
-
-                        GameObject temp = tempImg.transform.Find("Text").gameObject;
-                        temp.GetComponent<Text>().text = $"{ATKList[index].CardName}\n{ATKList[index].CardDetail}";
-                    }
-                    currrentIndex = index;
-                    clickCount++;
+                    Card_img.transform.localScale = Vector3.one;
                 }
                 else
                 {
-                    clickCount = 0;
-                    HideCardSkill();
+                    Card_img = GameObject.Find($"Card/img_Card{(index + 1)}").GetComponent<Image>();
+                    GameObject tempImg = Resources.Load("Prefab/img_Detail") as GameObject;
+                    tempImg = Common.AddChild(Card_img.transform, tempImg);
+                    tempImg.name = "img_Detail";
+                    tempImg.transform.localPosition = new Vector2(0, 160);
+
+
+                    GameObject temp = tempImg.transform.Find("Text").gameObject;
+                    temp.GetComponent<Text>().text = $"{ATKList[index].CardName}\n{ATKList[index].CardDetail}";
                 }
+                currrentIndex = index;
+                clickCount++;
+            }
+            else
+            {
+                clickCount = 0;
+                HideCardSkill();
             }
 
         }

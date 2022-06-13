@@ -8,8 +8,8 @@ using UnityEngine.UI;
 
 public class AiDieScene : MonoBehaviour
 {
-    Button btn_Return, btn_GameOver;
-    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj;
+    Button btn_Return, btn_GameOver, btn_CardPoolsReturn;
+    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj, SettingCanvas, CardPoolsCanvas;
     Text txt_Silver, txt_AwardSilver, txt_ResetSilver, txt_CardPoolsCount;
     CurrentRoleModel PlayerRole;
     List<CurrentCardPoolModel> CurrentCardPools = new List<CurrentCardPoolModel>();
@@ -27,6 +27,8 @@ public class AiDieScene : MonoBehaviour
         Award_Obj = transform.Find("Award").gameObject;
         ResetAward_Obj = transform.Find("ResetAward").gameObject;
         CardPools_Obj = transform.Find("CardPools_Obj").gameObject;
+        SettingCanvas = GameObject.Find("SettingCanvas");
+        CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
         #endregion
         #region 给画布添加隐藏技能详细事件
 
@@ -50,6 +52,9 @@ public class AiDieScene : MonoBehaviour
         trigger1.triggers.Add(entry1);
         #endregion
         #region 卡池单击事件
+        btn_CardPoolsReturn = GameObject.Find("CardPoolsCanvas/Button").GetComponent<Button>();
+        btn_CardPoolsReturn.onClick.AddListener(ReturnScene);
+        CardPoolsCanvas.SetActive(false);
         EventTrigger trigger2 = CardPools_Obj.GetComponent<EventTrigger>();
         if (trigger2 == null)
         {
@@ -65,8 +70,9 @@ public class AiDieScene : MonoBehaviour
         Setting_Obj = transform.Find("TopBar/Setting").gameObject;
         btn_Return = GameObject.Find("SettingCanvas/Content/btn_Return").GetComponent<Button>();
         btn_Return.onClick.AddListener(ReturnScene);
-        btn_GameOver = GameObject.Find("SettingCanvas/Content/btn_GameOver").GetComponent<Button>();
-        btn_GameOver.transform.localScale = Vector3.zero;
+        //btn_GameOver = GameObject.Find("SettingCanvas/Content/btn_GameOver").GetComponent<Button>();
+        //btn_GameOver.transform.localScale = Vector3.zero;
+        SettingCanvas.SetActive(false);
         EventTrigger trigger3 = Setting_Obj.GetComponent<EventTrigger>();
         if (trigger3 == null)
         {
@@ -316,16 +322,21 @@ public class AiDieScene : MonoBehaviour
 
     public void ShowCardPools()
     {
-        Debug.Log("显示卡池");
+        transform.gameObject.SetActive(false);
+        SettingCanvas.SetActive(false);
+        CardPoolsCanvas.SetActive(true);
     }
 
     public void ClickSetting()
     {
-        //Common.SceneJump("SettingScene", 1, "HomeScene");
         transform.gameObject.SetActive(false);
+        SettingCanvas.SetActive(true);
+        CardPoolsCanvas.SetActive(false);
     }
     public void ReturnScene()
     {
         transform.gameObject.SetActive(true);
+        SettingCanvas.SetActive(false);
+        CardPoolsCanvas.SetActive(false);
     }
 }

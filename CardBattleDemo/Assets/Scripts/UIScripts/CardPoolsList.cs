@@ -67,6 +67,11 @@ public class CardPoolsList : MonoBehaviour
                     CreateCardPools();
                 }
             }
+            else
+            {
+                CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+                CreateCardPools();
+            }
         }
     }
 
