@@ -17,7 +17,7 @@ namespace Assets.Scripts.LogicalScripts.Models
         public string ID { get; set; }
         /// <summary>
         /// 卡类型
-        /// 0物理卡、1武技卡、2功能卡
+        /// 0近战卡、1远程卡、2功能卡
         /// </summary>
         public int CardType { get; set; }
 

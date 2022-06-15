@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class AiDieScene : MonoBehaviour
 {
     Button btn_Return, btn_GameOver, btn_CardPoolsReturn;
-    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj, SettingCanvas, CardPoolsCanvas;
+    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj, SettingCanvas, CardPoolsCanvas, AllSkillCanvas;
     Text txt_Silver, txt_AwardSilver, txt_ResetSilver, txt_CardPoolsCount;
     CurrentRoleModel PlayerRole;
     List<CurrentCardPoolModel> CurrentCardPools = new List<CurrentCardPoolModel>();
@@ -29,6 +29,8 @@ public class AiDieScene : MonoBehaviour
         CardPools_Obj = transform.Find("CardPools_Obj").gameObject;
         SettingCanvas = GameObject.Find("SettingCanvas");
         CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
+        AllSkillCanvas = GameObject.Find("AllSkillCanvas");
+        AllSkillCanvas.SetActive(false);
         #endregion
         #region 给画布添加隐藏技能详细事件
 
@@ -95,7 +97,7 @@ public class AiDieScene : MonoBehaviour
     {
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
 
-        list = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName)?.FindAll(a => a.CardLevel == 1).ListRandom();
+        list = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName)?.FindAll(a => a.CardLevel == 1 && a.PlayerOrAI == 0).ListRandom();
 
         CurrentCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
 

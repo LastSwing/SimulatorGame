@@ -12,7 +12,7 @@ using UnityEngine.UI;
 public class GameScene : MonoBehaviour
 {
     StateMachine<GameScene> myStateMachine; //状态机
-    private GameObject tempObj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, left_Card_Obj, right_Card_Obj;
+    private GameObject tempObj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, left_Card_Obj, right_Card_Obj, AllSkillCanvas;
     Button btn_Return, btn_CardPoolsReturn;
     private Animation Anim_GameStart, Anim_DealCards;
     private CurrentRoleModel PlayerRole;    //玩家角色
@@ -62,6 +62,8 @@ public class GameScene : MonoBehaviour
 
         Setting_Canvas = GameObject.Find("SettingCanvas");
         CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
+        AllSkillCanvas = GameObject.Find("AllSkillCanvas");
+        AllSkillCanvas.SetActive(false);
 
         //GameStart = transform.Find("GameStart").gameObject;
         #endregion
@@ -133,7 +135,7 @@ public class GameScene : MonoBehaviour
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
         AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == "2022042809503249");//由等级随机一个AI
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
-        var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
+        var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
         UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         #endregion
         txt_EndCardCount.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
@@ -175,7 +177,7 @@ public class GameScene : MonoBehaviour
                 txt_StartCardCount.text = UnusedCardList.Count.ToString();
                 UnusedCardList.ListRandom();
             }
-            
+
             #endregion
 
             #region AI牌池

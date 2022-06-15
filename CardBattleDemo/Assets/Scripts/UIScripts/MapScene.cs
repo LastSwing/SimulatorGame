@@ -15,7 +15,7 @@ public class MapScene : MonoBehaviour
     Image img_map, img_Boss_Head, img_Player_Head, img_Init;
     Text txt_CardPoolsCount;
     Button btn_GameStart, btn_Return, btn_CardPoolsReturn;
-    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, CardPools_Obj, Map_Obj;
+    GameObject Suspension_Boss_obj, Suspension_Player_obj, Setting_Obj, Setting_Canvas, CardPoolsCanvas, CardPools_Obj, Map_Obj, AllSkillCanvas;
 
     int OneUnitCount, MoveType;
     int MapRow = 1;
@@ -60,6 +60,8 @@ public class MapScene : MonoBehaviour
         CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
         Map_Obj = transform.Find("Map").gameObject;
         txt_CardPoolsCount = transform.Find("Map/CardPools_Obj/Image/Text").GetComponent<Text>();
+        AllSkillCanvas = GameObject.Find("AllSkillCanvas");
+        AllSkillCanvas.SetActive(false);
         #endregion
 
         #region 数据初始化
@@ -1932,6 +1934,11 @@ public class CurrentMapLocation
     /// 地图类型 1普通，2商店，3Boss,4冒险
     /// </summary>
     public int MapType { get; set; }
+
+    /// <summary>
+    /// 是否击杀了boss 0否，1是
+    /// </summary>
+    public int HasKillBoss { get; set; }
 }
 
 /// <summary>

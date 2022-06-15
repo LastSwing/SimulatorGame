@@ -10,8 +10,8 @@ using UnityEngine.UI;
 public class HomeScene : MonoBehaviour
 {
     Text txt_SkillsCount, txt_GoldCount;
-    Button GameStart_Btn, btn_Return, btn_GameOver;
-    GameObject Skills_Obj, Setting_Obj, SettingCanvas;
+    Button GameStart_Btn, btn_Return, btn_GameOver, btn_AllSkillReturn;
+    GameObject Skills_Obj, Setting_Obj, SettingCanvas, AllSkillCanvas;
     Image Player;
     List<CurrentCardPoolModel> GlobalCardPools = new List<CurrentCardPoolModel>();//游戏全局卡池
     List<CurrentCardPoolModel> GlobalPlayerCardPools = new List<CurrentCardPoolModel>();//角色全局卡池
@@ -28,11 +28,14 @@ public class HomeScene : MonoBehaviour
         Player = transform.Find("Player/Image").GetComponent<Image>();
         Setting_Obj = transform.Find("TopBar/Setting").gameObject;
         SettingCanvas = GameObject.Find("SettingCanvas");
+        AllSkillCanvas = GameObject.Find("AllSkillCanvas");
         #endregion
 
         GameStart_Btn.onClick.AddListener(delegate { ClickGameStartBtn(); });
 
         #region 绑定点击图鉴
+
+        AllSkillCanvas.SetActive(false);
         EventTrigger trigger1 = Skills_Obj.GetComponent<EventTrigger>();
         if (trigger1 == null)
         {
@@ -85,7 +88,7 @@ public class HomeScene : MonoBehaviour
         }
         CurrentRole = GlobalRolePools.Find(a => a.RoleID == GlobalRole.CurrentRoleID);
         #endregion
-        txt_SkillsCount.text = $"{GlobalPlayerCardPools.Count}/{GlobalCardPools?.Count}";
+        txt_SkillsCount.text = $"{GlobalPlayerCardPools?.Count}/{GlobalCardPools?.Count}";
         txt_GoldCount.text = GlobalRole.Wealth.ToString();
         Common.ImageBind(CurrentRole.RoleImgUrl, Player);
     }
@@ -98,18 +101,25 @@ public class HomeScene : MonoBehaviour
 
     public void ClickSkills()
     {
-        Debug.Log("点击图鉴");
+        transform.gameObject.SetActive(false);
+        SettingCanvas.SetActive(false);
+        AllSkillCanvas.SetActive(true);
+        btn_AllSkillReturn = GameObject.Find("AllSkillCanvas/btn_Return").GetComponent<Button>();
+        btn_AllSkillReturn.onClick.RemoveAllListeners();
+        btn_AllSkillReturn.onClick.AddListener(ReturnScene);
     }
 
     public void ClickSetting()
     {
         transform.gameObject.SetActive(false);
         SettingCanvas.SetActive(true);
+        AllSkillCanvas.SetActive(false);
     }
     public void ReturnScene()
     {
         transform.gameObject.SetActive(true);
         SettingCanvas.SetActive(false);
+        AllSkillCanvas.SetActive(false);
     }
 
 }

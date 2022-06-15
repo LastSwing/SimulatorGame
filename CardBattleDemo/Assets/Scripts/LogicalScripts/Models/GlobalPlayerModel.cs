@@ -35,5 +35,17 @@ namespace Assets.Scripts.LogicalScripts.Models
         /// 财富值
         /// </summary>
         public float Wealth { get; set; }
+
+        /// <summary>
+        /// 累计值，达到累计值可解锁新的卡牌
+        /// 每次击杀存储 4*关卡等级
+        /// </summary>
+        public int AccumulateValue { get; set; }
+
+        /// <summary>
+        /// 所需达到的累计值
+        /// 初始80
+        /// </summary>
+        public int MaxAccumulate { get; set; }
     }
 }

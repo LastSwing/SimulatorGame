@@ -27,7 +27,6 @@ namespace Assets.Scripts.UIScripts
         public bool RecycleCardAnimationState, RecycleCardAnimationEndState,//回收卡牌动画
             CardListAnimationState, CardListAnimationEndState, //卡牌发牌动画
             RoundOverState, CardPoolsDataSave, HasUseCard, CardRecycleSuccess,//回合结束状态、卡池数据保存、是否使用了卡牌、卡牌回收成功
-            RotationCardAnimationState, RotationCardAnimationEndState,//卡牌旋转动画
             ShuffleAnimationState, FoldCardAnimationState, ShuffleAnimationSuccessState,   //洗牌状态、叠牌状态、动画完成
             AiAtkState, GameOverStartState, AiAnimStartState//Ai攻击状态,游戏结束动画开始,Ai动画开始
             = false;
@@ -301,7 +300,6 @@ namespace Assets.Scripts.UIScripts
                     {
                         if (PlayerRole.Energy >= atkModel.Consume)
                         {
-                            atkModel.Proficiency++;
                             if (atkModel.Consume > 0)
                             {
                                 Common.EnergyImgChange(PlayerRole.Energy, atkModel.Consume, 0, PlayerRole.MaxEnergy);
@@ -375,7 +373,6 @@ namespace Assets.Scripts.UIScripts
                     #region 能量恢复5
                     if (stateType == 5)
                     {
-                        atkModel.Proficiency++;
                         Energy_Obj.SetActive(true);
                         Anim_EnergyRestore.Play("EnergyRestore");
                         Common.EnergyImgChange(PlayerRole.Energy, Convert.ToInt32(atkModel.Effect), 1, PlayerRole.MaxEnergy);
@@ -405,7 +402,6 @@ namespace Assets.Scripts.UIScripts
                     {
                         if (PlayerRole.Energy >= atkModel.Consume)
                         {
-                            atkModel.Proficiency++;
                             if (atkModel.Consume > 0)
                             {
                                 Common.EnergyImgChange(PlayerRole.Energy, atkModel.Consume, 0, PlayerRole.MaxEnergy);
@@ -448,7 +444,6 @@ namespace Assets.Scripts.UIScripts
                     {
                         if (PlayerRole.Energy >= atkModel.Consume)
                         {
-                            atkModel.Proficiency++;
                             if (atkModel.Consume > 0)
                             {
                                 Common.EnergyImgChange(PlayerRole.Energy, atkModel.Consume, 0, PlayerRole.MaxEnergy);
@@ -503,6 +498,14 @@ namespace Assets.Scripts.UIScripts
             {
                 Card_img.transform.localPosition = InitVector;
             }
+            #region 存储卡牌使用次数
+            var cardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+            var aa = cardPools.Find(a => a.ID == atkModel.ID);
+            atkModel.Proficiency = aa.Proficiency + 1;
+            cardPools.Remove(aa);
+            cardPools.Add(atkModel);
+            Common.SaveTxtFile(cardPools.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+            #endregion
             Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
             Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         }
