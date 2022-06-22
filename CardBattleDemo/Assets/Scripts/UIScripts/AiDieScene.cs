@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class AiDieScene : MonoBehaviour
 {
     Button btn_Return, btn_GameOver, btn_CardPoolsReturn;
-    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj, SettingCanvas, CardPoolsCanvas, AllSkillCanvas;
+    GameObject Award_Obj, ResetAward_Obj, CardPools_Obj, Setting_Obj, SettingCanvas, CardPoolsCanvas, AllSkillCanvas, obj_AwardSilver;
     Text txt_Silver, txt_AwardSilver, txt_ResetSilver, txt_CardPoolsCount;
     CurrentRoleModel PlayerRole;
     List<CurrentCardPoolModel> CurrentCardPools = new List<CurrentCardPoolModel>();
@@ -26,6 +26,7 @@ public class AiDieScene : MonoBehaviour
 
         Award_Obj = transform.Find("Award").gameObject;
         ResetAward_Obj = transform.Find("ResetAward").gameObject;
+        obj_AwardSilver = transform.Find("AwardSilver").gameObject;
         CardPools_Obj = transform.Find("CardPools_Obj").gameObject;
         SettingCanvas = GameObject.Find("SettingCanvas");
         CardPoolsCanvas = GameObject.Find("CardPoolsCanvas");
@@ -112,22 +113,98 @@ public class AiDieScene : MonoBehaviour
         }
         #endregion
 
-        for (int i = 0; i < AwardCount; i++)
+        if (string.IsNullOrEmpty(PlayerRole.AdventureIds))
         {
-            CreateAwardCrad(list[i], i);
+            for (int i = 0; i < AwardCount; i++)
+            {
+                CreateAwardCrad(list[i], i);
+            }
+
+            var RAwardSilver = Random.Range(15, 25);
+
+            txt_AwardSilver.text = $"+ {RAwardSilver} 银币";
+
+            PlayerRole.Wealth += RAwardSilver;
+            txt_Silver.text = PlayerRole.Wealth.ToString();
+            Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+            if (PlayerRole.Wealth < 25)
+            {
+                txt_ResetSilver.color = Color.red;
+            }
         }
+        else //固定的奖励
+        {
+            ResetAward_Obj.SetActive(false);
+            obj_AwardSilver.SetActive(false);
+            var model = Common.GetTxtFileToList<AdventureModel>(GlobalAttr.GlobalAdventureFileName, "Adventure").Find(a => a.ID == PlayerRole.AdventureIds);
+            if (model.RewardType == 4)//金币奖励
+            {
+                GameObject tempObject = Resources.Load("Prefab/img_AdventureBtn") as GameObject;
+                tempObject = Common.AddChild(Award_Obj.transform, tempObject);
+                tempObject.name = "img_AwardGold";
+                var temp_img = tempObject.GetComponent<Image>();
+                var temp_title = tempObject.transform.Find("txt_Title").GetComponent<Text>();
+                var temp_Effect = tempObject.transform.Find("txt_Effect").GetComponent<Text>();
+                Common.ImageBind("Images/GoldReward1", temp_img);
+                temp_title.transform.localScale = Vector3.zero;
+                temp_Effect.text = $"+{model.EventEffectValue} 银币";
+                EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
+                if (trigger == null)
+                {
+                    trigger = tempObject.AddComponent<EventTrigger>();
+                }
+                EventTrigger.Entry entry = new EventTrigger.Entry();
+                entry.callback.AddListener(delegate { ShowClick(model, tempObject); });
+                trigger.triggers.Add(entry);
+            }
+            else //卡牌奖励
+            {
+                var rewardList = new List<CurrentCardPoolModel>();
+                if (model.RewardType == 8)
+                {
+                    //rewardList = list.FindAll(a => 1 == 1);//加上查询条件
+                    rewardList = list;
+                    rewardList.ListRandom();
+                    for (int i = 0; i < model.EventEffectValue; i++)
+                    {
+                        rewardList.Add(rewardList[i]);
+                    }
+                }
+                for (int i = 0; i < rewardList.Count; i++)
+                {
+                    CreateAwardCrad(rewardList[i], i);
+                }
+            }
+            PlayerRole.AdventureIds = "";
+            Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+        }
+    }
 
-        var RAwardSilver = Random.Range(15, 25);
+    private void ShowClick(AdventureModel model, GameObject thisObj)
+    {
+        var btn = thisObj.transform.Find("btn_Adventure")?.GetComponent<Button>();
+        if (btn == null)
+        {
+            GameObject tempObject = Resources.Load("Prefab/btn_Adventure") as GameObject;
+            tempObject = Common.AddChild(thisObj.transform, tempObject);
+            tempObject.name = "btn_Adventure";
+            var temp = tempObject.GetComponent<Button>();
+            var tempName = temp.transform.Find("Text").GetComponent<Text>();
+            tempName.text = "确  定";
+            temp.onClick.AddListener(delegate { GoldRewardConfirm(model); });
+        }
+        else
+        {
+            btn.transform.localScale = Vector3.one;
+        }
+    }
 
-        txt_AwardSilver.text = $"+ {RAwardSilver} 银币";
-
-        PlayerRole.Wealth += RAwardSilver;
-        txt_Silver.text = PlayerRole.Wealth.ToString();
+    private void GoldRewardConfirm(AdventureModel model)
+    {
+        PlayerRole.Wealth += model.EventEffectValue;
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
-        if (PlayerRole.Wealth < 25)
-        {
-            txt_ResetSilver.color = Color.red;
-        }
+
+        Common.SceneJump("MapScene");
     }
 
 
@@ -253,6 +330,11 @@ public class AiDieScene : MonoBehaviour
             {
                 btn.transform.localScale = Vector3.zero;
             }
+        }
+        var goldBtn = transform.Find("Award/img_AwardGold/btn_Adventure")?.GetComponent<Button>();
+        if (goldBtn != null)
+        {
+            goldBtn.transform.localScale = Vector3.zero;
         }
     }
 

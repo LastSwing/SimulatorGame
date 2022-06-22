@@ -89,5 +89,12 @@ namespace Assets.Scripts.Tools
         /// </summary>
         public static string CurrentMapPathFileName = "CurrentMapPath";
         #endregion
+
+        #region Adventure
+        /// <summary>
+        /// 冒险文件名称
+        /// </summary>
+        public static string GlobalAdventureFileName = "GlobalAdventure";
+        #endregion
     }
 }

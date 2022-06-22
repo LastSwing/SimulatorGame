@@ -81,5 +81,15 @@ namespace Assets.Scripts.LogicalScripts.Models
         /// AI按等级出现
         /// </summary>
         public int AILevel { get; set; }
+
+        /// <summary>
+        /// 额外奖励
+        /// </summary>
+        public int ExtraReward { get; set; }
+
+        /// <summary>
+        /// 冒险ID
+        /// </summary>
+        public string AdventureIds { get; set; }
     }
 }

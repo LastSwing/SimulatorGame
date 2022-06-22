@@ -52,7 +52,7 @@ public class PlayerDieScene : MonoBehaviour
             int goldValue = mapLo.Row * Random.Range(6, 13);
             if (mapLo.HasKillBoss == 1)
             {
-                goldValue += 30;
+                goldValue = 130;
             }
             txt_AwardGold.text = $"+ {goldValue}";
             globalPlayerModel.Wealth += goldValue;

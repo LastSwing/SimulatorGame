@@ -1815,6 +1815,7 @@ public class MapScene : MonoBehaviour
         MoveTopOneUnitState = true;
         OneUnitCount = 0;
         string imgColumnName = "";
+        string SceneName = "";
         switch (mapLocation.MapType)
         {
             case 2:
@@ -1825,9 +1826,11 @@ public class MapScene : MonoBehaviour
             //    break;
             case 4:
                 imgColumnName = $"Adventure_img{mapLocation.Column}";
+                SceneName = "AdventureScene";
                 break;
             default:
                 imgColumnName = $"Atk_img{mapLocation.Column}";
+                SceneName = "GameScene";
                 break;
         }
         string imgRowName = "";
@@ -1863,7 +1866,7 @@ public class MapScene : MonoBehaviour
             Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
         }
         //进入游戏
-        Common.SceneJump("GameScene");
+        Common.SceneJump(SceneName);
     }
 
     /// <summary>
