@@ -47,7 +47,8 @@ public class MainView : BaseUI
     /// </summary>
     private void StartBtnClick()
     {
-        //todo
+        UIManager.instance.OpenView("GameView");
+        UIManager.instance.CloseView("MainView");
     }
 
     /// <summary>
@@ -64,6 +65,15 @@ public class MainView : BaseUI
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
         InitUIData();
         InitUIState();
+        InitSetting();
+    }
+
+    /// <summary>
+    /// 初始化其余设置
+    /// </summary>
+    private void InitSetting()
+    {
+        SoundManager.instance.PlayOnlyOneSound("BGM_1",(int)TrackType.BGM,true);
     }
 
     /// <summary>

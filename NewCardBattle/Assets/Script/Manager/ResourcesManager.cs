@@ -11,6 +11,8 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     /// 最好走配表的方式，这里先直接填充
     Dictionary<string, string> urlDic = new Dictionary<string, string>()
     {
+        {"SoundItem","SoundItem/SoundItem" },
+        {"BGM_1","AudioClip/BGM_1" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },
         //{"CardPoolsView","View/CardPoolsView" },
@@ -61,7 +63,7 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     {
         #region 资源路径初始化
         //Common.SaveTxtFile(Common.DicToJson(urlDic), GlobalAttr.AllResourcesFileName, "Resources");
-        urlDic = Common.DicDataRead(GlobalAttr.AllResourcesFileName); 
+        Common.DicDataRead(ref urlDic,GlobalAttr.AllResourcesFileName); 
         #endregion
 
         //页面预加载

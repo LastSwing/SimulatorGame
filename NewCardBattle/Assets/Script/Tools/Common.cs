@@ -191,10 +191,10 @@ namespace Assets.Script.Tools
         /// </summary>
         /// <param name="Name"></param>
         /// <returns></returns>
-        public static Dictionary<string, string> DicDataRead(string Name)
+        public static void DicDataRead(ref Dictionary<string, string> dict,string Name)
         {
             var path = Application.dataPath + "/Data/Resources/";
-            Dictionary<string, string> dict = new Dictionary<string, string>();
+            //Dictionary<string, string> dict = new Dictionary<string, string>();
             //文件夹是否存在
             DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
             if (!myDirectoryInfo.Exists)
@@ -227,7 +227,7 @@ namespace Assets.Script.Tools
                 }
                 json.Close();
             }
-            return dict;
+            //return dict;
         }
 
         #endregion
