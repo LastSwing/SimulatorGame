@@ -13,7 +13,7 @@ public class GameStart : MonoBehaviour
         UIManager.instance.Init();
         SoundManager.instance.Init();
         UIManager.instance.OpenView("MainView");
-        //UIManager.instance.OpenView("MapView");
+        //UIManager.instance.OpenView("CardPoolsView");
     }
 
     // Update is called once per frame

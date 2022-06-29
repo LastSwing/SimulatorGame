@@ -1,33 +1,109 @@
-﻿using System.Collections;
+﻿using Assets.Script.Tools;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SettingView : BaseUI
 {
-    public override void OnClose()
-    {
-        //throw new System.NotImplementedException();
-    }
 
+    Image img_Background;//背景图片
+    Button btn_GameOver, btn_CardList, btn_Return;
+    Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1;//返回按钮所跳页面；是否显示设置页面按钮0否，1是
     public override void OnInit()
     {
-        //throw new System.NotImplementedException();
+        //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
+        InitComponent();
+        InitUIevent();
     }
+
+    /// <summary>
+    /// 初始化UI组件
+    /// </summary>
+    private void InitComponent()
+    {
+        txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
+        txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
+        txt_SettingHasBtn = GameObject.Find("MainCanvas/txt_SettingHasBtn").GetComponent<Text>();
+        img_Background = transform.Find("BG").GetComponent<Image>();
+        btn_GameOver = transform.Find("UI/Content/btn_GameOver").GetComponent<Button>();
+        btn_CardList = transform.Find("UI/Content/btn_CardList").GetComponent<Button>();
+        btn_Return = transform.Find("UI/Content/btn_Return").GetComponent<Button>();
+    }
+
+    /// <summary>
+    /// 初始化事件
+    /// </summary>
+    private void InitUIevent()
+    {
+        btn_GameOver.onClick.AddListener(GameOverClick);
+        btn_CardList.onClick.AddListener(CardListClick);
+        btn_Return.onClick.AddListener(ReturnClick);
+    }
+
+    #region 按钮点击事件
+    public void GameOverClick()
+    {
+        UIManager.instance.OpenView("PlayerDieView");
+        UIManager.instance.CloseView("SettingView");
+    }
+
+    public void CardListClick()
+    {
+        txt_ReturnView.text = "SettingView";
+        UIManager.instance.OpenView("AllSkillView");
+        UIManager.instance.CloseView("SettingView");
+    }
+
+    public void ReturnClick()
+    {
+        UIManager.instance.OpenView(txt_ReturnView1.text);
+        UIManager.instance.CloseView("SettingView");
+    }
+
+    #endregion
 
     public override void OnOpen()
     {
-        //throw new System.NotImplementedException();
+        //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
+        InitUIData();
+        InitUIState();
+        InitSetting();
     }
 
-    // Start is called before the first frame update
-    void Start()
+    /// <summary>
+    /// 初始化其余设置
+    /// </summary>
+    private void InitSetting()
     {
-        
+        //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
     }
 
-    // Update is called once per frame
-    void Update()
+    /// <summary>
+    /// 更新UI状态
+    /// </summary>
+    private void InitUIState()
     {
-        
+        if (txt_SettingHasBtn.text == "0")
+        {
+            btn_GameOver.transform.localScale = Vector3.zero;
+        }
+        else
+        {
+            btn_GameOver.transform.localScale = Vector3.one;
+        }
+    }
+
+    /// <summary>
+    /// 更新数据
+    /// </summary>
+    private void InitUIData()
+    {
+
+    }
+
+    public override void OnClose()
+    {
+
     }
 }

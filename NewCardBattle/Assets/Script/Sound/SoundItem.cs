@@ -24,16 +24,16 @@ public class SoundItem : MonoBehaviour
         audioSource.Play();
         audioSource.loop = isLoop;
     }
-    
+
     /// <summary>
     /// 播放音频
     /// </summary>
     /// <param name="name">音频名</param>
     /// <param name="isLoop">循环</param>
-    public void Play(string name,bool isLoop = false)
+    public void Play(string name, bool isLoop = false)
     {
-        AudioClip audioClip=ResourcesManager.instance.Load(name) as AudioClip;
-        Play(audioClip,isLoop);
+        AudioClip audioClip = ResourcesManager.instance.Load(name) as AudioClip;
+        Play(audioClip, isLoop);
     }
 
     /// <summary>
