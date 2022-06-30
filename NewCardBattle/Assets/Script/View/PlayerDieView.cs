@@ -15,6 +15,7 @@ public class PlayerDieView : BaseUI
     GameObject Award_Obj;
     Text txt_AwardGold, txt_ReturnView, txt_ReturnView1;
     GlobalPlayerModel globalPlayerModel;
+    GameObject UI_Obj;
     float totalTime;
     int AccumulateCount, InitValue, MaxValue = 0;
     public override void OnInit()
@@ -37,6 +38,7 @@ public class PlayerDieView : BaseUI
         Award_Obj = transform.Find("UI/Award").gameObject;
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
+        UI_Obj = transform.Find("UI").gameObject;
     }
 
     /// <summary>
@@ -63,11 +65,13 @@ public class PlayerDieView : BaseUI
     #region 按钮事件
     public void ContinueClick()
     {
+        Common.GameOverDataReset();
         UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("PlayerDieView");
     }
     public void AginClick()
     {
+        Common.GameOverDataReset();
         UIManager.instance.OpenView("MainView");
         UIManager.instance.CloseView("PlayerDieView");
     }
@@ -109,7 +113,6 @@ public class PlayerDieView : BaseUI
     /// </summary>
     private void InitUIData()
     {
-        Common.GameOverDataReset();
         #region 奖励
         globalPlayerModel = Common.GetTxtFileToModel<GlobalPlayerModel>(GlobalAttr.GlobalRoleFileName);
         var mapLo = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
@@ -136,7 +139,7 @@ public class PlayerDieView : BaseUI
             Calculate();
             for (int x = 0; x < AccumulateCount; x++)
             {
-                GameObject img_Accumulate = Resources.Load("Prefabs/img_Accumulate") as GameObject;
+                GameObject img_Accumulate = ResourcesManager.instance.Load("img_Accumulate") as GameObject;
                 img_Accumulate = Common.AddChild(Award_Obj.transform, img_Accumulate);
                 img_Accumulate.name = "img_Accumulate" + x;
                 #region 点击事件
@@ -153,6 +156,18 @@ public class PlayerDieView : BaseUI
             globalPlayerModel.MaxAccumulate = MaxValue;
             Common.SaveTxtFile(globalPlayerModel.ObjectToJson(), GlobalAttr.GlobalRoleFileName);
             #endregion
+        }
+        #endregion
+
+        #region 加载TopBar预制件
+
+        //加载TopBar预制件
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        if (tempBar == null)
+        {
+            GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+            topBar = Common.AddChild(UI_Obj.transform, topBar);
+            topBar.name = "TopBar";
         }
         #endregion
     }
@@ -181,7 +196,7 @@ public class PlayerDieView : BaseUI
         if (surplusList?.Count > 0)
         {
             var model = surplusList[0];
-            GameObject img_Card = Resources.Load("Prefabs/img_Card240") as GameObject;
+            GameObject img_Card = ResourcesManager.instance.Load("img_Card240") as GameObject;
             img_Card = Common.AddChild(obj.transform, img_Card);
             img_Card.name = "img_AwardCard" + i;
             img_Card.transform.localPosition = new Vector3(0, 0);
@@ -256,7 +271,7 @@ public class PlayerDieView : BaseUI
         else
         {
             var Card_img = GameObject.Find($"UI/Award/img_Accumulate{i}/img_AwardCard{i}").GetComponent<Image>();
-            GameObject tempImg = Resources.Load("Prefabs/img_CardDetail") as GameObject;
+            GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
             tempImg = Common.AddChild(Card_img.transform, tempImg);
             tempImg.name = "img_Detail";
             tempImg.transform.localPosition = new Vector2(0, 160);

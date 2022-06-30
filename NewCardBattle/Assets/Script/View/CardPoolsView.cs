@@ -106,7 +106,7 @@ public class CardPoolsView : BaseUI
     /// <param name="i"></param>
     private void CreateAwardCrad(CurrentCardPoolModel model, int i)
     {
-        GameObject tempObject = Resources.Load("Prefabs/img_Card240") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("img_Card240") as GameObject;
         tempObject = Common.AddChild(Content_Obj.transform, tempObject);
         tempObject.name = "img_Card" + i;
         EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
@@ -195,7 +195,7 @@ public class CardPoolsView : BaseUI
         else
         {
             var Card_img = GameObject.Find($"CardDetails");
-            GameObject tempImg = Resources.Load("Prefabs/img_CardDetail") as GameObject;
+            GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
             tempImg = Common.AddChild(Card_img.transform, tempImg);
             tempImg.name = "img_Detail" + i;
             tempImg.transform.localPosition = new Vector2(0, 0);

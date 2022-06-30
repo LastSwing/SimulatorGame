@@ -245,7 +245,7 @@ public class AllSkillView : BaseUI
     /// <param name="i"></param>
     private void CreateQuestionCard(CurrentCardPoolModel model, int i)
     {
-        GameObject tempObject = Resources.Load("Prefabs/img_QuestionCard") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("img_QuestionCard") as GameObject;
         tempObject = Common.AddChild(Content_Obj.transform, tempObject);
         tempObject.name = "img_Card" + i;
         EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
@@ -265,7 +265,7 @@ public class AllSkillView : BaseUI
     /// <param name="i"></param>
     private void CreateAwardCrad(CurrentCardPoolModel model, int i)
     {
-        GameObject tempObject = Resources.Load("Prefabs/img_Card240") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("img_Card240") as GameObject;
         tempObject = Common.AddChild(Content_Obj.transform, tempObject);
         tempObject.name = "img_Card" + i;
         EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
@@ -337,11 +337,11 @@ public class AllSkillView : BaseUI
             var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
             if (type == 0)
             {
-                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 185);
+                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
             }
             else
             {
-                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 160);
+                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
             }
             Card_Detail.transform.localScale = Vector3.one;
         }
@@ -353,10 +353,10 @@ public class AllSkillView : BaseUI
                 var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
                 //RectTransform Irect = Card_img.GetComponent<RectTransform>();
                 //var imgHeight = Irect.sizeDelta.y;
-                GameObject tempImg = Resources.Load("Prefabs/img_CardDetail") as GameObject;
+                GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
                 tempImg.name = "img_Detail" + i;
-                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 185);
+                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
                 temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
@@ -366,10 +366,10 @@ public class AllSkillView : BaseUI
                 //img_QuestionDetail
                 var Card_Deatils = transform.Find("UI/CardDetails").gameObject;
                 var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
-                GameObject tempImg = Resources.Load("Prefabs/img_QuestionDetail") as GameObject;
+                GameObject tempImg = ResourcesManager.instance.Load("img_QuestionDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
                 tempImg.name = "img_Detail" + i;
-                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 160);
+                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
                 string typeName = "";
