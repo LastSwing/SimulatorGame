@@ -14,6 +14,8 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
         {"SoundItem","SoundItem/SoundItem" },
         {"img_QuestionDetail","Prefabs/img_QuestionDetail" },
         {"img_Accumulate","Prefabs/img_Accumulate" },
+        {"btn_Adventure","Prefabs/btn_Adventure" },
+        {"btn_Confirm","Prefabs/btn_Confirm" },
         {"BGM_1","AudioClip/BGM_1" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },

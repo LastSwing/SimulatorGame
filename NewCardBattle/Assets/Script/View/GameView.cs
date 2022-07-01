@@ -37,7 +37,7 @@ public class GameView : BaseUI
         img_Player = transform.Find("UI/Player/Player").GetComponent<Image>();
         img_Enemy = transform.Find("UI/Enemy/Enemy").GetComponent<Image>();
         Pimg_HP = transform.Find("UI/Player/Pimg_HP").GetComponent<Image>();
-        Eimg_HP = transform.Find("UI/Player/Eimg_HP").GetComponent<Image>();
+        Eimg_HP = transform.Find("UI/Enemy/Eimg_HP").GetComponent<Image>();
         Pimg_Armor = transform.Find("UI/Player/img_Armor").GetComponent<Image>();
         Eimg_Armor = transform.Find("UI/Enemy/img_Armor").GetComponent<Image>();
 
@@ -69,7 +69,7 @@ public class GameView : BaseUI
         txt_ReturnView.text = "GameView";
         txt_ReturnView1.text = "GameView";
         txt_SettingHasBtn.text = "1";
-        UIManager.instance.OpenView("PlayerDieView");
+        UIManager.instance.OpenView("SettingView");
         UIManager.instance.CloseView("GameView");
     }
 

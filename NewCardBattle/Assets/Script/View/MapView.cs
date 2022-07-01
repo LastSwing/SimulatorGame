@@ -199,6 +199,7 @@ public class MapView : BaseUI
         bottomY = Screen.height * 2.5f;
         topY = Screen.height * -1.5f;
         lineSpacing = bottomY / 9;
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
         #region 数据初始化
         var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom();//ailevel==boss等级
         CurrentAiModel = listAi[0];
@@ -207,6 +208,11 @@ public class MapView : BaseUI
         if (PlayerRole == null)
         {
             PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == GlobalRole.CurrentRoleID);
+            //TopBar也删除
+            if (tempBar != null)
+            {
+                DestroyImmediate(tempBar);
+            }
         }
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         Common.ImageBind(CurrentAiModel.HeadPortraitUrl, img_Boss_Head);
@@ -248,7 +254,6 @@ public class MapView : BaseUI
         #region 加载TopBar预制件
 
         //加载TopBar预制件
-        var tempBar = transform.Find("UI/TopBar")?.gameObject;
         if (tempBar == null)
         {
             GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
@@ -273,6 +278,7 @@ public class MapView : BaseUI
         listCombatPoint = Common.GetTxtFileToList<MapCombatPoint>(GlobalAttr.CurrentMapCombatPointFileName, "Map");
         listPath = Common.GetTxtFileToList<MapPath>(GlobalAttr.CurrentMapPathFileName, "Map");
         mapLocation = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
+
         if (listCombatPoint?.Count > 0)
         {
             int BGcount = img_map.transform.childCount;
@@ -298,6 +304,21 @@ public class MapView : BaseUI
         }
         else
         {
+            int BGcount = img_map.transform.childCount;
+            if (BGcount > 0)
+            {
+                for (int i = 0; i < BGcount; i++)
+                {
+                    if (img_map.transform.GetChild(0).gameObject.name == "Map_Row0")
+                    {
+                        img_map.transform.GetChild(0).gameObject.transform.SetAsLastSibling();
+                    }
+                    else
+                    {
+                        DestroyImmediate(img_map.transform.GetChild(0).gameObject);
+                    }
+                }
+            }
             listCombatPoint = new List<MapCombatPoint>();
             listPath = new List<MapPath>();
             mapLocation = new CurrentMapLocation();//生成地图
@@ -315,6 +336,8 @@ public class MapView : BaseUI
             });
             Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Init);
             CreateMapState = true;
+            MapRow = 1;
+            ListPreviousRow = new List<int>() { 1 };
         }
     }
 
@@ -1765,7 +1788,7 @@ public class MapView : BaseUI
 
     public override void OnClose()
     {
-        //throw new System.NotImplementedException();
+        HasMouseDown = false;
     }
 
     #region Uinty事件
