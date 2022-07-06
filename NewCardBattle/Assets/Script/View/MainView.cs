@@ -23,6 +23,7 @@ public class MainView : BaseUI
     List<CurrentRoleModel> GlobalRolePools = new List<CurrentRoleModel>();
     CurrentRoleModel CurrentRole = new CurrentRoleModel();
     GlobalPlayerModel GlobalRole;
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -87,7 +88,9 @@ public class MainView : BaseUI
         UIManager.instance.CloseView("MainView");
     }
 
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -145,6 +148,7 @@ public class MainView : BaseUI
 
     }
 
+    #endregion
     public override void OnClose()
     {
         //todo

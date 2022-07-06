@@ -17,6 +17,7 @@ public class AllSkillView : BaseUI
     RectTransform Content_Rect;
     Text txt_AllSkillCount, txt_ReturnView;
     Button btn_AllSkill, btn_Atk, btn_function, btn_Debuff, btn_Return;
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -186,6 +187,9 @@ public class AllSkillView : BaseUI
     }
 
     #endregion
+    #endregion
+
+    #region OnOpen
 
     public override void OnOpen()
     {
@@ -202,6 +206,29 @@ public class AllSkillView : BaseUI
     {
         //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
     }
+
+    /// <summary>
+    /// 更新UI状态
+    /// </summary>
+    private void InitUIState()
+    {
+        txt_AllSkillCount.text = $"{GlobalPlayerCardPools?.Count}/{GlobalCardPools?.Count}";
+    }
+
+    /// <summary>
+    /// 更新数据
+    /// </summary>
+    private void InitUIData()
+    {
+        #region 数据源
+        GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName);
+        GlobalPlayerCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
+        #endregion
+        CardList = GlobalCardPools;
+        CreateCardPools(GlobalPlayerCardPools, GlobalCardPools);
+        BtnColorUpdate(0);
+    } 
+    #endregion
 
     #region 卡池创建
     /// <summary>
@@ -245,7 +272,7 @@ public class AllSkillView : BaseUI
     /// <param name="i"></param>
     private void CreateQuestionCard(CurrentCardPoolModel model, int i)
     {
-        GameObject tempObject = Resources.Load("Prefabs/img_QuestionCard") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("img_QuestionCard") as GameObject;
         tempObject = Common.AddChild(Content_Obj.transform, tempObject);
         tempObject.name = "img_Card" + i;
         EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
@@ -265,7 +292,7 @@ public class AllSkillView : BaseUI
     /// <param name="i"></param>
     private void CreateAwardCrad(CurrentCardPoolModel model, int i)
     {
-        GameObject tempObject = Resources.Load("Prefabs/img_Card240") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("img_Card240") as GameObject;
         tempObject = Common.AddChild(Content_Obj.transform, tempObject);
         tempObject.name = "img_Card" + i;
         EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
@@ -277,49 +304,7 @@ public class AllSkillView : BaseUI
         entry.callback.AddListener(delegate { ShowDetail(model, i); });
         trigger.triggers.Add(entry);
 
-        #region 卡牌数据绑定
-        var cardType = model.StateType;
-        #region 攻击力图标
-        var Card_ATK_img = tempObject.transform.Find("img_ATK").GetComponent<Image>();
-        var Card_ATK_icon = tempObject.transform.Find("img_ATK/Image").GetComponent<Image>();
-        var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
-        if (cardType == 6 || cardType == 7 || cardType == 8 || cardType == 9)//是否隐藏
-        {
-            Card_ATK_img.transform.localScale = Vector3.zero;
-        }
-        else
-        {
-            if (cardType == 1)
-            {
-                Common.ImageBind("Images/Defense", Card_ATK_icon);
-            }
-            else if (cardType == 2 || cardType == 3)
-            {
-                Common.ImageBind("Images/HP_Icon", Card_ATK_icon);
-            }
-            else if (cardType == 5)
-            {
-                Common.ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
-            }
-            else
-            {
-                Common.ImageBind("Images/Atk_Icon", Card_ATK_icon);
-            }
-            Card_ATKNumber.text = model.Effect.ToString();
-        }
-        #endregion
-        var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
-        var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
-        var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
-        var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
-        if (model.Consume == 0)
-        {
-            Card_energy_img.transform.localScale = Vector3.zero;
-        }
-        Common.ImageBind(model.CardUrl, Card_Skill_img);
-        Card_Energy.text = model.Consume.ToString();
-        Card_Title.text = model.CardName.TextSpacing();
-        #endregion
+        Common.CardDataBind(tempObject, model);
     }
 
     /// <summary>
@@ -337,11 +322,11 @@ public class AllSkillView : BaseUI
             var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
             if (type == 0)
             {
-                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 185);
+                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
             }
             else
             {
-                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 160);
+                Card_Detail.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
             }
             Card_Detail.transform.localScale = Vector3.one;
         }
@@ -353,10 +338,10 @@ public class AllSkillView : BaseUI
                 var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
                 //RectTransform Irect = Card_img.GetComponent<RectTransform>();
                 //var imgHeight = Irect.sizeDelta.y;
-                GameObject tempImg = Resources.Load("Prefabs/img_CardDetail") as GameObject;
+                GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
                 tempImg.name = "img_Detail" + i;
-                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 185);
+                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
                 temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
@@ -366,10 +351,10 @@ public class AllSkillView : BaseUI
                 //img_QuestionDetail
                 var Card_Deatils = transform.Find("UI/CardDetails").gameObject;
                 var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
-                GameObject tempImg = Resources.Load("Prefabs/img_QuestionDetail") as GameObject;
+                GameObject tempImg = ResourcesManager.instance.Load("img_QuestionDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
                 tempImg.name = "img_Detail" + i;
-                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + 160);
+                tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
                 string typeName = "";
@@ -405,28 +390,6 @@ public class AllSkillView : BaseUI
         }
     }
     #endregion
-    /// <summary>
-    /// 更新UI状态
-    /// </summary>
-    private void InitUIState()
-    {
-        txt_AllSkillCount.text = $"{GlobalPlayerCardPools?.Count}/{GlobalCardPools?.Count}";
-    }
-
-    /// <summary>
-    /// 更新数据
-    /// </summary>
-    private void InitUIData()
-    {
-        #region 数据源
-        GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName);
-        GlobalPlayerCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
-        #endregion
-        CardList = GlobalCardPools;
-        CreateCardPools(GlobalPlayerCardPools, GlobalCardPools);
-        BtnColorUpdate(0);
-    }
-
 
     public override void OnClose()
     {

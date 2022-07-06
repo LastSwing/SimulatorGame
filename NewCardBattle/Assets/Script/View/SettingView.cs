@@ -10,6 +10,7 @@ public class SettingView : BaseUI
     Image img_Background;//背景图片
     Button btn_GameOver, btn_CardList, btn_Return;
     Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1;//返回按钮所跳页面；是否显示设置页面按钮0否，1是
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -62,7 +63,9 @@ public class SettingView : BaseUI
     }
 
     #endregion
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -100,7 +103,8 @@ public class SettingView : BaseUI
     private void InitUIData()
     {
 
-    }
+    } 
+    #endregion
 
     public override void OnClose()
     {
