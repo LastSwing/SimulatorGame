@@ -14,6 +14,7 @@ public class CardPoolsView : BaseUI
     RectTransform Content_Rect;
     Image img_Background;//背景图片
     Button btn_Return;
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -59,7 +60,9 @@ public class CardPoolsView : BaseUI
         UIManager.instance.OpenView(txt_ReturnView.text);
         UIManager.instance.CloseView("CardPoolsView");
     }
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -75,6 +78,37 @@ public class CardPoolsView : BaseUI
     {
         //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
     }
+
+    /// <summary>
+    /// 更新UI状态
+    /// </summary>
+    private void InitUIState()
+    {
+
+    }
+
+    /// <summary>
+    /// 更新数据
+    /// </summary>
+    private void InitUIData()
+    {
+        if (txt_CardType.text == "1")
+        {
+            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
+            CreateCardPools();
+        }
+        else if (txt_CardType.text == "2")
+        {
+            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName);
+            CreateCardPools();
+        }
+        else
+        {
+            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+            CreateCardPools();
+        }
+    } 
+    #endregion
 
     #region 卡池创建
 
@@ -118,49 +152,7 @@ public class CardPoolsView : BaseUI
         entry.callback.AddListener(delegate { ShowDetail(model, i); });
         trigger.triggers.Add(entry);
 
-        #region 卡牌数据绑定
-        var cardType = model.StateType;
-        #region 攻击力图标
-        var Card_ATK_img = tempObject.transform.Find("img_ATK").GetComponent<Image>();
-        var Card_ATK_icon = tempObject.transform.Find("img_ATK/Image").GetComponent<Image>();
-        var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
-        if (cardType == 6 || cardType == 7 || cardType == 8 || cardType == 9)//是否隐藏
-        {
-            Card_ATK_img.transform.localScale = Vector3.zero;
-        }
-        else
-        {
-            if (cardType == 1)
-            {
-                Common.ImageBind("Images/Defense", Card_ATK_icon);
-            }
-            else if (cardType == 2 || cardType == 3)
-            {
-                Common.ImageBind("Images/HP_Icon", Card_ATK_icon);
-            }
-            else if (cardType == 5)
-            {
-                Common.ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
-            }
-            else
-            {
-                Common.ImageBind("Images/Atk_Icon", Card_ATK_icon);
-            }
-            Card_ATKNumber.text = model.Effect.ToString();
-        }
-        #endregion
-        var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
-        var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
-        var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
-        var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
-        if (model.Consume == 0)
-        {
-            Card_energy_img.transform.localScale = Vector3.zero;
-        }
-        Common.ImageBind(model.CardUrl, Card_Skill_img);
-        Card_Energy.text = model.Consume.ToString();
-        Card_Title.text = model.CardName.TextSpacing();
-        #endregion
+        Common.CardDataBind(tempObject, model);
     }
 
 
@@ -205,37 +197,6 @@ public class CardPoolsView : BaseUI
         }
     }
     #endregion
-
-    /// <summary>
-    /// 更新UI状态
-    /// </summary>
-    private void InitUIState()
-    {
-
-    }
-
-    /// <summary>
-    /// 更新数据
-    /// </summary>
-    private void InitUIData()
-    {
-        if (txt_CardType.text == "1")
-        {
-            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
-            CreateCardPools();
-        }
-        else if (txt_CardType.text == "2")
-        {
-            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName);
-            CreateCardPools();
-        }
-        else
-        {
-            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
-            CreateCardPools();
-        }
-    }
-
     public override void OnClose()
     {
 

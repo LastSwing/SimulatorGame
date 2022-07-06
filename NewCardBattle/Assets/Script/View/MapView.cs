@@ -41,6 +41,7 @@ public class MapView : BaseUI
     private bool IsNeedMove, HasMouseDown, HasMouseUp = false;//是否需要移动 
     #endregion
     float bottomY, topY, lineSpacing;//地图底部Y,地图顶部Y,每个战斗点间距
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -165,7 +166,9 @@ public class MapView : BaseUI
         UIManager.instance.CloseView("MapView");
     }
     #endregion
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -267,7 +270,9 @@ public class MapView : BaseUI
             btn_Setting.onClick.AddListener(SettingClick);
         }
         MapInit();
-    }
+    } 
+    #endregion
+
     #region 地图事件
 
     /// <summary>
@@ -1735,17 +1740,18 @@ public class MapView : BaseUI
         {
             case 2:
                 imgColumnName = $"Atk_imgShop{mapLocation.Column}";
+                SceneName = "ShoppingView";
                 break;
             //case 3:
             //    imgColumnName = "Atk_imgBoss";
             //    break;
             case 4:
                 imgColumnName = $"Adventure_img{mapLocation.Column}";
-                SceneName = "AdventureScene";
+                SceneName = "AdventureView";
                 break;
             default:
                 imgColumnName = $"Atk_img{mapLocation.Column}";
-                SceneName = "GameScene";
+                SceneName = "GameView";
                 break;
         }
         string imgRowName = "";
@@ -1781,7 +1787,7 @@ public class MapView : BaseUI
             Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
         }
         //进入游戏
-        UIManager.instance.OpenView("GameView");
+        UIManager.instance.OpenView(SceneName);
         UIManager.instance.CloseView("MapView");
     }
     #endregion

@@ -102,5 +102,10 @@ namespace Assets.Script.Models
         /// </summary>
         public int AiAtkSort { get; set; }
 
+        /// <summary>
+        /// 攻击次数
+        /// </summary>
+        public int AtkNumber { get; set; }
+
     }
 }
