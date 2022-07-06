@@ -12,6 +12,14 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     Dictionary<string, string> urlDic = new Dictionary<string, string>()
     {
         {"SoundItem","SoundItem/SoundItem" },
+        {"img_QuestionDetail","Prefabs/img_QuestionDetail" },
+        {"img_Accumulate","Prefabs/img_Accumulate" },
+        {"btn_Adventure","Prefabs/btn_Adventure" },
+        {"btn_Confirm","Prefabs/btn_Confirm" },
+        {"ShoppingView","View/ShoppingView" },
+        {"UpgradeView","View/UpgradeView" },
+        {"img_CardShop","Prefabs/img_CardShop" },
+        {"btn_ShopConfirm","Prefabs/btn_ShopConfirm" },
         {"BGM_1","AudioClip/BGM_1" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },
@@ -63,7 +71,7 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     {
         #region 资源路径初始化
         //Common.SaveTxtFile(Common.DicToJson(urlDic), GlobalAttr.AllResourcesFileName, "Resources");
-        Common.DicDataRead(ref urlDic,GlobalAttr.AllResourcesFileName); 
+        Common.DicDataRead(ref urlDic, GlobalAttr.AllResourcesFileName);
         #endregion
 
         //页面预加载

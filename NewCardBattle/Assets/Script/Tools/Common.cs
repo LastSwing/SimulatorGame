@@ -1,4 +1,5 @@
-﻿using LitJson;
+﻿using Assets.Script.Models;
+using LitJson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -173,7 +174,7 @@ namespace Assets.Script.Tools
         /// </summary>
         /// <param name="Name"></param>
         /// <returns></returns>
-        public static void DicDataRead(ref Dictionary<string, string> dict,string Name)
+        public static void DicDataRead(ref Dictionary<string, string> dict, string Name)
         {
             var path = Application.dataPath + "/Data/Resources/";
             //Dictionary<string, string> dict = new Dictionary<string, string>();
@@ -630,7 +631,64 @@ namespace Assets.Script.Tools
             }
         }
 
-
+        /// <summary>
+        /// 卡牌数据绑定
+        /// </summary>
+        /// <param name="tempObject">卡牌对象</param>
+        /// <param name="model">实体类</param>
+        public static void CardDataBind(GameObject tempObject, CurrentCardPoolModel model)
+        {
+            #region 卡牌数据绑定
+            var cardType = model.StateType;
+            #region 攻击力图标
+            var Card_ATK_img = tempObject.transform.Find("img_ATK").GetComponent<Image>();
+            var Card_ATK_icon = tempObject.transform.Find("img_ATK/Image").GetComponent<Image>();
+            var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
+            if (cardType == 6 || cardType == 7 || cardType == 8 || cardType == 9)//是否隐藏
+            {
+                Card_ATK_img.transform.localScale = Vector3.zero;
+            }
+            else
+            {
+                if (cardType == 1)
+                {
+                    ImageBind("Images/Defense", Card_ATK_icon);
+                }
+                else if (cardType == 2 || cardType == 3)
+                {
+                    ImageBind("Images/HP_Icon", Card_ATK_icon);
+                }
+                else if (cardType == 5)
+                {
+                    ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
+                }
+                else
+                {
+                    ImageBind("Images/Atk_Icon", Card_ATK_icon);
+                }
+                Card_ATKNumber.text = model.Effect.ToString();
+                
+            }
+            #endregion
+            var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
+            var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
+            var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
+            var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
+            if (model.Consume == 0)
+            {
+                Card_energy_img.transform.localScale = Vector3.zero;
+            }
+            ImageBind(model.CardUrl, Card_Skill_img);
+            Card_Energy.text = model.Consume.ToString();
+            Card_Title.text = model.CardName.TextSpacing();
+            if (model.UpgradeCount == 1)
+            {
+                Card_ATKNumber.color = new Color32(0, 205, 12, 255);
+                Card_Title.color = new Color32(0, 205, 12, 255);
+                Card_Title.text = "* " + Card_Title.text;
+            }
+            #endregion
+        }
         #endregion
 
         #region Method

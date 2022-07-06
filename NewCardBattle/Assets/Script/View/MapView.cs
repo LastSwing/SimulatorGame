@@ -38,8 +38,10 @@ public class MapView : BaseUI
     private Vector2 second = Vector2.zero;//鼠标第二次位置（拖拽位置）
     private Vector3 vecPos = Vector3.zero;//鼠标移动了多少
     private Vector2 InitPos = Vector2.zero;//初始位置
-    private bool IsNeedMove = false;//是否需要移动 
+    private bool IsNeedMove, HasMouseDown, HasMouseUp = false;//是否需要移动 
     #endregion
+    float bottomY, topY, lineSpacing;//地图底部Y,地图顶部Y,每个战斗点间距
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -164,7 +166,9 @@ public class MapView : BaseUI
         UIManager.instance.CloseView("MapView");
     }
     #endregion
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -195,6 +199,10 @@ public class MapView : BaseUI
     /// </summary>
     private void InitUIData()
     {
+        bottomY = Screen.height * 2.5f;
+        topY = Screen.height * -1.5f;
+        lineSpacing = bottomY / 9;
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
         #region 数据初始化
         var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom();//ailevel==boss等级
         CurrentAiModel = listAi[0];
@@ -203,6 +211,11 @@ public class MapView : BaseUI
         if (PlayerRole == null)
         {
             PlayerRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalPlayerRolePoolFileName).Find(a => a.RoleID == GlobalRole.CurrentRoleID);
+            //TopBar也删除
+            if (tempBar != null)
+            {
+                DestroyImmediate(tempBar);
+            }
         }
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
         Common.ImageBind(CurrentAiModel.HeadPortraitUrl, img_Boss_Head);
@@ -244,10 +257,9 @@ public class MapView : BaseUI
         #region 加载TopBar预制件
 
         //加载TopBar预制件
-        var tempBar = transform.Find("UI/TopBar")?.gameObject;
         if (tempBar == null)
         {
-            GameObject topBar = Resources.Load("Prefabs/TopBar") as GameObject;
+            GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
             topBar = Common.AddChild(UI_Obj.transform, topBar);
             topBar.name = "TopBar";
         }
@@ -258,7 +270,9 @@ public class MapView : BaseUI
             btn_Setting.onClick.AddListener(SettingClick);
         }
         MapInit();
-    }
+    } 
+    #endregion
+
     #region 地图事件
 
     /// <summary>
@@ -269,11 +283,14 @@ public class MapView : BaseUI
         listCombatPoint = Common.GetTxtFileToList<MapCombatPoint>(GlobalAttr.CurrentMapCombatPointFileName, "Map");
         listPath = Common.GetTxtFileToList<MapPath>(GlobalAttr.CurrentMapPathFileName, "Map");
         mapLocation = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
+
         if (listCombatPoint?.Count > 0)
         {
-            var map_Row0 = transform.Find("BG/Map_Row0").gameObject;
-            DestroyImmediate(map_Row0);
-            //map_Row0.SetActive(false);
+            int BGcount = img_map.transform.childCount;
+            for (int i = 0; i < BGcount; i++)
+            {
+                DestroyImmediate(img_map.transform.GetChild(0).gameObject);
+            }
             //读取地图
             ReadMap();
             ReadPath();
@@ -292,6 +309,21 @@ public class MapView : BaseUI
         }
         else
         {
+            int BGcount = img_map.transform.childCount;
+            if (BGcount > 0)
+            {
+                for (int i = 0; i < BGcount; i++)
+                {
+                    if (img_map.transform.GetChild(0).gameObject.name == "Map_Row0")
+                    {
+                        img_map.transform.GetChild(0).gameObject.transform.SetAsLastSibling();
+                    }
+                    else
+                    {
+                        DestroyImmediate(img_map.transform.GetChild(0).gameObject);
+                    }
+                }
+            }
             listCombatPoint = new List<MapCombatPoint>();
             listPath = new List<MapPath>();
             mapLocation = new CurrentMapLocation();//生成地图
@@ -309,6 +341,8 @@ public class MapView : BaseUI
             });
             Common.ImageBind(PlayerRole.HeadPortraitUrl, img_Init);
             CreateMapState = true;
+            MapRow = 1;
+            ListPreviousRow = new List<int>() { 1 };
         }
     }
 
@@ -325,7 +359,7 @@ public class MapView : BaseUI
             if (item.Key == 13)
             {
                 //图片生成
-                GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                 Atkimg = Common.AddChild(img_map.transform, Atkimg);
                 var column = item.ToList()[0];
                 Atkimg.name = column.Name;
@@ -336,7 +370,7 @@ public class MapView : BaseUI
                 Common.ImageBind(column.Url, tempImg);
 
                 #region 添加头像
-                GameObject img_head = Resources.Load("Prefabs/Map/Map_Head_Box") as GameObject;
+                GameObject img_head = ResourcesManager.instance.Load("Map_Head_Box") as GameObject;
                 img_head = Common.AddChild(Atkimg.transform, img_head);
                 img_head.name = "Map_Head_Box";
                 var tempHead = Atkimg.transform.Find($"Map_Head_Box/img_Round/img_Head").GetComponent<Image>();
@@ -359,7 +393,7 @@ public class MapView : BaseUI
             }
             else
             {
-                GameObject tempObject = Resources.Load("Prefabs/Map/Map_Row") as GameObject;
+                GameObject tempObject = ResourcesManager.instance.Load("Map_Row") as GameObject;
                 tempObject = Common.AddChild(img_map.transform, tempObject);
                 tempObject.name = "Map_Row" + item.Key;
                 tempObject.transform.localPosition = new Vector2(0, OneRowY + item.Key * 240);
@@ -367,7 +401,7 @@ public class MapView : BaseUI
                 foreach (var column in listColumn)
                 {
                     //图片生成
-                    GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                    GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
                     Atkimg.name = column.Name;
                     var tempImg = tempObject.transform.Find(column.Name).GetComponent<Image>();
@@ -394,7 +428,7 @@ public class MapView : BaseUI
     {
         foreach (var row in listPath)
         {
-            GameObject tempObject = Resources.Load($"Prefabs/Map/Path_NullObj") as GameObject;
+            GameObject tempObject = ResourcesManager.instance.Load("Path_NullObj") as GameObject;
             tempObject = Common.AddChild(img_map.transform, tempObject);
             tempObject.name = $"Path_{row.Row}";
             tempObject.transform.localPosition = new Vector2(0, OnePathY + (row.Row - 1) * 240);
@@ -405,8 +439,8 @@ public class MapView : BaseUI
             {
                 if (row.CurrentRow == 2)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj1.transform.localPosition = new Vector2(-62, 0);
@@ -416,9 +450,9 @@ public class MapView : BaseUI
                 }
                 if (row.CurrentRow == 3)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -431,10 +465,10 @@ public class MapView : BaseUI
                 }
                 if (row.CurrentRow == 4)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_3") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_3_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_3") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_3_y") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -453,8 +487,8 @@ public class MapView : BaseUI
             {
                 if (row.CurrentRow == 1)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj1.transform.localPosition = new Vector2(-62, 0);
@@ -464,10 +498,10 @@ public class MapView : BaseUI
                 }
                 if (row.CurrentRow == 2)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0_y") as GameObject;
                     var random = row.RandomNum;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -481,9 +515,9 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 3)
                 {
                     var random = row.RandomNum;//1不带y，0带y
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load($"Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -499,10 +533,10 @@ public class MapView : BaseUI
                     int random = row.RandomNum;
                     if (random == 0)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -518,10 +552,10 @@ public class MapView : BaseUI
                     }
                     else if (random == 1)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -537,10 +571,10 @@ public class MapView : BaseUI
                     }
                     else if (random == 2)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_0_y") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_0_y") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -560,9 +594,9 @@ public class MapView : BaseUI
             {
                 if (row.CurrentRow == 1)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -576,10 +610,10 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 2)
                 {
                     var random = row.RandomNum;
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
                     switch (random)
                     {
                         case 1:
@@ -611,10 +645,10 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 3)
                 {
                     var random = row.RandomNum;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                     switch (random)
                     {
                         case 0:
@@ -630,13 +664,13 @@ public class MapView : BaseUI
                             obj2.transform.localPosition = new Vector2(-105, 0);
                             obj2.transform.name = $"img_{row.Row}_0_1";
 
-                            var obj6 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                            var obj6 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                             obj6 = Common.AddChild(tempObject.transform, obj6);
                             obj6.transform.localPosition = new Vector2(20, 0);
                             obj6.transform.name = $"img_{row.Row}_1_1";
                             break;
                         case 2:
-                            var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                            var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                             obj5 = Common.AddChild(tempObject.transform, obj5);
                             obj5.transform.localPosition = new Vector2(20, 0);
                             obj5.transform.name = $"img_{row.Row}_1_1";
@@ -668,10 +702,10 @@ public class MapView : BaseUI
                     int random = row.RandomNum;
                     if (random == 0)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -687,10 +721,10 @@ public class MapView : BaseUI
                     }
                     else if (random == 1)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -706,11 +740,11 @@ public class MapView : BaseUI
                     }
                     else if (random == 2)
                     {
-                        var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                        var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
-                        var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                        var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                        var obj5 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
+                        var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                        var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
+                        var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                        var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                        var obj5 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
                         obj1 = Common.AddChild(tempObject.transform, obj1);
                         obj2 = Common.AddChild(tempObject.transform, obj2);
                         obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -733,10 +767,10 @@ public class MapView : BaseUI
             {
                 if (row.CurrentRow == 1)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_3_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_3") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_3_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_3") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -753,12 +787,12 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 2)
                 {
                     var random = row.RandomNum;
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj6 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj6 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
                     switch (random)
                     {
                         case 0:
@@ -810,11 +844,11 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 3)
                 {
                     var random = row.RandomNum;
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj5 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj5 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
                     if (random == 1)
                     {
                         obj2 = Common.AddChild(tempObject.transform, obj2);
@@ -837,11 +871,11 @@ public class MapView : BaseUI
                 if (row.CurrentRow == 4)
                 {
                     int random = row.RandomNum;
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                    var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                    var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -891,7 +925,7 @@ public class MapView : BaseUI
         if (type == 0)
         {
             //4-6必出商店
-            GameObject tempObject = Resources.Load("Prefabs/Map/Map_Row") as GameObject;
+            GameObject tempObject = ResourcesManager.instance.Load("Map_Row") as GameObject;
             tempObject = Common.AddChild(img_map.transform, tempObject);
             tempObject.name = "Map_Row" + MapRow;
             tempObject.transform.localPosition = new Vector2(0, OneRowY + MapRow * 240);
@@ -920,7 +954,7 @@ public class MapView : BaseUI
                 {
                     //图片生成
                     int imgIndex = Random.Range(0, 4);
-                    GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                    GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
                     tempImgName = "Atk_img" + i;
                     Atkimg.name = tempImgName;
@@ -945,7 +979,7 @@ public class MapView : BaseUI
                 {
                     //图片生成
                     int imgIndex = Random.Range(0, 2);
-                    GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                    GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
                     tempImgName = "Adventure_img" + i;
                     Atkimg.name = tempImgName;
@@ -969,7 +1003,7 @@ public class MapView : BaseUI
                 else
                 {
                     //图片生成
-                    GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                    GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                     Atkimg = Common.AddChild(tempObject.transform, Atkimg);
                     tempImgName = "Atk_imgShop" + i;
                     Atkimg.name = tempImgName;
@@ -1007,7 +1041,7 @@ public class MapView : BaseUI
         else if (type == 99)
         {
             //图片生成
-            GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+            GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
             Atkimg = Common.AddChild(img_map.transform, Atkimg);
             Atkimg.name = "Atk_imgBoss";
             Atkimg.transform.localPosition = new Vector2(0, OneRowY + MapRow * 240 + 70);
@@ -1018,7 +1052,7 @@ public class MapView : BaseUI
             CreatePath(ListPreviousRow[MapRow - 1], 1);
 
             #region 添加头像
-            GameObject img_head = Resources.Load("Prefabs/Map/Map_Head_Box") as GameObject;
+            GameObject img_head = ResourcesManager.instance.Load("Map_Head_Box") as GameObject;
             img_head = Common.AddChild(Atkimg.transform, img_head);
             img_head.name = "Map_Head_Box";
             var tempHead = Atkimg.transform.Find($"Map_Head_Box/img_Round/img_Head").GetComponent<Image>();
@@ -1053,7 +1087,7 @@ public class MapView : BaseUI
         #region 商店
         else if (type == 1)
         {
-            GameObject tempObject = Resources.Load("Prefabs/Map/Map_Row") as GameObject;
+            GameObject tempObject = ResourcesManager.instance.Load("Map_Row") as GameObject;
             tempObject = Common.AddChild(img_map.transform, tempObject);
             tempObject.name = "Map_Row" + MapRow; ;
             tempObject.transform.localPosition = new Vector2(0, OneRowY + MapRow * 240);
@@ -1062,7 +1096,7 @@ public class MapView : BaseUI
             for (int i = 0; i < rowCount; i++)
             {
                 //图片生成
-                GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+                GameObject Atkimg = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
                 Atkimg = Common.AddChild(tempObject.transform, Atkimg);
                 Atkimg.name = "Atk_imgShop" + i;
                 var tempImg = tempObject.transform.Find($"Atk_imgShop{i}").GetComponent<Image>();
@@ -1108,7 +1142,7 @@ public class MapView : BaseUI
         //2-4、2-3、2-2
         //3-4、3-3、3-2
         //4-4、4-3、4-2
-        GameObject tempObject = Resources.Load($"Prefabs/Map/Path_NullObj") as GameObject;
+        GameObject tempObject = ResourcesManager.instance.Load("Path_NullObj") as GameObject;
         tempObject = Common.AddChild(img_map.transform, tempObject);
         tempObject.name = $"Path_{MapRow}";
         tempObject.transform.localPosition = new Vector2(0, OnePathY + (MapRow - 1) * 240);
@@ -1120,8 +1154,8 @@ public class MapView : BaseUI
         {
             if (CurrentRow == 2)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj1.transform.localPosition = new Vector2(-62, 0);
@@ -1131,9 +1165,9 @@ public class MapView : BaseUI
             }
             if (CurrentRow == 3)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1146,10 +1180,10 @@ public class MapView : BaseUI
             }
             if (CurrentRow == 4)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_3") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_3_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_3") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_3_y") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1168,8 +1202,8 @@ public class MapView : BaseUI
         {
             if (CurrentRow == 1)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj1.transform.localPosition = new Vector2(-62, 0);
@@ -1179,11 +1213,11 @@ public class MapView : BaseUI
             }
             if (CurrentRow == 2)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_0_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_0_y") as GameObject;
                 var random = Random.Range(0, 2);
                 tempRandom = random;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                var obj3 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1198,9 +1232,9 @@ public class MapView : BaseUI
             {
                 var random = Random.Range(0, 2);//1不带y，0带y
                 tempRandom = random;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj2 = ResourcesManager.instance.Load($"Path_img_1{(random == 0 ? "_y" : "")}") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1217,10 +1251,10 @@ public class MapView : BaseUI
                 tempRandom = random;
                 if (random == 0)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1236,10 +1270,10 @@ public class MapView : BaseUI
                 }
                 else if (random == 1)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1255,10 +1289,10 @@ public class MapView : BaseUI
                 }
                 else if (random == 2)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_0_y") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_0_y") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1278,9 +1312,9 @@ public class MapView : BaseUI
         {
             if (CurrentRow == 1)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1295,10 +1329,10 @@ public class MapView : BaseUI
             {
                 var random = Random.Range(0, 3);
                 tempRandom = random;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
                 switch (random)
                 {
                     case 1:
@@ -1331,10 +1365,10 @@ public class MapView : BaseUI
             {
                 var random = Random.Range(0, 3);
                 tempRandom = random;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                 switch (random)
                 {
                     case 0:
@@ -1350,13 +1384,13 @@ public class MapView : BaseUI
                         obj2.transform.localPosition = new Vector2(-105, 0);
                         obj2.transform.name = $"img_{MapRow}_0_1";
 
-                        var obj6 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                        var obj6 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                         obj6 = Common.AddChild(tempObject.transform, obj6);
                         obj6.transform.localPosition = new Vector2(20, 0);
                         obj6.transform.name = $"img_{MapRow}_1_1";
                         break;
                     case 2:
-                        var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                        var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                         obj5 = Common.AddChild(tempObject.transform, obj5);
                         obj5.transform.localPosition = new Vector2(20, 0);
                         obj5.transform.name = $"img_{MapRow}_1_1";
@@ -1389,10 +1423,10 @@ public class MapView : BaseUI
                 tempRandom = random;
                 if (random == 0)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1408,10 +1442,10 @@ public class MapView : BaseUI
                 }
                 else if (random == 1)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1427,11 +1461,11 @@ public class MapView : BaseUI
                 }
                 else if (random == 2)
                 {
-                    var obj1 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                    var obj2 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
-                    var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                    var obj4 = Resources.Load($"Prefabs/Map/Path_img_1_x") as GameObject;
-                    var obj5 = Resources.Load($"Prefabs/Map/Path_img_1_xy") as GameObject;
+                    var obj1 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                    var obj2 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
+                    var obj3 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                    var obj4 = ResourcesManager.instance.Load("Path_img_1_x") as GameObject;
+                    var obj5 = ResourcesManager.instance.Load("Path_img_1_xy") as GameObject;
                     obj1 = Common.AddChild(tempObject.transform, obj1);
                     obj2 = Common.AddChild(tempObject.transform, obj2);
                     obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1454,10 +1488,10 @@ public class MapView : BaseUI
         {
             if (CurrentRow == 1)
             {
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_3_y") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_3") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_3_y") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_3") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1475,12 +1509,12 @@ public class MapView : BaseUI
             {
                 var random = Random.Range(0, 4);
                 tempRandom = random;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_2") as GameObject;
-                var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj6 = Resources.Load($"Prefabs/Map/Path_img_2_y") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_2") as GameObject;
+                var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj6 = ResourcesManager.instance.Load("Path_img_2_y") as GameObject;
                 switch (random)
                 {
                     case 0:
@@ -1533,11 +1567,11 @@ public class MapView : BaseUI
             {
                 var random = Random.Range(0, 2);
                 tempRandom = random;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_1_y") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
-                var obj5 = Resources.Load($"Prefabs/Map/Path_img_1") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                var obj2 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj3 = ResourcesManager.instance.Load("Path_img_1_y") as GameObject;
+                var obj4 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
+                var obj5 = ResourcesManager.instance.Load("Path_img_1") as GameObject;
                 if (random == 1)
                 {
                     obj2 = Common.AddChild(tempObject.transform, obj2);
@@ -1561,11 +1595,11 @@ public class MapView : BaseUI
             {
                 int random = Random.Range(0, 2);
                 tempRandom = random;
-                var obj1 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
-                var obj2 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                var obj3 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                var obj4 = Resources.Load($"Prefabs/Map/Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
-                var obj5 = Resources.Load($"Prefabs/Map/Path_img_0") as GameObject;
+                var obj1 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
+                var obj2 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                var obj3 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                var obj4 = ResourcesManager.instance.Load($"Path_img_2{(random == 0 ? "_y" : "")}") as GameObject;
+                var obj5 = ResourcesManager.instance.Load("Path_img_0") as GameObject;
                 obj1 = Common.AddChild(tempObject.transform, obj1);
                 obj2 = Common.AddChild(tempObject.transform, obj2);
                 obj3 = Common.AddChild(tempObject.transform, obj3);
@@ -1622,7 +1656,7 @@ public class MapView : BaseUI
         Text title_txt = null;
         if (title == null)
         {
-            GameObject Atkimg = Resources.Load("Prefabs/Map/Map_Title_img") as GameObject;
+            GameObject Atkimg = ResourcesManager.instance.Load("Map_Title_img") as GameObject;
             Atkimg = Common.AddChild(thisObj.transform, Atkimg);
             Atkimg.name = "Map_Title_img";
             title_txt = Atkimg.transform.GetChild(0).GetComponent<Text>();
@@ -1706,17 +1740,18 @@ public class MapView : BaseUI
         {
             case 2:
                 imgColumnName = $"Atk_imgShop{mapLocation.Column}";
+                SceneName = "ShoppingView";
                 break;
             //case 3:
             //    imgColumnName = "Atk_imgBoss";
             //    break;
             case 4:
                 imgColumnName = $"Adventure_img{mapLocation.Column}";
-                SceneName = "AdventureScene";
+                SceneName = "AdventureView";
                 break;
             default:
                 imgColumnName = $"Atk_img{mapLocation.Column}";
-                SceneName = "GameScene";
+                SceneName = "GameView";
                 break;
         }
         string imgRowName = "";
@@ -1740,7 +1775,7 @@ public class MapView : BaseUI
         var thisImg = obj.GetComponent<Image>();
         if (currentRow == 13)
         {
-            GameObject tempObj = Resources.Load("Prefabs/Map/Map_Atk_img") as GameObject;
+            GameObject tempObj = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
             tempObj = Common.AddChild(thisImg.transform, tempObj);
             tempObj.name = "img_Player_Head";
             tempObj.transform.localPosition = new Vector3(-100, -30);
@@ -1752,52 +1787,68 @@ public class MapView : BaseUI
             Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
         }
         //进入游戏
-        UIManager.instance.OpenView("GameView");
+        UIManager.instance.OpenView(SceneName);
         UIManager.instance.CloseView("MapView");
     }
     #endregion
 
     public override void OnClose()
     {
-        //throw new System.NotImplementedException();
+        HasMouseDown = false;
     }
 
     #region Uinty事件
-    public void OnGUI()
-    {
-        #region 获取事件实行地图移动
-        if (Event.current.type == EventType.MouseDown)
-        {
-            //记录鼠标按下的位置 　　
-            first = Event.current.mousePosition;
-        }
-        if (Event.current.type == EventType.MouseDrag)
-        {
-            //记录鼠标拖动的位置 　　
-            second = Event.current.mousePosition;
-            vecPos = second - first;//需要移动的 向量
-            first = second;
-            IsNeedMove = true;
-
-        }
-        else
-        {
-            IsNeedMove = false;
-        }
-        #endregion
-    }
 
     void Update()
     {
+        #region 获取事件实行地图移动
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+        {
+            //如果位置在topbar上则不移动，topBar y=90
+            var currentPosition = Input.mousePosition;
+            if (currentPosition.y < Screen.height - 90)
+            {
+                //记录鼠标按下的位置 　　
+                first = Input.mousePosition;
+                HasMouseDown = true;
+            }
+        }
+        if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1))
+        {
+            HasMouseUp = true;
+        }
+        if (HasMouseDown && !HasMouseUp)
+        {
+            second = Input.mousePosition;
+            vecPos = second - first;//需要移动的 向量
+            first = second;
+            IsNeedMove = true;
+        }
+        else
+        {
+            HasMouseUp = false;
+            HasMouseDown = false;
+            IsNeedMove = false;
+        }
+        #endregion
+
         #region 判断当前地图位置展示悬浮框
         //判断角色悬浮框 初始==1800+80初始位置 1660
-        if (img_map.transform.position.y < 1880 - (mapLocation.Row + 1) * 240)
+        //图长3600,如果是1280*720，则最底部为1800
+        //如果高是1080，则最底部为2700
+        //底部是屏幕高度的2.5倍
+        //Debug.Log(img_map.transform.position.y);//2700/2400 1800/1600--角色头像
+        //                                        2700/          1800/-1070
+        //var bottomY = Screen.height * 2.5;
+        //var topY = Screen.height * -1.5;
+        //var lineSpacing = bottomY / 9;
+        if (img_map.transform.position.y < bottomY - (mapLocation.Row + 1) * lineSpacing)
         {
             btn_Suspension_Player.transform.localScale = Vector3.one;
             //加
             MoveType = 0;
         }
-        else if (img_map.transform.position.y > 1880 - (mapLocation.Row - 2) * 240)
+        else if (img_map.transform.position.y > bottomY - (mapLocation.Row - 2) * lineSpacing)
         {
             btn_Suspension_Player.transform.localScale = Vector3.one;
             //减
@@ -1808,7 +1859,7 @@ public class MapView : BaseUI
             btn_Suspension_Player.transform.localScale = Vector3.zero;
         }
         //判断boss悬浮框-1050
-        if (img_map.transform.position.y < -1050)
+        if (img_map.transform.position.y < topY - 30)
         {
             btn_Suspension_Boss.transform.localScale = Vector3.zero;
         }
@@ -1822,7 +1873,7 @@ public class MapView : BaseUI
         if (MoveTopState)
         {
             float y = img_map.transform.position.y - 10;
-            if (y < InitPos.y && y > -1080)
+            if (y < InitPos.y && y > topY)
             {
                 img_map.transform.position = new Vector3(InitPos.x, y, 0);
             }
@@ -1837,7 +1888,7 @@ public class MapView : BaseUI
             if (MoveType == 0)
             {
                 y = img_map.transform.position.y + 10;
-                if (y < InitPos.y && y < 1800 - mapLocation.Row * 240)
+                if (y < InitPos.y && y < bottomY - mapLocation.Row * lineSpacing)
                 {
                     img_map.transform.position = new Vector3(InitPos.x, y, 0);
                 }
@@ -1849,7 +1900,7 @@ public class MapView : BaseUI
             else
             {
                 y = img_map.transform.position.y - 10;
-                if (y < InitPos.y && y > 1800 - mapLocation.Row * 240)
+                if (y < InitPos.y && y > bottomY - mapLocation.Row * lineSpacing)
                 {
                     img_map.transform.position = new Vector3(InitPos.x, y, 0);
                 }
@@ -1882,8 +1933,8 @@ public class MapView : BaseUI
         #region 地图移动
         if (IsNeedMove)
         {
-            float y = img_map.transform.position.y - vecPos.y;
-            if (y < InitPos.y && y > -1080)
+            float y = img_map.transform.position.y + vecPos.y;
+            if (y < InitPos.y && y > topY)
             {
                 img_map.transform.position = new Vector3(InitPos.x, y, 0);
             }

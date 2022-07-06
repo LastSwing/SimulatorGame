@@ -15,8 +15,10 @@ public class PlayerDieView : BaseUI
     GameObject Award_Obj;
     Text txt_AwardGold, txt_ReturnView, txt_ReturnView1;
     GlobalPlayerModel globalPlayerModel;
+    GameObject UI_Obj;
     float totalTime;
     int AccumulateCount, InitValue, MaxValue = 0;
+    #region OnInit
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -37,6 +39,7 @@ public class PlayerDieView : BaseUI
         Award_Obj = transform.Find("UI/Award").gameObject;
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
+        UI_Obj = transform.Find("UI").gameObject;
     }
 
     /// <summary>
@@ -63,11 +66,13 @@ public class PlayerDieView : BaseUI
     #region 按钮事件
     public void ContinueClick()
     {
+        Common.GameOverDataReset();
         UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("PlayerDieView");
     }
     public void AginClick()
     {
+        Common.GameOverDataReset();
         UIManager.instance.OpenView("MainView");
         UIManager.instance.CloseView("PlayerDieView");
     }
@@ -79,7 +84,9 @@ public class PlayerDieView : BaseUI
         UIManager.instance.CloseView("PlayerDieView");
     }
     #endregion
+    #endregion
 
+    #region OnOpen
     public override void OnOpen()
     {
         //数据需要每次打开都要刷新，UI状态也是要每次打开都进行刷新，因此放在OnOpen
@@ -109,7 +116,6 @@ public class PlayerDieView : BaseUI
     /// </summary>
     private void InitUIData()
     {
-        Common.GameOverDataReset();
         #region 奖励
         globalPlayerModel = Common.GetTxtFileToModel<GlobalPlayerModel>(GlobalAttr.GlobalRoleFileName);
         var mapLo = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
@@ -136,7 +142,7 @@ public class PlayerDieView : BaseUI
             Calculate();
             for (int x = 0; x < AccumulateCount; x++)
             {
-                GameObject img_Accumulate = Resources.Load("Prefabs/img_Accumulate") as GameObject;
+                GameObject img_Accumulate = ResourcesManager.instance.Load("img_Accumulate") as GameObject;
                 img_Accumulate = Common.AddChild(Award_Obj.transform, img_Accumulate);
                 img_Accumulate.name = "img_Accumulate" + x;
                 #region 点击事件
@@ -155,7 +161,20 @@ public class PlayerDieView : BaseUI
             #endregion
         }
         #endregion
-    }
+
+        #region 加载TopBar预制件
+
+        //加载TopBar预制件
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        if (tempBar == null)
+        {
+            GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+            topBar = Common.AddChild(UI_Obj.transform, topBar);
+            topBar.name = "TopBar";
+        }
+        #endregion
+    } 
+    #endregion
 
     #region 卡片奖励
     //计算奖励几张卡牌
@@ -181,7 +200,7 @@ public class PlayerDieView : BaseUI
         if (surplusList?.Count > 0)
         {
             var model = surplusList[0];
-            GameObject img_Card = Resources.Load("Prefabs/img_Card240") as GameObject;
+            GameObject img_Card = ResourcesManager.instance.Load("img_Card240") as GameObject;
             img_Card = Common.AddChild(obj.transform, img_Card);
             img_Card.name = "img_AwardCard" + i;
             img_Card.transform.localPosition = new Vector3(0, 0);
@@ -196,49 +215,7 @@ public class PlayerDieView : BaseUI
             trigger2.triggers.Add(entry2);
             #endregion
 
-            #region 卡牌数据绑定
-            var cardType = model.StateType;
-            #region 攻击力图标
-            var Card_ATK_img = img_Card.transform.Find("img_ATK").GetComponent<Image>();
-            var Card_ATK_icon = img_Card.transform.Find("img_ATK/Image").GetComponent<Image>();
-            var Card_ATKNumber = img_Card.transform.Find("img_ATK/Text").GetComponent<Text>();
-            if (cardType == 6 || cardType == 7 || cardType == 8 || cardType == 9)//是否隐藏
-            {
-                Card_ATK_img.transform.localScale = Vector3.zero;
-            }
-            else
-            {
-                if (cardType == 1)
-                {
-                    Common.ImageBind("Images/Defense", Card_ATK_icon);
-                }
-                else if (cardType == 2 || cardType == 3)
-                {
-                    Common.ImageBind("Images/HP_Icon", Card_ATK_icon);
-                }
-                else if (cardType == 5)
-                {
-                    Common.ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
-                }
-                else
-                {
-                    Common.ImageBind("Images/Atk_Icon", Card_ATK_icon);
-                }
-                Card_ATKNumber.text = model.Effect.ToString();
-            }
-            #endregion
-            var Card_energy_img = img_Card.transform.Find("img_Energy").GetComponent<Image>();
-            var Card_Skill_img = img_Card.transform.Find("img_Skill").GetComponent<Image>();
-            var Card_Energy = img_Card.transform.Find("img_Energy/Text").GetComponent<Text>();
-            var Card_Title = img_Card.transform.Find("img_Title/Text").GetComponent<Text>();
-            if (model.Consume == 0)
-            {
-                Card_energy_img.transform.localScale = Vector3.zero;
-            }
-            Common.ImageBind(model.CardUrl, Card_Skill_img);
-            Card_Energy.text = model.Consume.ToString();
-            Card_Title.text = model.CardName.TextSpacing();
-            #endregion
+            Common.CardDataBind(img_Card, model);
 
             GlobalPlayerCardPools.Add(model);
             Common.SaveTxtFile(GlobalPlayerCardPools.ListToJson(), GlobalAttr.GlobalPlayerCardPoolFileName);
@@ -256,7 +233,7 @@ public class PlayerDieView : BaseUI
         else
         {
             var Card_img = GameObject.Find($"UI/Award/img_Accumulate{i}/img_AwardCard{i}").GetComponent<Image>();
-            GameObject tempImg = Resources.Load("Prefabs/img_CardDetail") as GameObject;
+            GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
             tempImg = Common.AddChild(Card_img.transform, tempImg);
             tempImg.name = "img_Detail";
             tempImg.transform.localPosition = new Vector2(0, 160);

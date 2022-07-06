@@ -15,5 +15,10 @@ namespace Assets.Script.Models
         /// 熟练度
         /// </summary>
         public int Proficiency { get; set; }
+
+        /// <summary>
+        /// 升级次数
+        /// </summary>
+        public int UpgradeCount { get; set; }
     }
 }
