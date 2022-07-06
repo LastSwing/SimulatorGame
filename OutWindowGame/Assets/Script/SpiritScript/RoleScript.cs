@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class RoleScript : MonoBehaviour
 {
+    public GameObject UI;
     Rigidbody2D rb;
     [Header("力度")]
     public float G = 1;
@@ -12,8 +13,13 @@ public class RoleScript : MonoBehaviour
     public float A = 1;
     //角色的力
     private Vector3 vector;
+    //角色的位置
+    private Vector2 location = Vector2.zero;
     //补偿速度
-    private float pay = 4500F;
+    private float pay = 2500F;
+    private UIScript uIScript = null;
+
+    public Vector2 Vector2 { set { location = value; } }
 
     /// <summary>
     /// 游戏开始
@@ -26,11 +32,13 @@ public class RoleScript : MonoBehaviour
     /// <summary>
     /// 使用道具
     /// </summary>
-    private bool _Prop = false;
+    public bool _Prop = false;
     
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        if(UI != null)
+            uIScript = UI.GetComponent<UIScript>();
     }
 
     private void FixedUpdate()
@@ -39,51 +47,75 @@ public class RoleScript : MonoBehaviour
         {
             move(vector);
         }
+        if (_Prop && location != Vector2.zero)
+        {
+            transform.localPosition = location;
+        }
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.name == "Pillar")
         {
+
         }
-        else if (collision.gameObject.name == "right" || collision.gameObject.name == "Land" || collision.gameObject.name == "Buffer" || collision.gameObject.name == "Top")
+        else if (collision.gameObject.name == "Ground")
+        {
+            DropProp();
+        }
+        else if (collision.gameObject.name == "Teleport")
         {
             _start = false;
-            _Down = false;
+            transform.localPosition = new Vector2(-900, 488);
+            rb.velocity = new Vector2(0, 0);
+        }
+    }
+    /// <summary>
+    /// 结束道具使用
+    /// </summary>
+    public void DropProp()
+    {
+        _start = false;
+        _Down = false;
+        if (_Prop == true)
+        {
+            _Prop = false;
+            rb.gravityScale = 10;
+            uIScript.RrecycleProp();
         }
     }
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.name == "Pillar")
         {
-            _Down = true;
+            //_Down = true;
         }
     }
     /// <summary>
-    /// 主页面调用开始方法
+    /// UI调用开始方法
     /// </summary>
     /// <param name="g">力度</param>
-    void Sprint(float g)
+    public void Sprint(float g)
     {
         _start = true;
         G = g;
-        vector = Vector3.right * G * pay;
+        vector = new Vector3(G * pay,-1f);
     }
     /// <summary>
     /// 主页面调用道具方法
     /// </summary>
-    /// <param name="angle">角度</param>
-    void PropWay(float angle)
+    public void PropWay()
     {
-        _start = true;
+        rb.velocity = new Vector2(0, 0);
+        rb.gravityScale = 0;
+        _start = false;
         _Prop = true;
-        vector = Movement.Angle(pay,angle,0.5F);
     }
     /// <summary>
     /// 重置
     /// </summary>
-    void Reset()
+    public void Reset()
     {
-        transform.localPosition=new Vector2(-900,384);
+        transform.localPosition=new Vector2(-900,375);
         _Down = false;
         _Prop = false;
     }

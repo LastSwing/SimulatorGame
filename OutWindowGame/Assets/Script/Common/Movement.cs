@@ -6,7 +6,7 @@ using UnityEngine;
 public static class Movement
 {
     /// <summary>
-    /// 根据角度给与方向的力
+    /// 根据角度给与角度方向的力
     /// </summary>
     /// <param name="PlusG">补偿力</param>
     /// <param name="angle">角度</param>
