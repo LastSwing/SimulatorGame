@@ -11,6 +11,8 @@ public class GameView : BaseUI
     Image img_Player, img_Enemy, Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
     GameObject obj_CardPools;
     Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Left_Count, txt_Right_Count;
+
+    int chpterID;//关卡ID
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -95,7 +97,9 @@ public class GameView : BaseUI
         InitUIData();
         InitUIState();
         InitSetting();
+        StartGame();
     }
+
 
     /// <summary>
     /// 初始化其余设置
@@ -118,12 +122,79 @@ public class GameView : BaseUI
     /// </summary>
     private void InitUIData()
     {
-
+        chpterID = 1;//目前使用测试数据，固定为第一关
     }
 
     public override void OnClose()
     {
         //throw new System.NotImplementedException();
     }
+
+    /// <summary>
+    /// 开始游戏
+    /// </summary>
+    private void StartGame()
+    {
+        BattleManager.instance.Init(GetPlayerDatas(PlayerType.OwnHuman),GetPlayerDatas(PlayerType.NormalRobot,chpterID));
+    }
+
+    /// <summary>
+    /// 获取战斗双方数据
+    /// </summary>
+    /// <param name="playerType"></param>
+    private List<PlayerData> GetPlayerDatas(PlayerType playerType, int other = -1)//视情况提供第二个参数
+    {
+        List<PlayerData> result = new List<PlayerData>();
+        switch (playerType)
+        {
+            case PlayerType.NormalRobot:
+                //todo
+                break;
+            case PlayerType.AiRobot:
+                //todo
+                break;
+            case PlayerType.OwnHuman:
+                //todo
+                break;
+            case PlayerType.OtherHuman:
+                //todo
+                break;
+        }
+        return result;
+    }
+}
+
+/// <summary>
+/// 对战者类型
+/// </summary>
+public enum PlayerType
+{
+    NormalRobot,//固定设置的机器人
+    AiRobot,//rouge机器人
+    OwnHuman,//玩家自己
+    OtherHuman,//联机玩家
+}
+
+/// <summary>
+/// 玩家数据
+/// </summary>
+public class PlayerData
+{
+    public Dictionary<int, int> cardDic;//对战者拥有的卡牌池[唯一ID,卡牌ID]
+    public List<BuffData> buffList;//对站者当前的buff列表
+    public PlayerType playerType;//玩家类型
+    public int bloodNow;//当前血量
+    public int bloodMax;//血量上限
+    public string playerName;//玩家名字
+    public int playerID;//玩家ID
+    public int playerPos;//玩家位置
+    public int speed;//先手速度权重
+}
+
+/// <summary>
+/// buff数据
+/// </summary>
+public class BuffData
+{
 
 }
