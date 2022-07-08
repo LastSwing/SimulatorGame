@@ -316,7 +316,8 @@ public class AllSkillView : BaseUI
     public void ShowDetail(CurrentCardPoolModel model, int i, int type = 0)
     {
         HideCardDetail();
-        var Card_Detail = transform.Find($"UI/CardDetails/img_Detail{i}")?.GetComponent<Image>();
+        var Card_Detail = transform.Find($"UI/CardDetails/img_Detail{model.ID}")?.GetComponent<Image>();
+        Debug.Log(model.CardName);
         if (Card_Detail != null)
         {
             var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
@@ -340,7 +341,7 @@ public class AllSkillView : BaseUI
                 //var imgHeight = Irect.sizeDelta.y;
                 GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
-                tempImg.name = "img_Detail" + i;
+                tempImg.name = "img_Detail" + model.ID;
                 tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
@@ -353,7 +354,7 @@ public class AllSkillView : BaseUI
                 var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;
                 GameObject tempImg = ResourcesManager.instance.Load("img_QuestionDetail") as GameObject;
                 tempImg = Common.AddChild(Card_Deatils.transform, tempImg);
-                tempImg.name = "img_Detail" + i;
+                tempImg.name = "img_Detail" + model.ID;
                 tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
@@ -380,9 +381,9 @@ public class AllSkillView : BaseUI
     /// </summary>
     public void HideCardDetail()
     {
-        for (int i = 0; i < CardList.Count; i++)
+        foreach (var item in CardList)
         {
-            var Card_img = GameObject.Find($"UI/CardDetails/img_Detail{i}")?.GetComponent<Image>();
+            var Card_img = GameObject.Find($"UI/CardDetails/img_Detail{item.ID}")?.GetComponent<Image>();
             if (Card_img != null)
             {
                 Card_img.transform.localScale = Vector3.zero;

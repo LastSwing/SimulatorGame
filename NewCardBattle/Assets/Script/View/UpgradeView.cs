@@ -103,47 +103,6 @@ public class UpgradeView : BaseUI
         }
     }
 
-    private void CardUpgrade()
-    {
-        foreach (var model in UpgradeCardList)
-        {
-            //第一次升级修改数值，第二次还是改数值。或消除一些负面效果。第三次升级改消耗。第四次还是改消耗，如果消耗无了就继续改数值
-            if (model.UpgradeCount == 0)
-            {
-                if (model.StateType == 0 || model.StateType == 1 || model.StateType == 3)
-                {
-                    int ReinforceNum = model.CardLevel + 3;
-                    model.Effect += ReinforceNum;
-                    model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
-                }
-                else if (model.StateType == 2 || model.StateType == 4)
-                {
-                    int ReinforceNum = model.CardLevel + 1;
-                    model.Effect -= ReinforceNum;
-                    model.CardDetail = model.CardDetail.Replace((model.Effect + ReinforceNum).ToString(), model.Effect.ToString());
-                }
-                else
-                {
-                    int ReinforceNum = model.CardLevel + 1;
-                    model.Effect += ReinforceNum;
-                    model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
-                }
-            }
-            else if (model.UpgradeCount == 1)
-            {
-
-            }
-            else if (model.UpgradeCount == 2)
-            {
-
-            }
-            else
-            {
-
-            }
-            model.UpgradeCount += 1;
-        }
-    }
     #endregion
 
     #region OnOpen
@@ -163,9 +122,8 @@ public class UpgradeView : BaseUI
         if (txt_HasClickSetting.text == "0")
         {
             CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName).FindAll(a => a.UpgradeCount == 0);
-            UpgradeCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+            UpgradeCardList = Common.CardUpgrade();
             PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
-            CardUpgrade();
         }
     }
 
