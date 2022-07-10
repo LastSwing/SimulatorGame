@@ -87,8 +87,8 @@ public class UpgradeView : BaseUI
 
     public void UpgradeClick()
     {
-        CurrentCardPoolModel model = CardList.Find(a => a.ID == txt_SelectedCardID.text);
-        var UpModel = UpgradeCardList.Find(a => a.ID == txt_SelectedCardID.text);
+        CurrentCardPoolModel model = CardList.Find(a => a.ID == Convert.ToInt32(txt_SelectedCardID.text));
+        var UpModel = UpgradeCardList.Find(a => a.ID == Convert.ToInt32(txt_SelectedCardID.text));
         int price = Convert.ToInt32(txt_UpgradePrice.text);
         if (PlayerRole.Wealth >= price)
         {
@@ -228,7 +228,7 @@ public class UpgradeView : BaseUI
     public void ShowDetail(CurrentCardPoolModel model, int i)
     {
         HideCardDetail();
-        txt_SelectedCardID.text = model.ID;
+        txt_SelectedCardID.text = model.ID.ToString();
         btn_Upgrade.transform.localScale = Vector3.one;
         txt_UpgradePrice.text = (100 - model.Proficiency).ToString();
         if (PlayerRole.Wealth < Convert.ToInt32(txt_UpgradePrice.text))

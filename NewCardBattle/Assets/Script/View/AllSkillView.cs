@@ -158,24 +158,24 @@ public class AllSkillView : BaseUI
     public void AtkClick()
     {
         BtnColorUpdate(1);
-        var palyerAtkList = GlobalPlayerCardPools.FindAll(a => a.CardType != 2 && a.HasDeBuff == 0);
-        var globalAtkList = GlobalCardPools.FindAll(a => a.CardType != 2 && a.HasDeBuff == 0);
+        var palyerAtkList = GlobalPlayerCardPools.FindAll(a => a.CardType == 0 );
+        var globalAtkList = GlobalCardPools.FindAll(a => a.CardType == 1);
         txt_AllSkillCount.text = $"{palyerAtkList?.Count}/{globalAtkList?.Count}";
         CreateCardPools(palyerAtkList, globalAtkList);
     }
     public void FunctionClick()
     {
         BtnColorUpdate(2);
-        var palyerFunctionList = GlobalPlayerCardPools.FindAll(a => a.CardType == 2 && a.HasDeBuff == 0);
-        var globalFunctionList = GlobalCardPools.FindAll(a => a.CardType == 2 && a.HasDeBuff == 0);
+        var palyerFunctionList = GlobalPlayerCardPools.FindAll(a => a.CardType == 1 );
+        var globalFunctionList = GlobalCardPools.FindAll(a => a.CardType == 1 );
         txt_AllSkillCount.text = $"{palyerFunctionList?.Count}/{globalFunctionList?.Count}";
         CreateCardPools(palyerFunctionList, globalFunctionList);
     }
     public void DebuffClick()
     {
         BtnColorUpdate(3);
-        var palyerDebuffList = GlobalPlayerCardPools.FindAll(a => a.HasDeBuff == 1);
-        var globalDebuffList = GlobalCardPools.FindAll(a => a.HasDeBuff == 1);
+        var palyerDebuffList = GlobalPlayerCardPools.FindAll(a => a.CardType == 2);
+        var globalDebuffList = GlobalCardPools.FindAll(a => a.CardType == 2);
         txt_AllSkillCount.text = $"{(palyerDebuffList == null ? 0 : palyerDebuffList.Count)}/{(globalDebuffList == null ? 0 : globalDebuffList.Count)}";
         CreateCardPools(palyerDebuffList, globalDebuffList);
     }
@@ -359,15 +359,15 @@ public class AllSkillView : BaseUI
 
                 GameObject temp = tempImg.transform.Find("Text").gameObject;
                 string typeName = "";
-                if (model.CardType == 2)
+                if (model.CardType == 1)
                 {
                     typeName = "功能卡";
                 }
-                else
+                else if (model.CardType == 0)
                 {
                     typeName = "攻击卡";
                 }
-                if (model.HasDeBuff == 1)
+                else
                 {
                     typeName = "黑卡";
                 }

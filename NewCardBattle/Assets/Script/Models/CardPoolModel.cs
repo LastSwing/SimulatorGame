@@ -6,32 +6,34 @@ using System.Threading.Tasks;
 
 namespace Assets.Script.Models
 {
-    /// <summary>
-    /// 卡池
-    /// </summary>
     public class CardPoolModel
     {
         /// <summary>
-        /// 主键
+        /// 自增主键
         /// </summary>
-        public string ID { get; set; }
+        public int ID { get; set; }
+
+        /// <summary>
+        /// 父ID
+        /// </summary>
+        public int ParentID { get; set; }
+
         /// <summary>
         /// 卡类型
-        /// 0近战卡、1远程卡、2功能卡
+        /// 0攻击卡、1功能卡、2黑卡
         /// </summary>
         public int CardType { get; set; }
 
         /// <summary>
         /// 效果类型
-        /// 0攻击、1防御、2血量消耗、3血量恢复、4能量消耗、5能量恢复、6暴击状态、7免疫状态、8愤怒、9虚弱、10二连击、11破甲攻击
+        /// 存Key在表里找到对应的效果
         /// </summary>
-        public int StateType { get; set; }
+        public int EffectType { get; set; }
 
         /// <summary>
-        /// 是否有AOE
-        /// 0、没有1、所有敌人、2当前的和后面的
+        /// 攻击次数
         /// </summary>
-        public int HasAOE { get; set; }
+        public int AtkNumber { get; set; }
 
         /// <summary>
         /// 卡牌名称
@@ -59,13 +61,14 @@ namespace Assets.Script.Models
         public float Effect { get; set; }
 
         /// <summary>
-        /// 玩家或AI的牌池
+        /// 该卡所属Ai或玩家
         /// 0玩家、1AI
         /// </summary>
         public int PlayerOrAI { get; set; }
 
         /// <summary>
-        /// 卡牌等级、用于判断什么时候出现在牌池中
+        /// 稀有度、用于判断什么时候出现在奖励牌池中
+        /// 每过一关，获得稀有卡牌概率提升
         /// </summary>
         public int CardLevel { get; set; }
 
@@ -81,14 +84,13 @@ namespace Assets.Script.Models
         public int HasShoppingShow { get; set; }
 
         /// <summary>
-        /// 是否是BUFF卡（黑卡）
-        /// 0否、1是
+        /// 触发条件
         /// </summary>
-        public int HasDeBuff { get; set; }
+        public int TriggerCondition { get; set; }
 
         /// <summary>
-        /// 触发状态
-        /// 0无、1敌人满血、2击杀恢复、3敌人是人类、4敌人有护甲、5敌人血量到达斩杀线、6使用后移除
+        /// 卡牌使用后触发状态
+        /// 存Key在表里找对应的值
         /// </summary>
         public int TriggerState { get; set; }
 
@@ -98,14 +100,21 @@ namespace Assets.Script.Models
         public int TriggerValue { get; set; }
 
         /// <summary>
-        /// Ai攻击顺序（在Ai有多次攻击时按排序攻击）
+        /// 触发条件
+        /// 存Key在表里找对应的值
         /// </summary>
-        public int AiAtkSort { get; set; }
+        public int TriggerCondition2 { get; set; }
 
         /// <summary>
-        /// 攻击次数
+        /// 卡牌使用后触发状态
+        /// 存Key在表里找对应的值
         /// </summary>
-        public int AtkNumber { get; set; }
+        public int TriggerState2 { get; set; }
+
+        /// <summary>
+        /// 触发值
+        /// </summary>
+        public int TriggerValue2 { get; set; }
 
     }
 }

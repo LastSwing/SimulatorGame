@@ -239,7 +239,7 @@ public class MapView : BaseUI
                     var id = arr[i].Split('|')[0].ToString().Trim();
                     if (!string.IsNullOrEmpty(id))
                     {
-                        cardModel = GlobalCardPools?.Find(a => a.ID == id);
+                        cardModel = GlobalCardPools?.Find(a => a.ID == System.Convert.ToInt32(id));
                         cardPools.Add(cardModel);
                     }
                 }
