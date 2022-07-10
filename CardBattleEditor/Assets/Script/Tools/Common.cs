@@ -1,5 +1,4 @@
-﻿using Assets.Script.Models;
-using LitJson;
+﻿using LitJson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,12 +13,48 @@ using UnityEngine.UI;
 
 namespace Assets.Script.Tools
 {
-    /// <summary>
-    /// 工具类
-    /// </summary>
     public static class Common
     {
-        #region Json处理
+        public static int HasAgain;
+
+        public static string ReturnName;
+
+        #region JSON格式化
+
+        #region 作废
+
+        /// <summary>
+        /// Dic转Model
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="dict"></param>
+        /// <returns></returns>
+        public static T DicToModel<T>(Dictionary<string, string> dict)
+        {
+            //
+            T obj = Activator.CreateInstance<T>();
+            //根据Key值设定 Columns
+            foreach (KeyValuePair<string, string> item in dict)
+            {
+                if (item.Key == "ID")
+                {
+                    continue;
+                }
+                PropertyInfo prop = obj.GetType().GetProperty(item.Key);
+                if (!string.IsNullOrEmpty(item.Value))
+                {
+                    object value = item.Value;
+                    //Nullable 获取Model类字段的真实类型
+                    Type itemType = Nullable.GetUnderlyingType(prop.PropertyType) == null ? prop.PropertyType : Nullable.GetUnderlyingType(prop.PropertyType);
+                    //根据Model类字段的真实类型进行转换
+                    prop.SetValue(obj, Convert.ChangeType(value, itemType), null);
+                }
+
+
+            }
+            return obj;
+        }
+
         /// <summary>
         /// dic转JSON
         /// </summary>
@@ -91,132 +126,7 @@ namespace Assets.Script.Tools
             result += "}";
             return result;
         }
-        /// <summary>
-        /// dic转JSON
-        /// </summary>
-        /// <param name="dic"></param>
-        /// <returns></returns>
-        public static string DicToJson(Dictionary<string, string> dic)
-        {
-            string result = "{";
-            char[] mychar = { ',' };
-            foreach (var item in dic.Keys)
-            {
-                if (dic[item] == null)
-                {
-                    result += $"\"{item}\":\"\",";
-                    continue;
-                }
-                Type type = dic[item]?.GetType();
-                if (dic[item] != null)
-                {
-                    if (type.IsPrimitive)//字符类型
-                    {
-                        result += $"\"{item}\":{dic[item]},";
-                    }
-                    else if (type == typeof(string))    //基础数据类型，非自定义的class或者struct
-                    {
-                        result += $"\"{item}\":\"{dic[item]}\",";
-                    }
-                }
-                else
-                {
-                    if (type.IsPrimitive || type == typeof(string))   //对象为空直接赋双引号
-                    {
-                        result += $"\"{item}\":\"\",";
-                    }
-                }
-            }
-
-            result = result.TrimEnd(mychar);
-            result += "}";
-            return result;
-        }
-
-
-        /// <summary>
-        /// Dic转Model
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="dict"></param>
-        /// <returns></returns>
-        public static T DicToModel<T>(Dictionary<string, string> dict)
-        {
-            //
-            T obj = default(T);
-            obj = Activator.CreateInstance<T>();
-
-            //根据Key值设定 Columns
-            foreach (KeyValuePair<string, string> item in dict)
-            {
-                if (item.Key == "ID")
-                {
-                    continue;
-                }
-                PropertyInfo prop = obj.GetType().GetProperty(item.Key);
-                if (!string.IsNullOrEmpty(item.Value))
-                {
-                    object value = item.Value;
-                    //Nullable 获取Model类字段的真实类型
-                    Type itemType = Nullable.GetUnderlyingType(prop.PropertyType) == null ? prop.PropertyType : Nullable.GetUnderlyingType(prop.PropertyType);
-                    //根据Model类字段的真实类型进行转换
-                    prop.SetValue(obj, Convert.ChangeType(value, itemType), null);
-                }
-
-
-            }
-            return obj;
-        }
-
-
-        /// <summary>
-        /// 读档
-        /// </summary>
-        /// <param name="Name"></param>
-        /// <returns></returns>
-        public static void DicDataRead(ref Dictionary<string, string> dict, string Name)
-        {
-            var path = Application.dataPath + "/Data/Resources/";
-            //Dictionary<string, string> dict = new Dictionary<string, string>();
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
-            {
-                Directory.CreateDirectory(path);
-            }
-            if (File.Exists(path + Name + ".txt"))
-            {
-                StreamReader json = File.OpenText(path + Name + ".txt");
-                //Debug.Log("读档" + json);
-                string input = json.ReadToEnd();
-                JsonReader reader = new JsonReader(input);
-                string temp = string.Empty;
-                while (reader.Read())
-                {
-                    if (reader.Value != null)
-                    {
-                        switch (reader.Token)
-                        {
-                            case JsonToken.PropertyName:
-                                dict.Add(reader.Value.ToString(), string.Empty);
-                                temp = reader.Value.ToString();
-                                break;
-                            default:
-                                dict[temp] = reader.Value.ToString();
-                                break;
-                        }
-                        Console.WriteLine(reader.Token + "\t" + reader.Value);
-                    }
-                }
-                json.Close();
-            }
-            //return dict;
-        }
-
         #endregion
-
-
-        #region JSON格式化
 
         /// <summary>
         /// object转json
@@ -538,6 +448,19 @@ namespace Assets.Script.Tools
         #region UI
 
         /// <summary>
+        /// 跳转页面
+        /// </summary>
+        /// <param name="SceneName">场景名称</param>
+        /// <param name="Again"></param>
+        /// <param name="Name">起始页面名称</param>
+        public static void SceneJump(string SceneName, int Again = 1, string Name = "")
+        {
+            HasAgain = Again;
+            ReturnName = Name;
+            SceneManager.LoadScene(SceneName);
+        }
+
+        /// <summary>
         /// 将控件添加到父控件
         /// </summary>
         /// <param name="parent">父控件</param>
@@ -631,111 +554,6 @@ namespace Assets.Script.Tools
             }
         }
 
-        /// <summary>
-        /// 卡牌数据绑定
-        /// </summary>
-        /// <param name="tempObject">卡牌对象</param>
-        /// <param name="model">实体类</param>
-        public static void CardDataBind(GameObject tempObject, CurrentCardPoolModel model)
-        {
-            #region 卡牌数据绑定
-            var cardType = model.EffectType;
-            #region 攻击力图标
-            var Card_ATK_img = tempObject.transform.Find("img_ATK").GetComponent<Image>();
-            var Card_ATK_icon = tempObject.transform.Find("img_ATK/Image").GetComponent<Image>();
-            var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
-            if (cardType == 6 || cardType == 7 || cardType == 8 || cardType == 9)//是否隐藏
-            {
-                Card_ATK_img.transform.localScale = Vector3.zero;
-            }
-            else
-            {
-                if (cardType == 1)
-                {
-                    ImageBind("Images/Defense", Card_ATK_icon);
-                }
-                else if (cardType == 2 || cardType == 3)
-                {
-                    ImageBind("Images/HP_Icon", Card_ATK_icon);
-                }
-                else if (cardType == 5)
-                {
-                    ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
-                }
-                else
-                {
-                    ImageBind("Images/Atk_Icon", Card_ATK_icon);
-                }
-                Card_ATKNumber.text = model.Effect.ToString();
-                
-            }
-            #endregion
-            var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
-            var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
-            var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
-            var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
-            if (model.Consume == 0)
-            {
-                Card_energy_img.transform.localScale = Vector3.zero;
-            }
-            ImageBind(model.CardUrl, Card_Skill_img);
-            Card_Energy.text = model.Consume.ToString();
-            Card_Title.text = model.CardName.TextSpacing();
-            if (model.UpgradeCount == 1)
-            {
-                Card_ATKNumber.color = new Color32(0, 205, 12, 255);
-                Card_Title.color = new Color32(0, 205, 12, 255);
-                Card_Title.text = "* " + Card_Title.text;
-            }
-            #endregion
-        }
-
-        /// <summary>
-        /// 卡牌升级
-        /// </summary>
-        public static List<CurrentCardPoolModel> CardUpgrade()
-        {
-            var UpgradeCardList = GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
-            foreach (var model in UpgradeCardList)
-            {
-                //第一次升级修改数值，第二次还是改数值。或消除一些负面效果。第三次升级改消耗。第四次还是改消耗，如果消耗无了就继续改数值
-                if (model.UpgradeCount == 0)
-                {
-                    if (model.EffectType == 0 || model.EffectType == 1 || model.EffectType == 3)
-                    {
-                        int ReinforceNum = model.CardLevel + 3;
-                        model.Effect += ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
-                    }
-                    else if (model.EffectType == 2 || model.EffectType == 4)
-                    {
-                        int ReinforceNum = model.CardLevel + 1;
-                        model.Effect -= ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect + ReinforceNum).ToString(), model.Effect.ToString());
-                    }
-                    else
-                    {
-                        int ReinforceNum = model.CardLevel + 1;
-                        model.Effect += ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
-                    }
-                }
-                else if (model.UpgradeCount == 1)
-                {
-
-                }
-                else if (model.UpgradeCount == 2)
-                {
-
-                }
-                else
-                {
-
-                }
-                model.UpgradeCount += 1;
-            }
-            return UpgradeCardList;
-        }
 
         #endregion
 
@@ -815,6 +633,7 @@ namespace Assets.Script.Tools
             SaveTxtFile(null, GlobalAttr.CurrentPlayerRoleFileName);
 
         }
+
         #endregion
     }
 }

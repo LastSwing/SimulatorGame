@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Assets.Script.Models
 {
+    /// <summary>
+    /// 卡池
+    /// </summary>
     public class CardPoolModel
     {
         /// <summary>
@@ -29,6 +32,11 @@ namespace Assets.Script.Models
         /// 存Key在表里找到对应的效果
         /// </summary>
         public int EffectType { get; set; }
+
+        /// <summary>
+        /// 效果值（如血量恢复、愤怒层数、攻击力、护甲）
+        /// </summary>
+        public float Effect { get; set; }
 
         /// <summary>
         /// 攻击次数
@@ -56,11 +64,6 @@ namespace Assets.Script.Models
         public int Consume { get; set; }
 
         /// <summary>
-        /// 效果值（如血量恢复、愤怒层数、攻击力、护甲）
-        /// </summary>
-        public float Effect { get; set; }
-
-        /// <summary>
         /// 该卡所属Ai或玩家
         /// 0玩家、1AI
         /// </summary>
@@ -85,6 +88,7 @@ namespace Assets.Script.Models
 
         /// <summary>
         /// 触发条件
+        /// 存Key在表里找对应的值
         /// </summary>
         public int TriggerCondition { get; set; }
 
