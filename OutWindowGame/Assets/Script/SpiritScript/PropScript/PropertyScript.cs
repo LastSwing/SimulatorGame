@@ -26,7 +26,7 @@ public class PropertyScript : MonoBehaviour
         if (Role != null)
         {
             Role._Prop = true;
-            Role.Vector2 = new Vector3(transform.localPosition.x - Vector.x,transform.localPosition.y-Vector.y);
+            //Role.Vector2 = new Vector3(transform.localPosition.x - Vector.x,transform.localPosition.y-Vector.y);
         }
     }
 }

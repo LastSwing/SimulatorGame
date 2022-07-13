@@ -62,69 +62,6 @@ public class MainView : BaseUI
         //按钮位置根据分辨率改变
         UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2), UIList.transform.localPosition.y);
     }
-    /*void FixedUpdate()
-    {
-        //让屏幕和UI跟着角色向右移动
-        if (Role.transform.localPosition.x > (transform.localPosition.x * -1) + MobileWidth)
-        {
-            if (transform.localPosition.x * -1 >= (GetComponent<RectTransform>().rect.width / 2 - screen.x / 2))//已经到尽头
-            {
-                MobileWidth = 0;
-                transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2 - screen.x / 2) * -1, transform.localPosition.y);
-                UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2) - (UIList.GetComponent<RectTransform>().rect.width / 2), UIList.transform.localPosition.y);
-            }
-            else//角色在屏幕右边，添加屏幕宽度
-            {
-                IsMove = true;
-                Speed = 20;
-                MobileWidth += FrameWidthSpeed * WidthMSpeed;
-                FrameWidth = MobileWidth / Speed;
-            }
-        }
-        else
-        {
-            MobileWidth -= FrameWidth;
-            if (Role.transform.localPosition.x < (transform.localPosition.x * -1) - GetComponent<RectTransform>().rect.width / 1.8)
-            {
-                IsMove = true;
-                Speed = 20;
-                MobileWidth += FrameWidthSpeed * WidthMSpeed;
-                FrameWidth = MobileWidth / Speed;
-            }
-        }
-
-        //让屏幕和UI跟着角色上下移动
-        if (Role.transform.localPosition.y > (transform.localPosition.y * -1) + MobileHeight)
-        {
-
-        }
-
-        //移动操作
-        if (IsMove)
-        {
-            if (MobileWidth > 0)
-            {
-                transform.localPosition = new Vector2(transform.localPosition.x - MobileWidth / Speed, transform.localPosition.y);
-                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x + MobileWidth / Speed, UIList.transform.localPosition.y);
-            }
-            else if (MobileWidth < 0)
-            {
-                transform.localPosition = new Vector2(transform.localPosition.x + MobileWidth / Speed, transform.localPosition.y);
-                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x - MobileWidth / Speed, UIList.transform.localPosition.y);
-            }
-            if (MobileHeight > 0)
-            {
-                transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - MobileHeight / Speed);
-                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x, UIList.transform.localPosition.y + MobileHeight / Speed);
-            }
-            Speed--;
-            if (Speed <= 0)
-            {
-                IsMove = false;
-            }
-        }
-    }
-    */
     void FixedUpdate()
     {
         if (Role.transform.localPosition.x > (transform.localPosition.x * -1))//角色处于右半部

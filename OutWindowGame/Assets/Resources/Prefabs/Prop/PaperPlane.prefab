@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5090269604991128014}
   - component: {fileID: 5090269604991128015}
   - component: {fileID: 5090269604991128012}
-  - component: {fileID: 3657176107343390675}
+  - component: {fileID: -4907304455757060784}
   m_Layer: 0
   m_Name: PaperPlane
   m_TagString: Untagged
@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5090269604991128010}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4436.5215, y: -1764.7754, z: 0}
+  m_LocalPosition: {x: -4555.748, y: -2014.6807, z: 0}
   m_LocalScale: {x: 50, y: 50, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -204,14 +204,14 @@ Rigidbody2D:
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDrag: 0
-  m_AngularDrag: 0.05
-  m_GravityScale: 0.02
+  m_AngularDrag: 0.1
+  m_GravityScale: 1
   m_Material: {fileID: 0}
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &3657176107343390675
+--- !u!114 &-4907304455757060784
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
