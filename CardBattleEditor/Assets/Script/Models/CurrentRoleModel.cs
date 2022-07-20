@@ -9,7 +9,7 @@ namespace Assets.Script.Models
     /// <summary>
     /// 游戏内的角色
     /// </summary>
-    public class CurrentRoleModel
+    public class CurrentRoleModel 
     {
         /// <summary>
         /// 角色主键

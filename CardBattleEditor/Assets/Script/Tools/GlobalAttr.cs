@@ -96,5 +96,10 @@ namespace Assets.Script.Tools
         /// </summary>
         public static string GlobalAdventureFileName = "GlobalAdventure";
         #endregion
+
+        /// <summary>
+        /// 所有表属性
+        /// </summary>
+        public static string AllTablesAttrFlieName = "AllTablesAttr";
     }
 }
