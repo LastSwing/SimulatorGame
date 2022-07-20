@@ -9,7 +9,7 @@ namespace Assets.Script.Models
     /// <summary>
     /// 玩家类
     /// </summary>
-    public class GlobalPlayerModel
+    public class GlobalPlayerModel 
     {
         /// <summary>
         /// 主键

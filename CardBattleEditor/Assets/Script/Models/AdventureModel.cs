@@ -9,7 +9,7 @@ namespace Assets.Script.Models
     /// <summary>
     /// 冒险类
     /// </summary>
-    public class AdventureModel
+    public class AdventureModel 
     {
         /// <summary>
         /// 主键
