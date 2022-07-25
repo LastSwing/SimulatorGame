@@ -159,7 +159,7 @@ public class AllSkillView : BaseUI
     {
         BtnColorUpdate(1);
         var palyerAtkList = GlobalPlayerCardPools.FindAll(a => a.CardType == 0 );
-        var globalAtkList = GlobalCardPools.FindAll(a => a.CardType == 1);
+        var globalAtkList = GlobalCardPools.FindAll(a => a.CardType == 0);
         txt_AllSkillCount.text = $"{palyerAtkList?.Count}/{globalAtkList?.Count}";
         CreateCardPools(palyerAtkList, globalAtkList);
     }

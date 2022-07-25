@@ -132,11 +132,11 @@ public class MainView : BaseUI
         if (GlobalRole == null)
         {
             GlobalRole = new GlobalPlayerModel();
-            GlobalRole.ID = DateTime.Now.ToString("yyyyMMddHHmmss");
+            GlobalRole.ID = 1001;
             GlobalRole.Wealth = 100;
             GlobalRole.RoleList = "2022042716410125|玩家1;2022042811152451|玩家2;";
-            GlobalRole.SkillList = "2022042516365099|木盾;2022042516475185|冲拳;2022042516505207|飞腿;2022042516535189|金光手;2022042516543430|琉光掌;2022042516590925|土菇花;2022042516594601|土梨果;";
-            GlobalRole.CurrentRoleID = "2022042716410125";
+            GlobalRole.SkillList = "1001|木盾;1001|木盾;1002|冲拳;1002|冲拳;1003|飞腿;1004|金光手;1005|琉光掌;1006|土菇花;1007|土梨果;1007|土梨果;";
+            GlobalRole.CurrentRoleID = 1001;
             Common.SaveTxtFile(GlobalRole.ObjectToJson(), GlobalAttr.GlobalRoleFileName);
 
         }

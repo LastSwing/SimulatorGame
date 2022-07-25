@@ -83,8 +83,23 @@ namespace Assets.Script.Models
         /// </summary>
         public int HasShoppingShow { get; set; }
 
+
+        /// <summary>
+        /// 使用后触发
+        /// </summary>
+        public List<TriggerAfterUsing> TriggerAfterUsingList { get; set; }
+
+    }
+
+    /// <summary>
+    /// 卡牌使用后
+    /// </summary>
+    public class TriggerAfterUsing
+    {
+
         /// <summary>
         /// 触发条件
+        /// 存Key在表里找对应的值
         /// </summary>
         public int TriggerCondition { get; set; }
 
@@ -100,21 +115,8 @@ namespace Assets.Script.Models
         public int TriggerValue { get; set; }
 
         /// <summary>
-        /// 触发条件
-        /// 存Key在表里找对应的值
+        /// 触发顺序
         /// </summary>
-        public int TriggerCondition2 { get; set; }
-
-        /// <summary>
-        /// 卡牌使用后触发状态
-        /// 存Key在表里找对应的值
-        /// </summary>
-        public int TriggerState2 { get; set; }
-
-        /// <summary>
-        /// 触发值
-        /// </summary>
-        public int TriggerValue2 { get; set; }
-
+        public int Sort { get; set; }
     }
 }
