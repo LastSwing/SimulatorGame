@@ -20,5 +20,10 @@ namespace Assets.Script.Models
         /// 升级次数
         /// </summary>
         public int UpgradeCount { get; set; }
+
+        /// <summary>
+        /// 唯一ID
+        /// </summary>
+        public int SingleID { get; set; }
     }
 }

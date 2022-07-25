@@ -162,6 +162,7 @@ GameObject:
   - component: {fileID: 8665876696897883928}
   - component: {fileID: 8665876696897883930}
   - component: {fileID: 8665876696897883929}
+  - component: {fileID: 5052149887903300767}
   m_Layer: 5
   m_Name: img_Card200
   m_TagString: Untagged
@@ -230,6 +231,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5052149887903300767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8665876696897883935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f41250baaef6d9e46b2532a1bdf8908c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8665876697121826503
 GameObject:
   m_ObjectHideFlags: 0

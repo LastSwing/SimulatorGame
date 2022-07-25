@@ -14,7 +14,7 @@ namespace Assets.Script.Models
         /// <summary>
         /// 角色主键
         /// </summary>
-        public string RoleID { get; set; }
+        public int RoleID { get; set; }
 
         /// <summary>
         /// 角色属性

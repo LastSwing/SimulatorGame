@@ -14,12 +14,12 @@ namespace Assets.Script.Models
         /// <summary>
         /// 主键
         /// </summary>
-        public string ID { get; set; }
+        public int ID { get; set; }
 
         /// <summary>
         /// 出战的角色ID
         /// </summary>
-        public string CurrentRoleID { get; set; }
+        public int CurrentRoleID { get; set; }
 
         /// <summary>
         /// 所拥有的的角色

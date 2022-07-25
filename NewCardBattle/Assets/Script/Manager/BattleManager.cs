@@ -11,14 +11,23 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
     public List<PlayerData> OwnPlayerData = new List<PlayerData>();
     public List<PlayerData> EnemyPlayerData = new List<PlayerData>();
     public StateMachine BattleStateMachine;
-    public List<int> OwnCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性
+    public List<int> OwnCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性;玩家牌库ID
     public List<int> EnemyCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性
-    public List<int> OwnHandCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性
+    public List<int> OwnHandCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性;当前玩家牌库牌堆ID
     public List<int> EnemyHandCards = new List<int>();//这里的卡牌ID不用表ID，而是唯一ID，保证唯一性
-    public List<int> PlayControlIndexList = new List<int>();
+    public List<int> PlayControlIndexList = new List<int>();//出手顺序，存角色ID
     public int controlIndex;//当前出手
 
     private Action UpdateAction;
+
+    public void InitCardPools(List<int> ownCards, List<int> enemyCards, List<int> ownHandCards, List<int> enemyHandCards)
+    {
+        this.OwnCards = ownCards;
+        this.EnemyCards = enemyCards;
+        this.OwnHandCards = ownHandCards;
+        this.EnemyHandCards = enemyHandCards;
+    }
+
     public void Init(List<PlayerData> ownPlayerData, List<PlayerData> enemyPlayerData)
     {
         ResetBattle();
@@ -57,7 +66,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
         controlIndex = 0;
         BattleStateMachine.ChangeState(BattleStateID.TurnStart);
     }
-    
+
 
     /// <summary>
     /// 确定出手顺序

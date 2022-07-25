@@ -60,11 +60,32 @@ public class StateMachine
 }
 public static class BattleStateID
 {
-    public const int Ready = 1000;//准备
-    public const int TurnStart = 2000;//回合开始阶段
-    public const int DrawCard = 3000;//回合抽卡阶段
-    public const int Control = 4000;//出牌
-    public const int PlayEffect = 5000;//播放效果结算
-    public const int TurnEnd = 6000;//回合结束
-    public const int GameEnd = 7000;//游戏结束
+    /// <summary>
+    /// 准备
+    /// </summary>
+    public const int Ready = 1000;
+    /// <summary>
+    /// 回合开始阶段
+    /// </summary>
+    public const int TurnStart = 2000;
+    /// <summary>
+    /// 回合抽卡阶段
+    /// </summary>
+    public const int DrawCard = 3000;
+    /// <summary>
+    /// 出牌
+    /// </summary>
+    public const int Control = 4000;
+    /// <summary>
+    /// 播放效果阶段
+    /// </summary>
+    public const int PlayEffect = 5000;
+    /// <summary>
+    /// 回合结束
+    /// </summary>
+    public const int TurnEnd = 6000;
+    /// <summary>
+    /// 游戏结束
+    /// </summary>
+    public const int GameEnd = 7000;
 }

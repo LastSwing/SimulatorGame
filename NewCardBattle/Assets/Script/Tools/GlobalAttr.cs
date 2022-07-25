@@ -14,7 +14,7 @@ namespace Assets.Script.Tools
         public static string AllResourcesFileName = "AllResourcesPath";
 
         /// <summary>
-        /// 角色全局卡池文件的名称
+        /// 全局角色卡池文件的名称
         /// </summary>
         public static string GlobalPlayerCardPoolFileName = "GlobalPlayerCardPools";
 
@@ -24,12 +24,12 @@ namespace Assets.Script.Tools
         public static string GlobalCardPoolFileName = "GlobalCardPools";
 
         /// <summary>
-        /// 玩家角色池文件名称
+        /// 全局玩家角色池文件名称
         /// </summary>
         public static string GlobalPlayerRolePoolFileName = "GlobalPlayerRolePools";
 
         /// <summary>
-        /// AI角色池文件名称
+        /// 全局AI角色池文件名称
         /// </summary>
         public static string GlobalAIRolePoolFileName = "GlobalAIRolePools";
 
@@ -101,5 +101,27 @@ namespace Assets.Script.Tools
         /// </summary>
         public static string GlobalAdventureFileName = "GlobalAdventure";
         #endregion
+
+        #region Card
+        /// <summary>
+        /// 卡效果类型
+        /// </summary>
+        public static string EffectTypeFileName = "EffectType";
+
+        /// <summary>
+        /// 卡触发条件
+        /// </summary>
+        public static string TriggerConditionFileName = "TriggerCondition";
+        /// <summary>
+        /// 卡触发类型
+        /// </summary>
+        public static string TriggerStateFileName = "TriggerState";
+
+        #endregion
+
+        /// <summary>
+        /// 所有表属性
+        /// </summary>
+        public static string AllTablesAttrFlieName = "AllTablesAttr";
     }
 }

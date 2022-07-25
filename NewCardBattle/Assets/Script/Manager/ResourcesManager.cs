@@ -20,6 +20,9 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
         {"UpgradeView","View/UpgradeView" },
         {"img_CardShop","Prefabs/img_CardShop" },
         {"btn_ShopConfirm","Prefabs/btn_ShopConfirm" },
+        {"img_EnergyBG","Prefabs/img_EnergyBG" },
+        {"img_Energy","Prefabs/img_Energy" },
+        {"img_Buff","Prefabs/img_Buff" },
         {"BGM_1","AudioClip/BGM_1" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },
@@ -71,7 +74,7 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     {
         #region 资源路径初始化
         //Common.SaveTxtFile(Common.DicToJson(urlDic), GlobalAttr.AllResourcesFileName, "Resources");
-        Common.DicDataRead(ref urlDic, GlobalAttr.AllResourcesFileName);
+        Common.DicDataRead(ref urlDic, GlobalAttr.AllResourcesFileName, "Resources");
         #endregion
 
         //页面预加载
