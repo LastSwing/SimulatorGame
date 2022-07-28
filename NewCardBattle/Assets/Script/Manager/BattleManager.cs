@@ -54,6 +54,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
         BattleStateMachine.AddState(new Battle_PlayEffect());
         BattleStateMachine.AddState(new Battle_TurnEnd());
         BattleStateMachine.AddState(new Battle_GameEnd());
+        BattleStateMachine.AddState(new Battle_AiATK());
         UpdateAction = () => { BattleStateMachine.ExecuteState(); };
     }
 
@@ -208,6 +209,20 @@ public class Battle_GameEnd : State
     public Battle_GameEnd()
     {
         ID = BattleStateID.GameEnd;
+    }
+    public override void Enter() { }
+    public override void Execute() { }
+    public override void Exit() { }
+}
+
+/// <summary>
+/// AI攻击阶段
+/// </summary>
+public class Battle_AiATK : State
+{
+    public Battle_AiATK()
+    {
+        ID = BattleStateID.AiAtk;
     }
     public override void Enter() { }
     public override void Execute() { }

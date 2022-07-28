@@ -637,28 +637,65 @@ namespace Assets.Script.Tools
         /// </summary>
         /// <param name="tempObject">卡牌对象</param>
         /// <param name="model">实体类</param>
-        public static void CardDataBind(GameObject tempObject, CurrentCardPoolModel model)
+        public static void CardDataBind(GameObject tempObject, CurrentCardPoolModel model, List<BuffData> buffDatas = null)
         {
+            bool hasAscension = false;//是否用BUFF提升过数值
+            bool hasReduce = false;//是否用BUFF降低过数值
+            if (buffDatas != null && buffDatas?.Count > 0)
+            {
+                BuffData buff = buffDatas.Find(a => a.BUFFType == 0);
+                if (buff != null)
+                {
+                    if (buff.EffectType == 8)//愤怒
+                    {
+                        hasAscension = true;
+                        if (model.CardType == 0)
+                        {
+                            model.Effect += model.Effect * 0.2f;
+                        }
+                    }
+                    else if (buff.EffectType == 11)//虚弱
+                    {
+                        hasReduce = true;
+                        if (model.CardType == 0)
+                        {
+                            model.Effect -= model.Effect * 0.2f;
+                        }
+                    }
+                }
+            }
             #region 卡牌数据绑定
             var cardType = model.EffectType;
             #region 攻击力图标
             var Card_ATK_img = tempObject.transform.Find("img_ATK").GetComponent<Image>();
             var Card_ATK_icon = tempObject.transform.Find("img_ATK/Image").GetComponent<Image>();
             var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
+            var img_Up = tempObject.transform.Find("img_ATK/Text/Up")?.GetComponent<Image>();
+            var img_Down = tempObject.transform.Find("img_ATK/Text/Down")?.GetComponent<Image>();
+            if (img_Up != null && img_Down != null)
+            {
+                img_Up.transform.localScale = Vector3.zero;
+                img_Down.transform.localScale = Vector3.zero;
+            }
+            if (hasAscension)
+            {
+                img_Up.transform.localScale = Vector3.one;
+            }
+            if (hasReduce)
+            {
+                img_Down.transform.localScale = Vector3.one;
+            }
             if (cardType == 1 || cardType == 5 || cardType == 13)
             {
                 ImageBind("Images/Atk_Icon", Card_ATK_icon);
-                //ImageBind("Images/Defense", Card_ATK_icon);
             }
             else if (cardType == 2)
             {
                 ImageBind("Images/Defense", Card_ATK_icon);
-                //ImageBind("Images/HP_Icon", Card_ATK_icon);
             }
             else if (cardType == 3)
             {
                 ImageBind("Images/HP_Icon", Card_ATK_icon);
-                //ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
             }
             else if (cardType == 4)
             {
