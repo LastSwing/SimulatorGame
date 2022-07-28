@@ -88,4 +88,8 @@ public static class BattleStateID
     /// 游戏结束
     /// </summary>
     public const int GameEnd = 7000;
+    /// <summary>
+    /// AI攻击阶段
+    /// </summary>
+    public const int AiAtk = 8000;
 }

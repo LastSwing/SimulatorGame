@@ -89,6 +89,11 @@ namespace Assets.Script.Models
         /// </summary>
         public List<TriggerAfterUsing> TriggerAfterUsingList { get; set; }
 
+        /// <summary>
+        /// 使用前触发
+        /// </summary>
+        public List<TriggerAfterUsing> UsingBeforeTriggerList { get; set; }
+
     }
 
     /// <summary>
