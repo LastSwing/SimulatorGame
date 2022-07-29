@@ -270,7 +270,7 @@ public class MapView : BaseUI
             btn_Setting.onClick.AddListener(SettingClick);
         }
         MapInit();
-    } 
+    }
     #endregion
 
     #region 地图事件
@@ -310,6 +310,7 @@ public class MapView : BaseUI
         else
         {
             int BGcount = img_map.transform.childCount;
+            img_Init = transform.Find("BG/Map_Row0/Atk_img0").GetComponent<Image>();
             if (BGcount > 0)
             {
                 for (int i = 0; i < BGcount; i++)

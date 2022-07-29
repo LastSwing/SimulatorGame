@@ -601,7 +601,7 @@ namespace Assets.Script.Tools
                         total = ImgWidth;
                     }
                     Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
-                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
+                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x + ChangeImgW / 2, HpImg.transform.localPosition.y);
                 }
             }
         }
@@ -918,6 +918,9 @@ namespace Assets.Script.Tools
             if (typeStr.Contains("Models"))
             {
                 className = typeStr.Substring(typeStr.IndexOf("Models") + 7);
+                //如果Models下还有文件夹
+                var clsArr = className.Split('.');
+                className = clsArr[clsArr.Length - 1];
                 List<TableStruct> tables = GetTableStructData();
                 if (tables != null)
                 {
@@ -1024,6 +1027,9 @@ namespace Assets.Script.Tools
             if (typeStr.Contains("Models"))
             {
                 className = typeStr.Substring(typeStr.IndexOf("Models") + 7);
+                //如果Models下还有文件夹
+                var clsArr = className.Split('.');
+                className = clsArr[clsArr.Length - 1];
                 List<TableStruct> tables = GetTableStructData();
                 if (tables != null)
                 {
@@ -1089,6 +1095,9 @@ namespace Assets.Script.Tools
                 if (typeStr.Contains("Models"))
                 {
                     className = typeStr.Substring(typeStr.IndexOf("Models") + 7);
+                    //如果Models下还有文件夹
+                    var clsArr = className.Split('.');
+                    className = clsArr[clsArr.Length - 1];
                     List<TableStruct> tables = GetTableStructData();
                     if (tables != null)
                     {
@@ -1156,6 +1165,9 @@ namespace Assets.Script.Tools
             if (typeStr.Contains("Models"))
             {
                 className = typeStr.Substring(typeStr.IndexOf("Models") + 7);
+                //如果Models下还有文件夹
+                var clsArr = className.Split('.');
+                className = clsArr[clsArr.Length - 1];
                 List<TableStruct> tables = GetTableStructData();
                 if (tables != null)
                 {
@@ -1222,6 +1234,9 @@ namespace Assets.Script.Tools
             if (typeStr.Contains("Models"))
             {
                 className = typeStr.Substring(typeStr.IndexOf("Models") + 7);
+                //如果Models下还有文件夹
+                var clsArr = className.Split('.');
+                className = clsArr[clsArr.Length - 1];
                 List<TableStruct> tables = GetTableStructData();
                 if (tables != null)
                 {

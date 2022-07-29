@@ -14,7 +14,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
     GameObject MagnifyObj, thisObj, gameViewObj, P_buffObj, E_buffObj, obj_RemoveCard;
     CurrentCardPoolModel model = new CurrentCardPoolModel();//卡牌数据
     Image Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
-    Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor;
+    Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Right_Count;
     RectTransform thisParent;
     private void Start()
     {
@@ -27,6 +27,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         txt_E_HP = gameViewObj.transform.Find("UI/Enemy/Text").GetComponent<Text>();
         txt_P_Armor = gameViewObj.transform.Find("UI/Player/img_Armor/Text").GetComponent<Text>();
         txt_E_Armor = gameViewObj.transform.Find("UI/Enemy/img_Armor/Text").GetComponent<Text>();
+        txt_Right_Count = gameViewObj.transform.Find("UI/CardPools/right_Card/txt_EndCardCount").GetComponent<Text>();
         MagnifyObj = gameViewObj.transform.Find("UI/CardPools/obj_Magnify").gameObject;
         P_buffObj = gameViewObj.transform.Find("UI/Player/BuffBar").gameObject;
         E_buffObj = gameViewObj.transform.Find("UI/Enemy/BuffBar").gameObject;
@@ -771,6 +772,8 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
                 aiData.MaxHP = AiRole.bloodMax;
                 Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
                 #endregion
+                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
+                txt_Right_Count.text = useCards == null ? "0" : useCards.Count.ToString();
             }
             else
             {
@@ -900,8 +903,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
                 }
                 else if (item.TriggerCondition == 4)//攻击力*2大与血量
                 {
-                    //攻击力不*2，因为已经执行过一次攻击
-                    if (model.Effect > AiRole.bloodNow)
+                    if (model.Effect * 2 > AiRole.bloodNow)
                     {
                         hasReachCondition = true;
                     }

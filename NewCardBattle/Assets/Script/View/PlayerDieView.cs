@@ -18,6 +18,7 @@ public class PlayerDieView : BaseUI
     GameObject UI_Obj;
     float totalTime;
     int AccumulateCount, InitValue, MaxValue = 0;
+    bool DataReset;
     #region OnInit
     public override void OnInit()
     {
@@ -66,13 +67,11 @@ public class PlayerDieView : BaseUI
     #region 按钮事件
     public void ContinueClick()
     {
-        Common.GameOverDataReset();
         UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("PlayerDieView");
     }
     public void AginClick()
     {
-        Common.GameOverDataReset();
         UIManager.instance.OpenView("MainView");
         UIManager.instance.CloseView("PlayerDieView");
     }
@@ -260,8 +259,17 @@ public class PlayerDieView : BaseUI
     }
     #endregion
 
+    private void Update()
+    {
+        if (!DataReset)
+        {
+            Common.GameOverDataReset();
+            DataReset = true;
+        }
+    }
+
     public override void OnClose()
     {
-        //throw new System.NotImplementedException();
+
     }
 }
