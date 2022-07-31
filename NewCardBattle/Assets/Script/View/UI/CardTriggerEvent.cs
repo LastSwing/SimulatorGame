@@ -8,7 +8,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+/// <summary>
+/// 卡牌触发事件
+/// </summary>
+public class CardTriggerEvent : SingletonMonoBehaviour<CardTriggerEvent>, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     Vector3 InitVector;
     GameObject MagnifyObj, thisObj, gameViewObj, P_buffObj, E_buffObj, obj_RemoveCard;
@@ -16,6 +19,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
     Image Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
     Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Right_Count;
     RectTransform thisParent;
+    Vector3 CardPos;//卡牌当前位置
     private void Start()
     {
         gameViewObj = GameObject.Find("GameView(Clone)");
@@ -79,6 +83,23 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
     /// <summary>
+    /// 开始拖拽
+    /// </summary>
+    /// <param name="eventData"></param>
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+        //if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
+        //{
+        //    HideCardDetail();
+        //    HideMagnifyCard();
+        //    if (model.EffectType != 0)//无效果。黑卡
+        //    {
+        //        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+        //    }
+        //}
+    }
+    /// <summary>
     /// 拖拽中
     /// </summary>
     /// <param name="eventData"></param>
@@ -88,22 +109,6 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         {
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.position = Input.mousePosition;
-        }
-    }
-    /// <summary>
-    /// 开始拖拽
-    /// </summary>
-    /// <param name="eventData"></param>
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
-        {
-            HideCardDetail();
-            HideMagnifyCard();
-            if (model.EffectType != 0)//无效果。黑卡
-            {
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
-            }
         }
     }
     /// <summary>
@@ -783,7 +788,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
             }
         }
     }
-
+    
     /// <summary>
     /// BUFF数据应用到卡牌攻击中
     /// </summary>
@@ -867,6 +872,8 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
             Destroy(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
         }
     }
+
+    
 
     /// <summary>
     /// 卡牌使用前的触发事件

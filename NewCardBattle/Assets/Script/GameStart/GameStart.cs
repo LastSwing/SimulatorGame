@@ -12,7 +12,7 @@ public class GameStart : MonoBehaviour
         ResourcesManager.instance.Init();
         UIManager.instance.Init();
         SoundManager.instance.Init();
-        UIManager.instance.OpenView("MainView");
+        UIManager.instance.OpenView("GameView");
     }
 
     // Update is called once per frame

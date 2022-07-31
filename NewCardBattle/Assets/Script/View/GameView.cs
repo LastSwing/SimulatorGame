@@ -642,7 +642,6 @@ public class GameView : BaseUI
         txt_Right_Count.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         txt_Left_Count.text = UnusedCardList == null ? "0" : UnusedCardList.Count.ToString();//有动画后再逐一减少
         //AI攻击
-        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AiAtk);
         AiAtk();
     }
 
@@ -1192,11 +1191,14 @@ public class PlayerData
 }
 
 /// <summary>
-/// buff数据
+/// buff数据只作用在全局的
 /// </summary>
 public class BuffData
 {
-
+    /// <summary>
+    /// 唯一主键
+    /// </summary>
+    public int ID { get; set; }
     /// <summary>
     /// buff名称
     /// </summary>
@@ -1215,5 +1217,10 @@ public class BuffData
     /// 同CardPoolModel 的 EffectType
     /// </summary>
     public int EffectType { get; set; }
+
+    /// <summary>
+    /// 预留字段
+    /// </summary>
+    public string ReservedPara { get; set; }
 }
 #endregion

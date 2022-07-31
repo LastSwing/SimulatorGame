@@ -77,9 +77,9 @@ public static class BattleStateID
     /// </summary>
     public const int Control = 4000;
     /// <summary>
-    /// 播放效果阶段
+    /// 结算效果阶段只用于结算
     /// </summary>
-    public const int PlayEffect = 5000;
+    public const int EffectSettlement = 5000;
     /// <summary>
     /// 回合结束
     /// </summary>
@@ -88,8 +88,4 @@ public static class BattleStateID
     /// 游戏结束
     /// </summary>
     public const int GameEnd = 7000;
-    /// <summary>
-    /// AI攻击阶段
-    /// </summary>
-    public const int AiAtk = 8000;
 }
