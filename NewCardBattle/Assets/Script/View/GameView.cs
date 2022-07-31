@@ -67,7 +67,6 @@ public class GameView : BaseUI
     private void InitComponent()
     {
         //Common.SaveTablesStruct<TriggerAfterUsing>("TriggerAfterUsing");
-        Common.UpdateColumnData<CardPoolModel>(1031, 1073, GlobalAttr.GlobalCardPoolFileName);
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
         txt_SettingHasBtn = GameObject.Find("MainCanvas/txt_SettingHasBtn").GetComponent<Text>();
@@ -550,6 +549,7 @@ public class GameView : BaseUI
     {
         //手牌放入已使用的已使用的类中
         var atkCards = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentATKBarCardPoolsFileName);
+        UsedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName) ?? new List<CurrentCardPoolModel>();
         if (atkCards?.Count > 0)
         {
             var atkLength = atkCards.Count;
@@ -591,6 +591,7 @@ public class GameView : BaseUI
                 }
                 //卡牌回收动画
                 UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName).ListRandom();
+                UsedCardList = new List<CurrentCardPoolModel>();
                 for (int y = 0; y < 5 - length; y++)
                 {
                     CreateAtkBarCard(UnusedCardList[0]);
@@ -636,11 +637,11 @@ public class GameView : BaseUI
 
         Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
         Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+        Common.SaveTxtFile(UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
         #endregion
         txt_Right_Count.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         txt_Left_Count.text = UnusedCardList == null ? "0" : UnusedCardList.Count.ToString();//有动画后再逐一减少
         //AI攻击
-        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AiAtk);
         AiAtk();
     }
 
@@ -691,7 +692,7 @@ public class GameView : BaseUI
             #region 防御
             else if (AIAtk.EffectType == 2)//防御
             {
-                
+
                 Eimg_Armor.transform.localScale = Vector3.one;
                 enemyRole.Armor += Convert.ToInt32(AIAtk.Effect);
                 if (enemyRole.Armor > enemyRole.bloodMax)
@@ -704,7 +705,7 @@ public class GameView : BaseUI
             #region 血量变化
             else if (AIAtk.EffectType == 3)//血量变化
             {
-                
+
                 if (AIAtk.Effect < 0)
                 {
                     var effect = enemyRole.bloodNow + Convert.ToInt32(AIAtk.Effect);
@@ -741,7 +742,7 @@ public class GameView : BaseUI
             #region 连续攻击
             else if (AIAtk.EffectType == 5)//连续攻击
             {
-                
+
                 for (int j = 0; j < AIAtk.AtkNumber; j++)
                 {
                     int DeductionHp = Convert.ToInt32(AIAtk.Effect);
@@ -778,7 +779,7 @@ public class GameView : BaseUI
             #region 销毁防御
             else if (AIAtk.EffectType == 6)//销毁防御
             {
-                
+
                 if (ownRole.Armor > 0)
                 {
                     ownRole.Armor = 0;
@@ -790,7 +791,7 @@ public class GameView : BaseUI
             #region 无视防御攻击
             else if (AIAtk.EffectType == 7)//无视防御攻击
             {
-                
+
                 int DeductionHp = Convert.ToInt32(AIAtk.Effect);
                 Common.HPImageChange(Pimg_HP, ownRole.bloodMax, DeductionHp, 0);
                 ownRole.bloodNow -= DeductionHp;
@@ -806,7 +807,7 @@ public class GameView : BaseUI
             #region 愤怒
             else if (AIAtk.EffectType == 8)//愤怒
             {
-                
+
                 #region BUff添加
                 if (enemyRole.buffList == null)
                 {
@@ -870,7 +871,7 @@ public class GameView : BaseUI
             #region 虚弱
             else if (AIAtk.EffectType == 11)//虚弱
             {
-                
+
                 #region BUff添加
                 if (ownRole.buffList == null)
                 {
@@ -934,7 +935,7 @@ public class GameView : BaseUI
             #region 暴击等作用在攻击的Buff
             else if (AIAtk.EffectType == 10)//暴击
             {
-                
+
                 #region BUff添加
                 if (enemyRole.buffList == null)
                 {
@@ -998,7 +999,7 @@ public class GameView : BaseUI
             #region 免疫
             else if (AIAtk.EffectType == 9)//免疫
             {
-                
+
                 var aa = enemyRole.buffList.Find(a => a.Name == dic[AIAtk.EffectType.ToString()]);//是否以存在此buff
                 if (aa != null)
                 {
@@ -1190,11 +1191,14 @@ public class PlayerData
 }
 
 /// <summary>
-/// buff数据
+/// buff数据只作用在全局的
 /// </summary>
 public class BuffData
 {
-
+    /// <summary>
+    /// 唯一主键
+    /// </summary>
+    public int ID { get; set; }
     /// <summary>
     /// buff名称
     /// </summary>
@@ -1213,5 +1217,10 @@ public class BuffData
     /// 同CardPoolModel 的 EffectType
     /// </summary>
     public int EffectType { get; set; }
+
+    /// <summary>
+    /// 预留字段
+    /// </summary>
+    public string ReservedPara { get; set; }
 }
 #endregion

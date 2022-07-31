@@ -8,14 +8,18 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+/// <summary>
+/// 卡牌触发事件
+/// </summary>
+public class CardTriggerEvent : SingletonMonoBehaviour<CardTriggerEvent>, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     Vector3 InitVector;
     GameObject MagnifyObj, thisObj, gameViewObj, P_buffObj, E_buffObj, obj_RemoveCard;
     CurrentCardPoolModel model = new CurrentCardPoolModel();//卡牌数据
     Image Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
-    Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor;
+    Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Right_Count;
     RectTransform thisParent;
+    Vector3 CardPos;//卡牌当前位置
     private void Start()
     {
         gameViewObj = GameObject.Find("GameView(Clone)");
@@ -27,6 +31,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         txt_E_HP = gameViewObj.transform.Find("UI/Enemy/Text").GetComponent<Text>();
         txt_P_Armor = gameViewObj.transform.Find("UI/Player/img_Armor/Text").GetComponent<Text>();
         txt_E_Armor = gameViewObj.transform.Find("UI/Enemy/img_Armor/Text").GetComponent<Text>();
+        txt_Right_Count = gameViewObj.transform.Find("UI/CardPools/right_Card/txt_EndCardCount").GetComponent<Text>();
         MagnifyObj = gameViewObj.transform.Find("UI/CardPools/obj_Magnify").gameObject;
         P_buffObj = gameViewObj.transform.Find("UI/Player/BuffBar").gameObject;
         E_buffObj = gameViewObj.transform.Find("UI/Enemy/BuffBar").gameObject;
@@ -78,6 +83,23 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
     /// <summary>
+    /// 开始拖拽
+    /// </summary>
+    /// <param name="eventData"></param>
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+        //if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
+        //{
+        //    HideCardDetail();
+        //    HideMagnifyCard();
+        //    if (model.EffectType != 0)//无效果。黑卡
+        //    {
+        //        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+        //    }
+        //}
+    }
+    /// <summary>
     /// 拖拽中
     /// </summary>
     /// <param name="eventData"></param>
@@ -87,22 +109,6 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         {
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.position = Input.mousePosition;
-        }
-    }
-    /// <summary>
-    /// 开始拖拽
-    /// </summary>
-    /// <param name="eventData"></param>
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
-        {
-            HideCardDetail();
-            HideMagnifyCard();
-            if (model.EffectType != 0)//无效果。黑卡
-            {
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
-            }
         }
     }
     /// <summary>
@@ -771,6 +777,8 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
                 aiData.MaxHP = AiRole.bloodMax;
                 Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
                 #endregion
+                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
+                txt_Right_Count.text = useCards == null ? "0" : useCards.Count.ToString();
             }
             else
             {
@@ -780,7 +788,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
             }
         }
     }
-
+    
     /// <summary>
     /// BUFF数据应用到卡牌攻击中
     /// </summary>
@@ -865,6 +873,8 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         }
     }
 
+    
+
     /// <summary>
     /// 卡牌使用前的触发事件
     /// </summary>
@@ -900,8 +910,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
                 }
                 else if (item.TriggerCondition == 4)//攻击力*2大与血量
                 {
-                    //攻击力不*2，因为已经执行过一次攻击
-                    if (model.Effect > AiRole.bloodNow)
+                    if (model.Effect * 2 > AiRole.bloodNow)
                     {
                         hasReachCondition = true;
                     }

@@ -1,4 +1,5 @@
 ﻿using Assets.Script.Models;
+using Assets.Script.Models.Map;
 using Assets.Script.Tools;
 using System;
 using System.Collections;
