@@ -38,7 +38,6 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
         {
             InitBattleMachine();
         }
-        BattleStateMachine.InitState(BattleStateID.Ready);
         StartBattle();
     }
 
@@ -65,7 +64,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
     {
         InitControlIndex();
         controlIndex = 0;
-        BattleStateMachine.ChangeState(BattleStateID.Ready);
+        BattleStateMachine.InitState(BattleStateID.Ready);
     }
 
 
@@ -146,7 +145,8 @@ public class Battle_TurnStart : State
         int controlIndex = BattleManager.instance.controlIndex;
 
         List<PlayerData> Result = BattleManager.instance.OwnPlayerData.Concat(BattleManager.instance.EnemyPlayerData).ToList<PlayerData>();
-        PlayerData nowPlayer = Result.Find(p => p.playerID == BattleManager.instance.PlayControlIndexList[controlIndex]);
+        int num = BattleManager.instance.PlayControlIndexList[controlIndex];
+        PlayerData nowPlayer = Result.Find(p => p.playerID == num);
         switch (nowPlayer.playerType)
         {
 
