@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -64,7 +65,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
     {
         InitControlIndex();
         controlIndex = 0;
-        BattleStateMachine.ChangeState(BattleStateID.TurnStart);
+        BattleStateMachine.ChangeState(BattleStateID.Ready);
     }
 
 
@@ -125,7 +126,9 @@ public class Battle_Ready : State
     {
         ID = BattleStateID.Ready;
     }
-    public override void Enter() { }
+    public override void Enter() {
+        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
+    }
     public override void Execute() { }
     public override void Exit() { }
 }
@@ -139,7 +142,25 @@ public class Battle_TurnStart : State
     {
         ID = BattleStateID.TurnStart;
     }
-    public override void Enter() { }
+    public override void Enter() {
+        int controlIndex = BattleManager.instance.controlIndex;
+
+        List<PlayerData> Result = BattleManager.instance.OwnPlayerData.Concat(BattleManager.instance.EnemyPlayerData).ToList<PlayerData>();
+        PlayerData nowPlayer = Result.Find(p => p.playerID == BattleManager.instance.PlayControlIndexList[controlIndex]);
+        switch (nowPlayer.playerType)
+        {
+
+            case PlayerType.OwnHuman:
+                break;
+            case PlayerType.NormalRobot:
+            case PlayerType.AiRobot:
+                AIManager.instance.AIDo(1);
+                break;
+            case PlayerType.OtherHuman:
+                break;
+        }
+
+    }
     public override void Execute() { }
     public override void Exit() { }
 }

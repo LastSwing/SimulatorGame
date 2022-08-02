@@ -382,6 +382,7 @@ public class GameView : BaseUI
         List<CurrentCardPoolModel> list = new List<CurrentCardPoolModel>();
         switch (playerType)
         {
+            case PlayerType.AiRobot:
             case PlayerType.NormalRobot:
                 //todo
                 foreach (var item in AiCardList)
@@ -401,9 +402,6 @@ public class GameView : BaseUI
                 data.Energy = PlayerRole.Energy;
                 data.EnergyMax = PlayerRole.MaxEnergy;
                 result.Add(data);
-                break;
-            case PlayerType.AiRobot:
-                //todo
                 break;
             case PlayerType.OwnHuman:
                 //todo
