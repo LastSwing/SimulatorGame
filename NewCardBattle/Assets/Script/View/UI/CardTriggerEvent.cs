@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 卡牌触发事件
 /// </summary>
-public class CardTriggerEvent : SingletonMonoBehaviour<CardTriggerEvent>, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     Vector3 InitVector;
     GameObject MagnifyObj, thisObj, gameViewObj, P_buffObj, E_buffObj, obj_RemoveCard;
