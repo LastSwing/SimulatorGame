@@ -870,7 +870,7 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         int childCount = MagnifyObj.transform.childCount;
         for (int x = 0; x < childCount; x++)
         {
-            DestroyImmediate(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            Destroy(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
         }
     }
 

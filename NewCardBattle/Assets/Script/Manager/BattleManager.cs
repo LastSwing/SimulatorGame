@@ -191,6 +191,9 @@ public class Battle_Control : State
     public override void Enter()
     {
         //进入时执行
+        GameView view = UIManager.instance.GetView("GameView") as GameView;
+        view.HideCardDetail();
+        view.HideMagnifyCard();
     }
     public override void Execute()
     {
