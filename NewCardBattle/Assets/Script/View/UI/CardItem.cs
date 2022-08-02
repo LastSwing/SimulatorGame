@@ -11,13 +11,14 @@ using UnityEngine.UI;
 /// <summary>
 /// 卡牌触发事件
 /// </summary>
-public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
+public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
     Vector3 InitVector;
     GameObject MagnifyObj, thisObj, gameViewObj, P_buffObj, E_buffObj, obj_RemoveCard;
     CurrentCardPoolModel model = new CurrentCardPoolModel();//卡牌数据
     Image Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
     Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Right_Count;
+    public CurrentCardPoolModel BasisData;
     RectTransform thisParent;
     Vector3 CardPos;//卡牌当前位置
     private void Start()
@@ -869,7 +870,7 @@ public class CardTriggerEvent : MonoBehaviour, IPointerEnterHandler, IPointerExi
         int childCount = MagnifyObj.transform.childCount;
         for (int x = 0; x < childCount; x++)
         {
-            Destroy(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            DestroyImmediate(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
         }
     }
 

@@ -19,7 +19,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
     /// <param name="name">动作/特效名</param>
     /// <param name="arg">参数集</param>
     /// <returns>执行时间</returns>
-    public float DoAnimation(string name,object[] arg)
+    public float DoAnimation(string name, object[] arg)
     {
         if (animationDic.ContainsKey(name))
         {
