@@ -1,5 +1,7 @@
 ﻿using Assets.Script.Models;
 using Assets.Script.Tools;
+using Assets.Script.View.UI;
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,7 +16,7 @@ public class GameView : BaseUI
     Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1, txt_CardType, txt_HasClickSetting;
     Button btn_Setting, btn_RoundOver, btn_leftCards, btn_rightCards;
     Image img_Player, img_Enemy, Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
-    GameObject obj_CardPools, P_buffObj, E_buffObj;
+    GameObject obj_CardPools, P_buffObj, E_buffObj, MagnifyObj, CardDetailObj;
     Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Left_Count, txt_Right_Count;
     #region 字段声明
 
@@ -89,6 +91,8 @@ public class GameView : BaseUI
         obj_CardPools = transform.Find("UI/CardPools/Card").gameObject;
         P_buffObj = transform.Find("UI/Player/BuffBar").gameObject;
         E_buffObj = transform.Find("UI/Enemy/BuffBar").gameObject;
+        MagnifyObj = transform.Find("UI/CardPools/obj_Magnify").gameObject;
+        CardDetailObj = transform.Find("UI/CardPools/obj_CardDetails").gameObject;
 
         txt_P_HP = transform.Find("UI/Player/Text").GetComponent<Text>();
         txt_E_HP = transform.Find("UI/Enemy/Text").GetComponent<Text>();
@@ -145,7 +149,7 @@ public class GameView : BaseUI
     {
         if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
         {
-            int i = Convert.ToInt32(thisObj.name.Substring(8, 1));
+            var model = thisObj.GetComponent<CardData>().BasisData;
             var MagnifyObj = transform.Find("UI/CardPools/obj_Magnify").gameObject;
             int childCount = MagnifyObj.transform.childCount;
             for (int x = 0; x < childCount; x++)
@@ -153,20 +157,18 @@ public class GameView : BaseUI
                 DestroyImmediate(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
             }
             //显示详情
-            var img_Detail = transform.Find("UI/CardPools/obj_CardDetails/img_Detail" + i)?.GetComponent<Image>();
+            var img_Detail = transform.Find("UI/CardPools/obj_CardDetails/img_Detail" + model.SingleID)?.GetComponent<Image>();
             if (img_Detail != null)
             {
                 img_Detail.transform.localScale = Vector3.one;
             }
             else
             {
-                var parentObj = transform.Find("UI/CardPools/obj_CardDetails").gameObject;
                 GameObject tempObject = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
-                tempObject = Common.AddChild(parentObj.transform, tempObject);
-                tempObject.name = "img_Detail" + i;
-
+                tempObject = Common.AddChild(CardDetailObj.transform, tempObject);
+                tempObject.name = "img_Detail" + model.SingleID;
                 GameObject temp = tempObject.transform.Find("Text").gameObject;
-                temp.GetComponent<Text>().text = $"{ATKBarCardList[i].CardName}\n{ATKBarCardList[i].CardDetail}";
+                temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
             }
         }
     }
@@ -286,6 +288,7 @@ public class GameView : BaseUI
 
     }
 
+
     #region Method
     /// <summary>
     /// 创建攻击栏卡牌
@@ -296,14 +299,16 @@ public class GameView : BaseUI
         tempObject = Common.AddChild(obj_CardPools.transform, tempObject);
         tempObject.name = "imgCard_" + model.SingleID;
 
-        EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
-        if (trigger == null)
-        {
-            trigger = tempObject.AddComponent<EventTrigger>();
-        }
-        EventTrigger.Entry entry = new EventTrigger.Entry();
-        entry.callback.AddListener(delegate { CardClick(tempObject); });
-        trigger.triggers.Add(entry);
+        CardData cardData = tempObject.AddComponent<CardData>();
+        cardData.BasisData = model;
+        //EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
+        //if (trigger == null)
+        //{
+        //    trigger = tempObject.AddComponent<EventTrigger>();
+        //}
+        //EventTrigger.Entry entry = new EventTrigger.Entry();
+        //entry.callback.AddListener(delegate { CardClick(tempObject); });
+        //trigger.triggers.Add(entry);
 
         Common.CardDataBind(tempObject, model, BattleManager.instance.OwnPlayerData[0].buffList);
     }
@@ -347,6 +352,34 @@ public class GameView : BaseUI
             }
         }
     }
+
+
+    /// <summary>
+    /// 隐藏卡牌详情
+    /// </summary>
+    public void HideCardDetail()
+    {
+        int childCount = CardDetailObj.transform.childCount;
+        for (int x = 0; x < childCount; x++)
+        {
+            CardDetailObj.transform.GetChild(x).gameObject.transform.localScale = Vector3.zero;
+        }
+    }
+
+    /// <summary>
+    /// 隐藏放大后的图片
+    /// </summary>
+    public void HideMagnifyCard()
+    {
+
+        int childCount = MagnifyObj.transform.childCount;
+        for (int x = 0; x < childCount; x++)
+        {
+            Destroy(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+        }
+    }
+
+
     #endregion
 
     /// <summary>
@@ -1078,6 +1111,7 @@ public class GameView : BaseUI
         UIManager.instance.OpenView("AiDieView");
         UIManager.instance.CloseView("GameView");
     }
+
 }
 
 #region 相关类

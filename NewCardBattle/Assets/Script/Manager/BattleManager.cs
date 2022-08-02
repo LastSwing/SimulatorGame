@@ -170,8 +170,6 @@ public class Battle_Control : State
     public override void Enter()
     {
         //进入时执行
-        CardTriggerEvent.instance.HideCardDetail();
-        CardTriggerEvent.instance.HideMagnifyCard();
     }
     public override void Execute()
     {
