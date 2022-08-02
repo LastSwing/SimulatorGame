@@ -1,6 +1,5 @@
 ﻿using Assets.Script.Models;
 using Assets.Script.Tools;
-using Assets.Script.View.UI;
 using DG.Tweening;
 using System;
 using System.Collections;
@@ -149,7 +148,7 @@ public class GameView : BaseUI
     {
         if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
         {
-            var model = thisObj.GetComponent<CardData>().BasisData;
+            var model = thisObj.GetComponent<CardItem>().BasisData;
             var MagnifyObj = transform.Find("UI/CardPools/obj_Magnify").gameObject;
             int childCount = MagnifyObj.transform.childCount;
             for (int x = 0; x < childCount; x++)
@@ -299,16 +298,16 @@ public class GameView : BaseUI
         tempObject = Common.AddChild(obj_CardPools.transform, tempObject);
         tempObject.name = "imgCard_" + model.SingleID;
 
-        CardData cardData = tempObject.AddComponent<CardData>();
+        CardItem cardData = tempObject.GetComponent<CardItem>();
         cardData.BasisData = model;
-        //EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
-        //if (trigger == null)
-        //{
-        //    trigger = tempObject.AddComponent<EventTrigger>();
-        //}
-        //EventTrigger.Entry entry = new EventTrigger.Entry();
-        //entry.callback.AddListener(delegate { CardClick(tempObject); });
-        //trigger.triggers.Add(entry);
+        EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
+        if (trigger == null)
+        {
+            trigger = tempObject.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry = new EventTrigger.Entry();
+        entry.callback.AddListener(delegate { CardClick(tempObject); });
+        trigger.triggers.Add(entry);
 
         Common.CardDataBind(tempObject, model, BattleManager.instance.OwnPlayerData[0].buffList);
     }
