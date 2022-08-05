@@ -3119,6 +3119,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b9f3082ffab7c445a8873b4fd3bb0b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  txt_ReturnView: {fileID: 0}
+  txt_SettingHasBtn: {fileID: 0}
+  txt_ReturnView1: {fileID: 0}
+  txt_CardType: {fileID: 0}
+  txt_HasClickSetting: {fileID: 0}
+  btn_Setting: {fileID: 0}
+  btn_RoundOver: {fileID: 0}
+  btn_leftCards: {fileID: 0}
+  btn_rightCards: {fileID: 0}
+  img_Player: {fileID: 0}
+  img_Enemy: {fileID: 0}
+  Pimg_HP: {fileID: 0}
+  Eimg_HP: {fileID: 0}
+  Pimg_Armor: {fileID: 0}
+  Eimg_Armor: {fileID: 0}
+  obj_CardPools: {fileID: 0}
+  P_buffObj: {fileID: 0}
+  E_buffObj: {fileID: 0}
+  MagnifyObj: {fileID: 0}
+  CardDetailObj: {fileID: 0}
+  obj_RemoveCard: {fileID: 0}
+  txt_P_HP: {fileID: 0}
+  txt_E_HP: {fileID: 0}
+  txt_P_Armor: {fileID: 0}
+  txt_E_Armor: {fileID: 0}
+  txt_Left_Count: {fileID: 0}
+  txt_Right_Count: {fileID: 0}
+  thisParent: {fileID: 0}
 --- !u!1 &5769185420867657796
 GameObject:
   m_ObjectHideFlags: 0

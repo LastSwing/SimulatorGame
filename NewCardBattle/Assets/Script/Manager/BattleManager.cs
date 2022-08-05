@@ -125,7 +125,8 @@ public class Battle_Ready : State
     {
         ID = BattleStateID.Ready;
     }
-    public override void Enter() {
+    public override void Enter()
+    {
         BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
     }
     public override void Execute() { }
@@ -141,7 +142,8 @@ public class Battle_TurnStart : State
     {
         ID = BattleStateID.TurnStart;
     }
-    public override void Enter() {
+    public override void Enter()
+    {
         int controlIndex = BattleManager.instance.controlIndex;
 
         List<PlayerData> Result = BattleManager.instance.OwnPlayerData.Concat(BattleManager.instance.EnemyPlayerData).ToList<PlayerData>();
@@ -192,6 +194,7 @@ public class Battle_Control : State
     {
         //进入时执行
         GameView view = UIManager.instance.GetView("GameView") as GameView;
+
         view.HideCardDetail();
         view.HideMagnifyCard();
     }
@@ -203,7 +206,7 @@ public class Battle_Control : State
     public override void Exit()
     {
         //退出时执行
-        Debug.Log("退出出牌状态");
+        //Debug.Log("退出出牌状态");
     }
 
 }
@@ -217,7 +220,10 @@ public class Battle_PlayEffect : State
     {
         ID = BattleStateID.EffectSettlement;
     }
-    public override void Enter() { }
+    public override void Enter()
+    {
+        CardUseEffectManager.instance.CardUseEffect();
+    }
     public override void Execute() { }
     public override void Exit() { }
 }

@@ -637,33 +637,9 @@ namespace Assets.Script.Tools
         /// </summary>
         /// <param name="tempObject">卡牌对象</param>
         /// <param name="model">实体类</param>
+        /// <param name="buffDatas">buff数据用于判断卡牌是否提升</param>
         public static void CardDataBind(GameObject tempObject, CurrentCardPoolModel model, List<BuffData> buffDatas = null)
         {
-            bool hasAscension = false;//是否用BUFF提升过数值
-            bool hasReduce = false;//是否用BUFF降低过数值
-            if (buffDatas != null && buffDatas?.Count > 0)
-            {
-                BuffData buff = buffDatas.Find(a => a.BUFFType == 0);
-                if (buff != null)
-                {
-                    if (buff.EffectType == 8)//愤怒
-                    {
-                        hasAscension = true;
-                        if (model.CardType == 0)
-                        {
-                            model.Effect += model.Effect * 0.2f;
-                        }
-                    }
-                    else if (buff.EffectType == 11)//虚弱
-                    {
-                        hasReduce = true;
-                        if (model.CardType == 0)
-                        {
-                            model.Effect -= model.Effect * 0.2f;
-                        }
-                    }
-                }
-            }
             #region 卡牌数据绑定
             var cardType = model.EffectType;
             #region 攻击力图标
@@ -677,13 +653,19 @@ namespace Assets.Script.Tools
                 img_Up.transform.localScale = Vector3.zero;
                 img_Down.transform.localScale = Vector3.zero;
             }
-            if (hasAscension)
+            if (buffDatas != null)
             {
-                img_Up.transform.localScale = Vector3.one;
-            }
-            if (hasReduce)
-            {
-                img_Down.transform.localScale = Vector3.one;
+                if (model.CardType == 0)
+                {
+                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 8))
+                    {
+                        img_Up.transform.localScale = Vector3.one;
+                    }
+                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 11))
+                    {
+                        img_Down.transform.localScale = Vector3.one;
+                    }
+                }
             }
             if (cardType == 1 || cardType == 5 || cardType == 13)
             {
@@ -726,6 +708,59 @@ namespace Assets.Script.Tools
                 Card_Title.text = "* " + Card_Title.text;
             }
             #endregion
+        }
+
+        /// <summary>
+        /// AI卡牌数据绑定
+        /// </summary>
+        /// <param name="tempObject">卡牌对象</param>
+        /// <param name="model">实体类</param>
+        /// <param name="buffDatas">buff数据用于判断卡牌是否提升</param>
+        public static void AICardDataBind(GameObject tempObj, CurrentCardPoolModel model, List<BuffData> buffDatas = null)
+        {
+            ImageBind(model.CardUrl, tempObj.GetComponent<Image>());
+            var txtEffect = tempObj.transform.Find("Text").GetComponent<Text>();
+            var imgUp = tempObj.transform.Find("Text/Up").GetComponent<Image>();
+            var imgDown = tempObj.transform.Find("Text/Down").GetComponent<Image>();
+            var imgIcon = tempObj.transform.Find("Image").GetComponent<Image>();
+            txtEffect.text = model.Effect.ToString();
+            imgUp.transform.localScale = Vector3.zero;
+            imgDown.transform.localScale = Vector3.zero;
+            if (buffDatas != null)
+            {
+                if (model.CardType == 0)
+                {
+                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 8))
+                    {
+                        imgUp.transform.localScale = Vector3.one;
+                    }
+                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 11))
+                    {
+                        imgDown.transform.localScale = Vector3.one;
+                    }
+                }
+            }
+            var cardType = model.EffectType;
+            if (cardType == 1 || cardType == 5 || cardType == 13)
+            {
+                ImageBind("Images/Atk_Icon", imgIcon);
+            }
+            else if (cardType == 2)
+            {
+                ImageBind("Images/Defense", imgIcon);
+            }
+            else if (cardType == 3)
+            {
+                ImageBind("Images/HP_Icon", imgIcon);
+            }
+            else if (cardType == 4)
+            {
+                ImageBind("Images/CardIcon/ShuiJin", imgIcon);
+            }
+            else
+            {
+                imgIcon.transform.localScale = Vector3.zero;
+            }
         }
 
         #endregion
