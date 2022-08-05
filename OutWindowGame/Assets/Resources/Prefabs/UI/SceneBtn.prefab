@@ -93,7 +93,7 @@ MonoBehaviour:
   button: {fileID: 3685935470943399540}
   Text: {fileID: 3630588708633394992}
   Image: {fileID: 9019606029791265922}
-  ScenesID: 0
+  ScenesID: 2
 --- !u!1 &4766545901346595619
 GameObject:
   m_ObjectHideFlags: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u573A\u666F1"
+  m_Text: "\u573A\u666F2"
 --- !u!1 &8931082843794096484
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,7 +310,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4832382178025412083
 RectTransform:
   m_ObjectHideFlags: 0
