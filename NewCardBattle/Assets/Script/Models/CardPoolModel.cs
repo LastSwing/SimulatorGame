@@ -61,6 +61,11 @@ namespace Assets.Script.Models
         public float Effect { get; set; }
 
         /// <summary>
+        /// 初始效果值
+        /// </summary>
+        public float InitEffect { get; set; }
+
+        /// <summary>
         /// 该卡所属Ai或玩家
         /// 0玩家、1AI
         /// </summary>
