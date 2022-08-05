@@ -9,48 +9,21 @@ public class MainView : BaseUI
     public GameObject UIList;
     public GameObjectPool GameObjectPool;
     public GameObject Role;
+    public int SceneID = 0;
     private Vector2 screen;//屏幕分辨率
-    /// <summary>
-    /// 宽度移动速度
-    /// </summary>
-    private float WidthMSpeed = 5;
-    /// <summary>
-    /// 高度移动速度
-    /// </summary>
-    private float HeightMSpeed =5;
     /// <summary>
     /// 是否左右移动
     /// </summary>
-    private bool IsMove = false;
+    public bool IsMove = true;
     /// <summary>
-    /// 移动宽度
+    /// 是否上下移动
     /// </summary>
-    private float MobileWidth = 0;
+    public bool IsDownUp = true;
     /// <summary>
-    /// 移动高度
+    /// 当前关卡
     /// </summary>
-    private float MobileHeight = 0;
-    /// <summary>
-    ///移动帧速
-    /// </summary>
-    private float Speed = 0;
-    /// <summary>
-    /// 每帧移动宽度
-    /// </summary>
-    private float FrameWidth = 0;
-    /// <summary>
-    /// 每帧移动高度
-    /// </summary>
-    private float FrameHeight = 0;
-    /// <summary>
-    /// 每帧移动加速宽度
-    /// </summary>
-    private float FrameWidthSpeed = 5;
-    /// <summary>
-    /// 每帧移动加速高度
-    /// </summary>
-    private float FrameHeightSpeed = 5;
-
+    public int LevelNum = 0;
+    private List<LevelDetail> levelDetails = new List<LevelDetail>();
     public override void OnInit()
     {
         //因为获取组件以及绑定事件一般只需要做一次，所以放在OnInit
@@ -61,39 +34,69 @@ public class MainView : BaseUI
         transform.localPosition=new Vector2(GetComponent<RectTransform>().rect.width/ 2 - screen.x/2, GetComponent<RectTransform>().rect.height / 2 - screen.y / 2);
         //按钮位置根据分辨率改变
         UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2), UIList.transform.localPosition.y);
+        LevelNum = GameObject.Find("HomePage(Clone)").GetComponent<HomePage>().LevelNum;
+        if (LevelNum != 0)
+        { 
+            List<Level> levels = ReadData.GetLevels();
+            for (int i = 0; i < levels.Count; i++)
+            {
+                if (levels[i].LevelNum == LevelNum)
+                {
+                    transform.GetComponent<RectTransform>().sizeDelta = levels[i].Size;
+                    levelDetails = ReadData.GetLevelDetail(LevelNum);
+                    for (int j = 0; j < levelDetails.Count; j++)
+                    {
+                        if (levelDetails[j].DetailName != "Role")
+                        {
+                            GameObject gameObject = Resources.Load(@"Prefabs\Barrier\" + levelDetails[j].DetailName) as GameObject;
+                            gameObject.transform.localPosition = levelDetails[j].Location;
+                            gameObject.transform.localEulerAngles = levelDetails[j].Rotation;
+                            GameObjectPool.GetObject(gameObject, transform);
+                            GameObject game = transform.Find(levelDetails[j].DetailName + "(Clone)").gameObject;
+                            game.name = levelDetails[j].DetailName;
+                        }
+                        else if (levelDetails[j].DetailName == "Role")
+                        {
+                            Role.transform.localPosition = levelDetails[j].Location;
+                        }
+                    }
+                }
+            }
+        }
     }
     void FixedUpdate()
     {
-        if (Role.transform.localPosition.x > (transform.localPosition.x * -1))//角色处于右半部
+        if (IsMove)
         {
-            float move = transform.localPosition.x - (Role.transform.localPosition.x * -1);
-            transform.localPosition = new Vector2(transform.localPosition.x - move, transform.localPosition.y);
-            UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x + move, UIList.transform.localPosition.y);
+            if (Role.transform.localPosition.x > (transform.localPosition.x * -1))//角色处于右半部
+            {
+                float move = transform.localPosition.x - (Role.transform.localPosition.x * -1);
+                transform.localPosition = new Vector2(transform.localPosition.x - move, transform.localPosition.y);
+                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x + move, UIList.transform.localPosition.y);
+            }
         }
-        //else if (Role.transform.localPosition.x < (transform.localPosition.x * -1))
-        //{
-        //    float move = (Role.transform.localPosition.y - transform.localPosition.x * -1);
-        //    transform.localPosition = new Vector2(transform.localPosition.x + move, transform.localPosition.y );
-        //    UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x - move, UIList.transform.localPosition.y);
-        //}
-        float a =(transform.localPosition.y * -1 + screen.y*0.25f);
-        float b = transform.localPosition.y * -1;//-screen.y*0.25f
-        if (Role.transform.localPosition.y > a)//角色处于上半部四分之一
+        if (IsDownUp)
         {
-            float move = (Role.transform.localPosition.y - a);
-            transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - move);
-            UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x, UIList.transform.localPosition.y + move);
-        }
-        else if (Role.transform.localPosition.y < b)//角色处于下半部
-        {
-            float move = (Role.transform.localPosition.y - b);
-            transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - move);
-            UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x, UIList.transform.localPosition.y + move);
+            float a = (transform.localPosition.y * -1 + screen.y * 0.25f);
+            float b = transform.localPosition.y * -1;
+            if (Role.transform.localPosition.y > a)//角色处于上半部四分之一
+            {
+                float move = (Role.transform.localPosition.y - a);
+                transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - move);
+                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x, UIList.transform.localPosition.y + move);
+            }
+            else if (Role.transform.localPosition.y < b)//角色处于下半部
+            {
+                float move = (Role.transform.localPosition.y - b);
+                transform.localPosition = new Vector2(transform.localPosition.x, transform.localPosition.y - move);
+                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x, UIList.transform.localPosition.y + move);
+            }
         }
         if (transform.localPosition.x * -1 >= (GetComponent<RectTransform>().rect.width / 2 - screen.x / 2))//已经到右尽头
         {
-            transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2 - screen.x / 2) * -1, transform.localPosition.y);
-            UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2) * -1, UIList.transform.localPosition.y);
+            IsMove = false;
+            //transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2 - screen.x / 2) * -1, transform.localPosition.y);
+            //UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2) * -1, UIList.transform.localPosition.y);
         }
         else if (transform.localPosition.x >= (GetComponent<RectTransform>().rect.width / 2 - screen.x / 2))//已经到左尽头
         {
@@ -118,7 +121,25 @@ public class MainView : BaseUI
     {
         UIList.transform.localPosition = new Vector2(Screen.width / 2 - UIList.transform.localPosition.x / 2, UIList.transform.localPosition.y);
     }
-
+    /// <summary>
+    /// 重新开始
+    /// </summary>
+    public void Restart()
+    {
+        screen = new Vector2(Screen.width, Screen.height);
+        //背景位置根据分辨率改变
+        transform.localPosition = new Vector2(GetComponent<RectTransform>().rect.width / 2 - screen.x / 2, GetComponent<RectTransform>().rect.height / 2 - screen.y / 2);
+        //按钮位置根据分辨率改变
+        UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2), UIList.transform.localPosition.y);
+        UIList.transform.localPosition = new Vector2(Screen.width / 2 - UIList.transform.localPosition.x / 2, UIList.transform.localPosition.y);
+        foreach (var item in levelDetails)
+        {
+            if (item.DetailName == "Role")
+            {
+                Role.transform.localPosition = item.Location;
+            }
+        }
+    }
     /// <summary>
     /// 初始化事件
     /// </summary>
@@ -151,18 +172,6 @@ public class MainView : BaseUI
         //测试用例，实际需接入获取到的玩家数据
         //todo
     }
-    #region 其他脚本调用方法
-    /// <summary>
-    /// 视角移动速度给予
-    /// </summary>
-    /// <param name="WidthMSpeed">移动宽度速度 0-10</param>
-    ///  <param name="HeightMSpeed">移动高度速度 0-10</param>
-    public void SceenSpeed(float widthMSpeed, float heightMSpeed)
-    {
-        WidthMSpeed = widthMSpeed;
-        HeightMSpeed = heightMSpeed;
-    }
-    #endregion
     public override void OnClose()
     {
         //todo

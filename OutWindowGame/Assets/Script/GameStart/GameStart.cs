@@ -11,7 +11,7 @@ public class GameStart : MonoBehaviour
     {
         ResourcesManager.instance.Init();
         UIManager.instance.Init();
-        UIManager.instance.OpenView("MainView");
+        UIManager.instance.OpenView("EditView");
     }
 
     // Update is called once per frame

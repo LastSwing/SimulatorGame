@@ -9,7 +9,9 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     /// </summary>
     /// 最好走配表的方式，这里先直接填充
     Dictionary<string, string> urlDic = new Dictionary<string, string>() {
-        { "MainView","View/MainView" }
+        { "MainView","View/MainView" },
+        {"HomePage","View/HomePage" },
+        {"EditView","View/EditView" }
     };
 
     /// <summary>

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6816936353032712685}
   - component: {fileID: 8506582611082794360}
   - component: {fileID: 626370666399239950}
+  - component: {fileID: -8097576078871696028}
   m_Layer: 0
   m_Name: Rocket
   m_TagString: Untagged
@@ -113,11 +114,29 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDrag: 0
+  m_LinearDrag: 100
   m_AngularDrag: 0
   m_GravityScale: 0.5
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: eaed3209a60eb4649a084c541c97e2a7, type: 2}
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!255 &-8097576078871696028
+FixedJoint2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6252478026188635337}
+  m_Enabled: 1
+  serializedVersion: 4
+  m_EnableCollision: 0
+  m_ConnectedRigidBody: {fileID: 0}
+  m_BreakForce: Infinity
+  m_BreakTorque: Infinity
+  m_AutoConfigureConnectedAnchor: 1
+  m_Anchor: {x: 0, y: 0}
+  m_ConnectedAnchor: {x: 0, y: 0}
+  m_DampingRatio: 0
+  m_Frequency: 0

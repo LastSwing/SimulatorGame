@@ -21,4 +21,14 @@ public static class Movement
         vector3 = new Vector3(forceX, forceY);
         return vector3;
     }
+    /// <summary>
+    /// 通过坐标与坐标0的相对角度
+    /// </summary>
+    /// <param name="Coord"></param>
+    /// <returns></returns>
+    public static float CoordOutAngle(Vector2 Coord)
+    {
+        float angle = 0;
+        return angle;
+    }
 }
