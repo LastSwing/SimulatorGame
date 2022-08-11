@@ -687,8 +687,14 @@ namespace Assets.Script.Tools
             {
                 Card_ATK_img.transform.localScale = Vector3.zero;
             }
-            Card_ATKNumber.text = model.Effect.ToString();
-
+            if (model.AtkNumber > 1)
+            {
+                Card_ATKNumber.text = $"{model.Effect}*{model.AtkNumber}";
+            }
+            else
+            {
+                Card_ATKNumber.text = model.Effect.ToString();
+            }
             #endregion
             var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
             var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
@@ -842,7 +848,7 @@ namespace Assets.Script.Tools
             SaveTxtFile(null, GlobalAttr.CurrentATKBarCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentUnUsedCardPoolsFileName);
-
+            GameObject.Find("MainCanvas/txt_HasClickSetting").GetComponent<Text>().text = "0";
         }
 
         /// <summary>

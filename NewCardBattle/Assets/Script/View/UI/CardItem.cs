@@ -15,9 +15,13 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     GameObject thisObj;
     public CurrentCardPoolModel BasisData;//卡牌数据
-    GameView gameView = UIManager.instance.GetView("GameView") as GameView;
+    GameView gameView;
     Vector3 InitPos;//初始位置
     int UnUseCardScopeNum = 50;
+    private void Start()
+    {
+        gameView = UIManager.instance.GetView("GameView") as GameView;
+    }
 
     /// <summary>
     /// 鼠标进入时触发
@@ -26,9 +30,10 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     /// <exception cref="System.NotImplementedException"></exception>
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
             gameView.HideCardDetail();
+            gameView.HideMagnifyCard();
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.localScale = new Vector3(1.1f, 1.1f, 1.1f);
             Common.AddChild(gameView.MagnifyObj.transform, thisObj);
@@ -43,12 +48,12 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     /// <exception cref="System.NotImplementedException"></exception>
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.TurnStart)
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
             gameView.HideCardDetail();
+            gameView.HideMagnifyCard();
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.localScale = Vector3.one;
-            gameView.HideMagnifyCard();
         }
     }
 
@@ -58,11 +63,12 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     /// <param name="eventData"></param>
     public void OnBeginDrag(PointerEventData eventData)
     {
-        thisObj = transform.parent.Find(name).gameObject;
-        InitPos = thisObj.transform.position;
-        if (BasisData.CardType != 2)
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+            gameView.HideCardDetail();
+            gameView.HideMagnifyCard();
+            thisObj = transform.parent.Find(name).gameObject;
+            InitPos = thisObj.transform.position;
         }
     }
     /// <summary>
@@ -73,6 +79,8 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
+            gameView.HideCardDetail();
+            gameView.HideMagnifyCard();
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.position = Input.mousePosition;
         }
@@ -89,11 +97,12 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         if (InitPos.x + UnUseCardScopeNum > currentPos.x && InitPos.x - UnUseCardScopeNum < currentPos.x &&
             InitPos.y + UnUseCardScopeNum > currentPos.y && InitPos.y - UnUseCardScopeNum < currentPos.x)
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
             LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
         }
         else
         {
+            gameView.HideCardDetail();
+            gameView.HideMagnifyCard();
             CardUseEffectManager.instance.CurrentCardModel = BasisData;
             CardUseEffectManager.instance.CardToRoleID = CardInRolePosition(eventData.position);
             CardUseEffectManager.instance.CurrentCard = thisObj;

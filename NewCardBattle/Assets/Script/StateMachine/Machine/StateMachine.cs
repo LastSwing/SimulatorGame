@@ -7,6 +7,10 @@ public class StateMachine
 {
     public Dictionary<int, State> dictionary = new Dictionary<int, State>();
     public State CurrentState { set; get; }
+    /// <summary>
+    /// 上一个状态
+    /// </summary>
+    public State PreviousState { get; set; }
 
     public State GetState(int id)
     {
@@ -43,6 +47,7 @@ public class StateMachine
         if (CurrentState.ID != id)
         {
             CurrentState.Exit();
+            PreviousState = CurrentState;
             CurrentState = dictionary[id];
             CurrentState.Enter();
         }
