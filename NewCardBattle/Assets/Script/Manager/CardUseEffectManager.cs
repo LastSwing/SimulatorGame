@@ -21,9 +21,10 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     /// <summary>
     /// 卡牌使用效果
     /// </summary>
-    public void CardUseEffect()
+    /// <param name="hasUseCard">卡牌是否使用成功</param>
+    /// <param name="EffectOn">效果作用在。0AI,1角色</param>
+    public void CardUseEffect(ref bool hasUseCard, ref string EffectOn)
     {
-        bool hasUseCard = false;//卡牌是否使用了
         var ownRole = BattleManager.instance.OwnPlayerData[0];
         var AiRole = BattleManager.instance.EnemyPlayerData[0];
         Dictionary<string, string> dic = new Dictionary<string, string>();
@@ -31,7 +32,6 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         //能量不足无法使用卡牌
         if (ownRole.Energy < CurrentCardModel.Consume)
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
             LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
             return;
         }
@@ -41,7 +41,6 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         {
             if (buffResult.Exists(a => a.EffectType == 1 && a.HasValid == false))
             {
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
                 LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
                 return;
             }
@@ -91,6 +90,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
                 }
             }
+            EffectOn = "1";
             gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
         }
         #endregion
@@ -123,6 +123,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     ownRole.Energy = ownRole.EnergyMax;
                 }
             }
+            EffectOn = "1";
         }
         #endregion
         #region 复制卡
@@ -153,7 +154,6 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         {
             if (CardToRoleID == 0)
             {
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
                 LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
                 return;
             }
@@ -542,6 +542,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
                         }
                         gameView.txt_P_Armor.text = ownRole.Armor.ToString();
+                        EffectOn = "1";
                     }
                     #endregion
                 }
@@ -588,6 +589,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             gameView.AiDie();
                         }
                         gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                        EffectOn = "0";
                     }
                     #endregion
                     #region 连续攻击
@@ -641,6 +643,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         gameView.AiDie();
                                     }
                                     gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+
                                     #endregion
                                 }
                             }
@@ -678,6 +681,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 #endregion
                             }
 
+                            EffectOn = "0";
                         }
                     }
                     #endregion
@@ -702,6 +706,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             gameView.AiDie();
                         }
                         gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                        EffectOn = "0";
                     }
                     #endregion
                     #region 销毁防御
@@ -758,12 +763,10 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
             aiData.MaxHP = AiRole.bloodMax;
             Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
             #endregion
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
             gameView.txt_Right_Count.text = useCards == null ? "0" : useCards.Count.ToString();
         }
         else
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnStart);
             LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
         }
     }

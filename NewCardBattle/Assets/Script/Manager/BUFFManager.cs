@@ -8,7 +8,6 @@ using UnityEngine;
 public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
 {
 
-    GameView gameView = UIManager.instance.GetView("GameView") as GameView;
     /// <summary>
     /// BUFF应用，在回合开始时作用在游戏中
     /// </summary>
@@ -21,6 +20,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
     /// <returns>作用在卡和作用在角色身上时返回</returns>
     public List<BUFFEffect> BUFFApply(ref List<BuffData> buffDatas, List<BuffData> RivalBuff, ref CurrentCardPoolModel model, ref List<CurrentCardPoolModel> handCards, bool DataChange = false, int PlayerOrAI = 0)
     {
+        GameView gameView = UIManager.instance.GetView("GameView") as GameView;
         List<BUFFEffect> list = new List<BUFFEffect>();
         if (buffDatas?.Count > 0)
         {
