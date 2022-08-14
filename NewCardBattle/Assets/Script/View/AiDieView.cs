@@ -201,7 +201,7 @@ public class AiDieView : BaseUI
             #region 数据初始化
             PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
 
-            list = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName)?.FindAll(a => a.CardLevel == 1 && a.PlayerOrAI == 0).ListRandom();
+            list = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName)?.FindAll(a => a.PlayerOrAI == 0 && a.CardLevel > 0).ListRandom();//按关卡展示卡牌 
 
             CurrentCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
 
@@ -287,7 +287,7 @@ public class AiDieView : BaseUI
         {
             txt_HasClickSetting.text = "0";
         }
-    } 
+    }
     #endregion
 
     #region 奖励初始化

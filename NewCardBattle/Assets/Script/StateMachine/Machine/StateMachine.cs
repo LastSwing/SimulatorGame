@@ -82,15 +82,23 @@ public static class BattleStateID
     /// </summary>
     public const int Control = 4000;
     /// <summary>
+    /// 卡牌使用前状态
+    /// </summary>
+    public const int BeforeCardUse = 5000;
+    /// <summary>
     /// 结算效果阶段只用于结算
     /// </summary>
-    public const int EffectSettlement = 5000;
+    public const int EffectSettlement = 6000;
+    /// <summary>
+    /// 卡牌使用后状态
+    /// </summary>
+    public const int AfterCardUse = 7000;
     /// <summary>
     /// 回合结束
     /// </summary>
-    public const int TurnEnd = 6000;
+    public const int TurnEnd = 8000;
     /// <summary>
     /// 游戏结束
     /// </summary>
-    public const int GameEnd = 7000;
+    public const int GameEnd = 9000;
 }
