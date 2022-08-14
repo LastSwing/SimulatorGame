@@ -63,7 +63,13 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     /// <param name="eventData"></param>
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
+        if (CardUseEffectManager.instance.CopyBoxCardExist)
+        {
+            return;
+        }
+        //在使用了复制卡牌可在结算状态下拖动
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control ||
+            (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.EffectSettlement && CardUseEffectManager.instance.UseCopyCard))
         {
             gameView.HideCardDetail();
             gameView.HideMagnifyCard();
@@ -77,7 +83,13 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     /// <param name="eventData"></param>
     public void OnDrag(PointerEventData eventData)
     {
-        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
+        if (CardUseEffectManager.instance.CopyBoxCardExist)
+        {
+            return;
+        }
+        //在使用了复制卡牌可在结算状态下拖动
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control ||
+            (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.EffectSettlement && CardUseEffectManager.instance.UseCopyCard))
         {
             gameView.HideCardDetail();
             gameView.HideMagnifyCard();
@@ -92,21 +104,39 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public void OnEndDrag(PointerEventData eventData)
     {
         thisObj = transform.parent.Find(name).gameObject;
-        //小范围拖动不使用卡牌
-        var currentPos = thisObj.transform.position;
-        if (InitPos.x + UnUseCardScopeNum > currentPos.x && InitPos.x - UnUseCardScopeNum < currentPos.x &&
-            InitPos.y + UnUseCardScopeNum > currentPos.y && InitPos.y - UnUseCardScopeNum < currentPos.x)
+        if (CardUseEffectManager.instance.CopyBoxCardExist)
         {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+            return;
         }
-        else
+        if (CardUseEffectManager.instance.UseCopyCard)
         {
-            gameView.HideCardDetail();
-            gameView.HideMagnifyCard();
+            CardUseEffectManager.instance.CrtCardChange = true;
+            CardUseEffectManager.instance.PrevoiousCardModel = CardUseEffectManager.instance.CurrentCardModel;
+            CardUseEffectManager.instance.PrevoiousCard = CardUseEffectManager.instance.CurrentCard;
+            CardUseEffectManager.instance.CopyBoxCardExist = true;
             CardUseEffectManager.instance.CurrentCardModel = BasisData;
-            CardUseEffectManager.instance.CardToRoleID = CardInRolePosition(eventData.position);
             CardUseEffectManager.instance.CurrentCard = thisObj;
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+            thisObj.transform.position = gameView.obj_RemoveCard.transform.position;
+            return;
+        }
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
+        {
+            //小范围拖动不使用卡牌
+            var currentPos = thisObj.transform.position;
+            if (InitPos.x + UnUseCardScopeNum > currentPos.x && InitPos.x - UnUseCardScopeNum < currentPos.x &&
+                InitPos.y + UnUseCardScopeNum > currentPos.y && InitPos.y - UnUseCardScopeNum < currentPos.x)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+            }
+            else
+            {
+                gameView.HideCardDetail();
+                gameView.HideMagnifyCard();
+                CardUseEffectManager.instance.CurrentCardModel = BasisData;
+                CardUseEffectManager.instance.CardToRoleID = CardInRolePosition(eventData.position);
+                CardUseEffectManager.instance.CurrentCard = thisObj;
+                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.BeforeCardUse);
+            }
         }
     }
 

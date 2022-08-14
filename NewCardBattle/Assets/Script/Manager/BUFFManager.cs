@@ -16,7 +16,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
     /// <param name="handCards">手牌</param>
     /// <param name="model">攻击牌</param>
     /// <param name="DataChange">是否数据变化</param>
-    /// <param name="PlayerOrAI">角色或AI。0角色，1AI</param>
+    /// <param name="PlayerOrAI">作用在角色或AI。0角色，1AI</param>
     /// <returns>作用在卡和作用在角色身上时返回</returns>
     public List<BUFFEffect> BUFFApply(ref List<BuffData> buffDatas, List<BuffData> RivalBuff, ref CurrentCardPoolModel model, ref List<CurrentCardPoolModel> handCards, bool DataChange = false, int PlayerOrAI = 0)
     {
@@ -41,6 +41,15 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                         card.Effect = Convert.ToInt32(card.Effect + Math.Ceiling(card.InitEffect * 0.2f));
                                     }
                                 }
+                                if (PlayerOrAI == 0)
+                                {
+                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                                }
+                                else
+                                {
+                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+                                }
+                                CardUseEffectManager.instance.HasNumberValueChange = true;
                                 gameView.RealTimeChangeCardData(handCards, PlayerOrAI);
                             }
                             break;
@@ -54,21 +63,26 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                         card.Effect = Convert.ToInt32(card.Effect - Math.Ceiling(card.InitEffect * 0.2f));
                                     }
                                 }
+                                if (PlayerOrAI == 0)
+                                {
+                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                                }
+                                else
+                                {
+                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+                                }
+                                CardUseEffectManager.instance.HasNumberValueChange = true;
                                 gameView.RealTimeChangeCardData(handCards, PlayerOrAI);
                             }
                             break;
                         case 9://免疫
                             return new List<BUFFEffect>();
                         case 10://暴击
-                            if (DataChange)
+                            if (model.CardType == 0)
                             {
-                                if (model.CardType == 0)
-                                {
-                                    model.Effect *= 2;
-                                    item.Num -= 1;
-                                    //UI操作
-                                    gameView.BUFFUIChange(buffDatas, ref handCards, ref model, PlayerOrAI);
-                                }
+                                CardUseEffectManager.instance.HasNumberValueChange = true;
+                                model.Effect *= 2;
+                                item.Num -= 1;
                             }
                             break;
                         case 20://束缚
@@ -122,6 +136,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                 }
                                 else
                                 {
+                                    CardUseEffectManager.instance.HasNumberValueChange = true;
                                     model.Effect *= 2;
                                 }
                             }
@@ -135,8 +150,6 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                 bEffect.Sort = list.Count;
                                 list.Add(bEffect);
                                 item.Num -= 1;
-                                //UI操作
-                                gameView.BUFFUIChange(buffDatas, ref handCards, ref model, PlayerOrAI);
                             }
                             break;
                     }

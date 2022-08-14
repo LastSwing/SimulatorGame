@@ -667,33 +667,44 @@ namespace Assets.Script.Tools
                     }
                 }
             }
-            if (cardType == 1 || cardType == 5 || cardType == 13)
+            switch (cardType)
             {
-                ImageBind("Images/Atk_Icon", Card_ATK_icon);
+                case 1:
+                case 5:
+                case 7:
+                case 14:
+                case 31:
+                case 32:
+                    ImageBind("Images/Atk_Icon", Card_ATK_icon);
+                    break;
+                case 2:
+                    ImageBind("Images/Defense", Card_ATK_icon);
+                    break;
+                case 3:
+                    ImageBind("Images/HP_Icon", Card_ATK_icon);
+                    break;
+                case 4:
+                    ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
+                    break;
+                default:
+                    Card_ATK_img.transform.localScale = Vector3.zero;
+                    break;
             }
-            else if (cardType == 2)
-            {
-                ImageBind("Images/Defense", Card_ATK_icon);
-            }
-            else if (cardType == 3)
-            {
-                ImageBind("Images/HP_Icon", Card_ATK_icon);
-            }
-            else if (cardType == 4)
-            {
-                ImageBind("Images/CardIcon/ShuiJin", Card_ATK_icon);
-            }
-            else
-            {
-                Card_ATK_img.transform.localScale = Vector3.zero;
-            }
+            
             if (model.AtkNumber > 1)
             {
                 Card_ATKNumber.text = $"{model.Effect}*{model.AtkNumber}";
             }
             else
             {
-                Card_ATKNumber.text = model.Effect.ToString();
+                if (cardType == 14)
+                {
+                    Card_ATKNumber.text = CardUseEffectManager.instance.SuperPositionEffect > model.Effect ? CardUseEffectManager.instance.SuperPositionEffect.ToString() : model.Effect.ToString();
+                }
+                else
+                {
+                    Card_ATKNumber.text = model.Effect.ToString();
+                }
             }
             #endregion
             var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
@@ -706,7 +717,7 @@ namespace Assets.Script.Tools
             }
             ImageBind(model.CardUrl, Card_Skill_img);
             Card_Energy.text = model.Consume.ToString();
-            Card_Title.text = model.CardName.TextSpacing();
+            Card_Title.text = model.CardName;
             if (model.UpgradeCount == 1)
             {
                 Card_ATKNumber.color = new Color32(0, 205, 12, 255);
@@ -747,25 +758,29 @@ namespace Assets.Script.Tools
                 }
             }
             var cardType = model.EffectType;
-            if (cardType == 1 || cardType == 5 || cardType == 13)
+
+            switch (cardType)
             {
-                ImageBind("Images/Atk_Icon", imgIcon);
-            }
-            else if (cardType == 2)
-            {
-                ImageBind("Images/Defense", imgIcon);
-            }
-            else if (cardType == 3)
-            {
-                ImageBind("Images/HP_Icon", imgIcon);
-            }
-            else if (cardType == 4)
-            {
-                ImageBind("Images/CardIcon/ShuiJin", imgIcon);
-            }
-            else
-            {
-                imgIcon.transform.localScale = Vector3.zero;
+                case 1:
+                case 5:
+                case 7:
+                case 14:
+                case 31:
+                case 32:
+                    ImageBind("Images/Atk_Icon", imgIcon);
+                    break;
+                case 2:
+                    ImageBind("Images/Defense", imgIcon);
+                    break;
+                case 3:
+                    ImageBind("Images/HP_Icon", imgIcon);
+                    break;
+                case 4:
+                    ImageBind("Images/CardIcon/ShuiJin", imgIcon);
+                    break;
+                default:
+                    imgIcon.transform.localScale = Vector3.zero;
+                    break;
             }
         }
 
