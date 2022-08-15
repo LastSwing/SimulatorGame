@@ -1128,7 +1128,7 @@
         "AtkNumber":1,
         "CardName":"月影腿",
         "CardUrl":"",
-        "CardDetail":"消耗1点能量。照成16点伤害。",
+        "CardDetail":"消耗2点能量。照成16点伤害。",
         "Consume":2,
         "Effect":16,
         "PlayerOrAI":0,

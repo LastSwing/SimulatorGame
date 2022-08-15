@@ -41,14 +41,14 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                         card.Effect = Convert.ToInt32(card.Effect + Math.Ceiling(card.InitEffect * 0.2f));
                                     }
                                 }
-                                if (PlayerOrAI == 0)
-                                {
-                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
-                                }
-                                else
-                                {
-                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
-                                }
+                                //if (PlayerOrAI == 0)
+                                //{
+                                //    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                                //}
+                                //else
+                                //{
+                                //    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+                                //}
                                 CardUseEffectManager.instance.HasNumberValueChange = true;
                                 gameView.RealTimeChangeCardData(handCards, PlayerOrAI);
                             }
@@ -63,14 +63,14 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                         card.Effect = Convert.ToInt32(card.Effect - Math.Ceiling(card.InitEffect * 0.2f));
                                     }
                                 }
-                                if (PlayerOrAI == 0)
-                                {
-                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
-                                }
-                                else
-                                {
-                                    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
-                                }
+                                //if (PlayerOrAI == 0)
+                                //{
+                                //    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                                //}
+                                //else
+                                //{
+                                //    Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+                                //}
                                 CardUseEffectManager.instance.HasNumberValueChange = true;
                                 gameView.RealTimeChangeCardData(handCards, PlayerOrAI);
                             }
@@ -86,20 +86,26 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                             }
                             break;
                         case 20://束缚
-                            bEffect.ID = list.Count + 1;
-                            bEffect.HasValid = false;
-                            bEffect.UnableUse = 0;
-                            bEffect.Sort = list.Count;
-                            bEffect.EffectType = 1;
-                            list.Add(bEffect);
+                            if (model.CardType == 0)
+                            {
+                                bEffect.ID = list.Count + 1;
+                                bEffect.HasValid = false;
+                                bEffect.UnableUse = 0;
+                                bEffect.Sort = list.Count;
+                                bEffect.EffectType = 1;
+                                list.Add(bEffect); 
+                            }
                             break;
                         case 21://缠绕
-                            bEffect.ID = list.Count + 1;
-                            bEffect.HasValid = false;
-                            bEffect.UnableUse = 1;
-                            bEffect.Sort = list.Count;
-                            bEffect.EffectType = 1;
-                            list.Add(bEffect);
+                            if (model.CardType == 1)
+                            {
+                                bEffect.ID = list.Count + 1;
+                                bEffect.HasValid = false;
+                                bEffect.UnableUse = 1;
+                                bEffect.Sort = list.Count;
+                                bEffect.EffectType = 1;
+                                list.Add(bEffect); 
+                            }
                             break;
                         case 22://重伤
                             bEffect.ID = list.Count + 1;
@@ -132,6 +138,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                     bEffect.HasValid = false;
                                     bEffect.UnableUse = 0;
                                     bEffect.Sort = list.Count;
+                                    bEffect.EffectType = 2;
                                     list.Add(bEffect);
                                 }
                                 else

@@ -50,7 +50,7 @@ public class CardItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
-            gameView.HideCardDetail();
+            //gameView.HideCardDetail();
             gameView.HideMagnifyCard();
             thisObj = transform.parent.Find(name).gameObject;
             thisObj.transform.localScale = Vector3.one;
