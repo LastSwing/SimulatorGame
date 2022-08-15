@@ -317,7 +317,6 @@ public class AllSkillView : BaseUI
     {
         HideCardDetail();
         var Card_Detail = transform.Find($"UI/CardDetails/img_Detail{model.ID}")?.GetComponent<Image>();
-        Debug.Log(model.CardName);
         if (Card_Detail != null)
         {
             var Card_img = Content_Obj.transform.Find($"img_Card{i}").gameObject;

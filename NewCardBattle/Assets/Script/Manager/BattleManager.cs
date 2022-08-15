@@ -414,7 +414,7 @@ public class Battle_Control : State
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
         if (nowPlayer.playerType == PlayerType.AiRobot || nowPlayer.playerType == PlayerType.NormalRobot)
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.BeforeCardUse);
         }
     }
     public override void Execute()
@@ -435,8 +435,10 @@ public class Battle_Control : State
 /// </summary>
 public class Battle_BeforeCardUse : State
 {
+    float deltaTime = 0;
+    float AnimDuration = 0;
     GameView gameView = UIManager.instance.GetView("GameView") as GameView;
-    bool result = false;
+    int result;
     public Battle_BeforeCardUse()
     {
         ID = BattleStateID.BeforeCardUse;
@@ -444,6 +446,7 @@ public class Battle_BeforeCardUse : State
     public override void Enter()
     {
         gameView.AnimObj.SetActive(true);
+        int PlayerOrAI = 0;
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
         CurrentCardPoolModel model = null;
         switch (nowPlayer.playerType)
@@ -453,20 +456,64 @@ public class Battle_BeforeCardUse : State
                 break;
             case PlayerType.NormalRobot:
             case PlayerType.AiRobot:
-                model = gameView.AiATKCardList[0];
+                if (gameView.AiATKCardList?.Count > 0)
+                {
+                    model = gameView.AiATKCardList[0];
+                }
+                else
+                {
+                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnEnd);
+                    return;
+                }
+                PlayerOrAI = 1;
                 break;
             case PlayerType.OtherHuman:
                 break;
         }
-        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model);
-        if (result)
+        string EffectOn = "";
+        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model, PlayerOrAI, ref EffectOn);
+        switch (result)
         {
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+            case 1:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+                break;
+            case 2:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimationManager.instance.DoAnimation("Anim_ATK", null);
+                break;
+            case 3:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                break;
+            case 4:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                break;
+            case 5:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
+                break;
+            case 6:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_RemoveCard", null);
+                break;
+            case 7:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
+                break;
+            case 8:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                break;
+            case 9:
+                //摧毁防御动画
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
+                break;
         }
     }
     public override void Execute()
     {
-
+        deltaTime += Time.deltaTime;
+        if (deltaTime > AnimDuration)
+        {
+            deltaTime = 0;
+            AnimDuration = 0;
+            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+        }
     }
     public override void Exit()
     {
@@ -492,13 +539,15 @@ public class Battle_PlayEffect : State
         string EffectOn = "";
         gameView.AnimObj.SetActive(true);
         bool hasUseCard = false;
+        bool hasEffect = true;
         bool playerUseCard = false;
+        int playAnim = 0;
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
         CurrentCardPoolModel model = null;
         switch (nowPlayer.playerType)
         {
             case PlayerType.OwnHuman:
-                CardUseEffectManager.instance.CardUseEffect(ref hasUseCard, ref EffectOn);
+                CardUseEffectManager.instance.CardUseEffect(ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
                 model = CardUseEffectManager.instance.CurrentCardModel;
                 playerUseCard = true;
                 break;
@@ -507,7 +556,7 @@ public class Battle_PlayEffect : State
                 if (gameView.AiATKCardList?.Count > 0)
                 {
                     model = gameView.AiATKCardList[0];
-                    AIManager.instance.AIDo(1, model, ref hasUseCard, ref EffectOn);
+                    AIManager.instance.AIDo(1, model, ref hasUseCard, ref EffectOn, ref hasEffect);
                 }
                 else
                 {
@@ -531,58 +580,91 @@ public class Battle_PlayEffect : State
                 }
             }
             #endregion
-            //执行动画
-            switch (model.EffectType)
+            if (hasEffect)
             {
-                case 1:
-                case 7:
-                case 14:
-                case 31:
-                case 32:
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
-                    break;
-                case 5://连续攻击
-                    comboATKNum = model.AtkNumber;
-                    if (nowPlayer.playerType == PlayerType.OwnHuman)
-                    {
-                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
-                    }
-                    else
-                    {
-                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
-                    }
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
-                    break;
-                case 2:
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
-                    break;
-                case 3:
-                    if (model.Effect > 0)
-                    {
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
-                    }
-                    else
-                    {
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
-                    }
-                    break;
-                case 4:
-                    if (model.Effect > 0)
-                    {
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
-                    }
-                    break;
-                case 12:
-                    CardUseEffectManager.instance.UseCopyCard = true;
-                    gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.CopyCard(CardUseEffectManager.instance.CurrentCard); });
-                    break;
-                default:
-                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AfterCardUse);
-                    break;
+                #region 执行动画
+                //执行动画
+                switch (model.EffectType)
+                {
+                    #region 攻击
+                    case 1:
+                    case 7:
+                    case 14:
+                    case 31:
+                    case 32:
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        break;
+                    #endregion
+                    #region 连续攻击
+                    case 5://连续攻击
+                        comboATKNum = model.AtkNumber;
+                        if (nowPlayer.playerType == PlayerType.OwnHuman)
+                        {
+                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
+                        }
+                        else
+                        {
+                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
+                        }
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        break;
+                    #endregion
+                    #region 防御
+                    case 2:
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                        break;
+                    #endregion
+                    #region 血量变化
+                    case 3:
+                        if (model.Effect > 0)
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                        }
+                        else
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        }
+                        break;
+                    #endregion
+                    #region 能量恢复
+                    case 4:
+                        if (model.Effect > 0)
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
+                        }
+                        break;
+                    #endregion
+                    #region 复制卡
+                    case 12:
+                        CardUseEffectManager.instance.UseCopyCard = true;
+                        gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.CopyCard(CardUseEffectManager.instance.CurrentCard); });
+                        break;
+                    #endregion
+                    #region 销毁防御
+                    case 6:
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
+                        break;
+                    #endregion
+                    #region 概率防御
+                    case 28:
+                        if (playAnim == 1)
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                        }
+                        else
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
+                        }
+                        break;
+                    #endregion
+                    default:
+                        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AfterCardUse);
+                        break;
+                }
+                #endregion 
             }
-            //动画执行完毕进行状态调整
         }
         #endregion
         else
@@ -683,6 +765,7 @@ public class Battle_AfterCardUse : State
                 break;
             case 2:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             case 3:
@@ -703,6 +786,32 @@ public class Battle_AfterCardUse : State
             case 7:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
                 break;
+            case 8:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                break;
+            case 9:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                break;
+            case 10:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+                break;
+            case 11:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                break;
+            case 12:
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                break;
+            case 13:
+                //销毁防御
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
+                break;
+            case 14:
+                //销毁防御和卡牌回收
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
+                AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+                break;
         }
 
     }
@@ -717,7 +826,7 @@ public class Battle_AfterCardUse : State
             {
                 if (AnimNum < DrawACard.Count)
                 {
-                    Debug.Log("抽卡");
+                    gameView.txt_Left_Count.text = (Convert.ToInt32(gameView.txt_Left_Count.text) + 1).ToString();
                     AnimDuration = AnimationManager.instance.DoAnimation("Anim_DrawACard", new object[] { DrawACard[AnimNum] });
                     AnimNum++;
                 }

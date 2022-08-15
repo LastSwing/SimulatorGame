@@ -711,10 +711,6 @@ namespace Assets.Script.Tools
             var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
             var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
             var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
-            if (model.Consume == 0)
-            {
-                Card_energy_img.transform.localScale = Vector3.zero;
-            }
             ImageBind(model.CardUrl, Card_Skill_img);
             Card_Energy.text = model.Consume.ToString();
             Card_Title.text = model.CardName;

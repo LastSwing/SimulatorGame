@@ -61,11 +61,11 @@ public class GameView : BaseUI
     #endregion
     #region 动画声明
     public GameObject AnimObj;
-    public Animation Anim_Shuffle, Anim_ShowTitle, Anim_DealCard, Anim_RecycleCard, Anim_ATK, Anim_HPDeduction, Anim_HPRestore, Anim_Armor, Anim_EnergyRestore, Anim_PlayerDie, Anim_RemoveCard, Anim_DrawACard;
+    public Animation Anim_Shuffle, Anim_ShowTitle, Anim_DealCard, Anim_RecycleCard, Anim_ATK, Anim_HPDeduction, Anim_HPRestore, Anim_Armor, Anim_EnergyRestore, Anim_PlayerDie, Anim_RemoveCard, Anim_DrawACard, Anim_ArmorMelting;
     //int cardRotationNum = 18;
     #endregion
     public string hasPlayerOrAIDie;//0AI，1角色
-    public CurrentCardPoolModel CrtAIATKModel;
+    public CurrentCardPoolModel CrtAIATKModel;//当前AI攻击卡
 
     #region OnInit
     public override void OnInit()
@@ -94,6 +94,7 @@ public class GameView : BaseUI
         Anim_PlayerDie = transform.Find("UI/Animation/Anim_PlayerDie").GetComponent<Animation>();
         Anim_RemoveCard = transform.Find("UI/Animation/Anim_RemoveCard").GetComponent<Animation>();
         Anim_DrawACard = transform.Find("UI/Animation/Anim_DrawACard").GetComponent<Animation>();
+        Anim_ArmorMelting = transform.Find("UI/Animation/Anim_ArmorMelting").GetComponent<Animation>();
         //AnimObj.SetActive(false);
         #endregion
 
@@ -191,35 +192,35 @@ public class GameView : BaseUI
     /// </summary>
     public void CardClick(GameObject thisObj)
     {
-        hasDown = false;
-        if (downTime > 1)
+        //hasDown = false;
+        //if (downTime > 1)
+        //{
+        if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
-            if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
+            var model = thisObj.GetComponent<CardItem>().BasisData;
+            var MagnifyObj = transform.Find("UI/CardPools/obj_Magnify").gameObject;
+            int childCount = MagnifyObj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
             {
-                var model = thisObj.GetComponent<CardItem>().BasisData;
-                var MagnifyObj = transform.Find("UI/CardPools/obj_Magnify").gameObject;
-                int childCount = MagnifyObj.transform.childCount;
-                for (int x = 0; x < childCount; x++)
-                {
-                    DestroyImmediate(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
-                }
-                //显示详情
-                var img_Detail = transform.Find("UI/CardPools/obj_CardDetails/img_Detail" + model.SingleID)?.GetComponent<Image>();
-                if (img_Detail != null)
-                {
-                    img_Detail.transform.localScale = Vector3.one;
-                }
-                else
-                {
-                    GameObject tempObject = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
-                    tempObject = Common.AddChild(CardDetailObj.transform, tempObject);
-                    tempObject.name = "img_Detail" + model.SingleID;
-                    GameObject temp = tempObject.transform.Find("Text").gameObject;
-                    temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail.Trim()}";
-                }
+                DestroyImmediate(MagnifyObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+            //显示详情
+            var img_Detail = transform.Find("UI/CardPools/obj_CardDetails/img_Detail" + model.SingleID)?.GetComponent<Image>();
+            if (img_Detail != null)
+            {
+                img_Detail.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                GameObject tempObject = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
+                tempObject = Common.AddChild(CardDetailObj.transform, tempObject);
+                tempObject.name = "img_Detail" + model.SingleID;
+                GameObject temp = tempObject.transform.Find("Text").gameObject;
+                temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail.Trim()}";
             }
         }
-        downTime = 0;
+        //}
+        //downTime = 0;
     }
 
     /// <summary>
@@ -662,7 +663,7 @@ public class GameView : BaseUI
                     }
                 }
                 #endregion
-                Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+                //Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
                 CardUseEffectManager.instance.HasNumberValueChange = false;
             }
             for (int i = 0; i < buffDatas?.Count; i++)
@@ -729,7 +730,7 @@ public class GameView : BaseUI
                 }
                 #endregion
                 CardUseEffectManager.instance.HasNumberValueChange = false;
-                Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+                //Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
             }
             for (int i = 0; i < buffDatas?.Count; i++)
             {
@@ -772,7 +773,8 @@ public class GameView : BaseUI
     /// <param name="AIAtk">攻击卡数据</param>
     /// <param name="hasUseCard">卡牌是否使用成功</param>
     /// <param name="EffectOn">效果作用在。0AI,1角色</param>
-    public void AiAtk(CurrentCardPoolModel AIAtk, ref bool hasUseCard, ref string EffectOn)
+    /// <param name="hasEffect">卡牌是否有效果</param>
+    public void AiAtk(CurrentCardPoolModel AIAtk, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect)
     {
         CrtAIATKModel = AIAtk;
         var ownRole = BattleManager.instance.OwnPlayerData[0];
@@ -781,6 +783,25 @@ public class GameView : BaseUI
         Common.DicDataRead(ref dic, GlobalAttr.EffectTypeFileName, "Card");
         var atkObj = AiATKBar_obj.transform.Find("AiAtkimg_" + AIAtk.SingleID + "(Clone)").gameObject;
         DestroyImmediate(atkObj);
+        #region BUFF限制卡牌使用
+        var buffResult = BUFFManager.instance.BUFFApply(ref enemyRole.buffList, ownRole.buffList, ref AIAtk, ref enemyRole.handCardList);
+        if (buffResult?.Count > 0)
+        {
+            if (buffResult.Exists(a => a.EffectType == 1 && a.HasValid == false))//卡无效果未被使用
+            {
+                hasUseCard = false;
+                AiATKCardList.Remove(AIAtk);
+                return;
+            }
+            if (buffResult.Exists(a => a.EffectType == 2 && a.HasValid == false))//卡无效果已被使用
+            {
+                AiATKCardList.Remove(AIAtk);
+                hasUseCard = true;
+                hasEffect = false;
+                return;
+            }
+        }
+        #endregion
         #region 攻击
         if (AIAtk.EffectType == 1)//攻击
         {
@@ -1408,7 +1429,11 @@ public class BuffData
     public float Num { get; set; }
 
     /// <summary>
-    /// 0应用在卡牌数据上。1应用在卡上。2应用在角色身上。3免疫。4应用在攻击上
+    /// 0应用在卡牌数据上；(如愤怒)
+    /// 1应用在卡上；（如束缚）
+    /// 2应用在角色身上；（如重伤）
+    /// 3免疫；（如免疫）
+    /// 4应用在攻击上；（如混乱）
     /// </summary>
     public int BUFFType { get; set; }
 

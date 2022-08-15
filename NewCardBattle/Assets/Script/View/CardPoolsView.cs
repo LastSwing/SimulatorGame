@@ -2,6 +2,7 @@
 using Assets.Script.Tools;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -107,7 +108,35 @@ public class CardPoolsView : BaseUI
             CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
             CreateCardPools();
         }
-    } 
+        SetSingleID(ref CardList);
+    }
+    /// <summary>
+    /// 设置唯一ID
+    /// </summary>
+    /// <param name="cardList"></param>
+    private void SetSingleID(ref List<CurrentCardPoolModel> cardList)
+    {
+        foreach (var item in cardList)
+        {
+            if (item.SingleID > 0)
+            {
+
+            }
+            else
+            {
+                var id = cardList.Max(a => a.SingleID);
+                if (id < 1)
+                {
+                    id = 1000000;
+                }
+                else
+                {
+                    id += 1;
+                }
+                item.SingleID = id;
+            }
+        }
+    }
     #endregion
 
     #region 卡池创建
@@ -163,7 +192,7 @@ public class CardPoolsView : BaseUI
     {
         for (int i = 0; i < CardList.Count; i++)
         {
-            var Card_img = GameObject.Find($"CardDetails/img_Detail{i}")?.GetComponent<Image>();
+            var Card_img = GameObject.Find($"CardDetails/img_Detail{CardList[i].SingleID}")?.GetComponent<Image>();
             if (Card_img != null)
             {
                 Card_img.transform.localScale = Vector3.zero;
@@ -179,7 +208,7 @@ public class CardPoolsView : BaseUI
     public void ShowDetail(CurrentCardPoolModel model, int i)
     {
         HideCardDetail();
-        var Card_Detail = GameObject.Find($"CardDetails/img_Detail{i}")?.GetComponent<Image>();
+        var Card_Detail = GameObject.Find($"CardDetails/img_Detail{model.SingleID}")?.GetComponent<Image>();
         if (Card_Detail != null)
         {
             Card_Detail.transform.localScale = Vector3.one;
@@ -189,7 +218,7 @@ public class CardPoolsView : BaseUI
             var Card_img = GameObject.Find($"CardDetails");
             GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
             tempImg = Common.AddChild(Card_img.transform, tempImg);
-            tempImg.name = "img_Detail" + i;
+            tempImg.name = "img_Detail" + model.SingleID;
             tempImg.transform.localPosition = new Vector2(0, 0);
 
             GameObject temp = tempImg.transform.Find("Text").gameObject;

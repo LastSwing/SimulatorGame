@@ -26,6 +26,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
         { "Anim_PlayerDie",1.55f},//角色死亡90
         { "Anim_RemoveCard",0.89f},//移除卡牌50
         { "Anim_DrawACard",1.10f},//抽一张卡60
+        { "Anim_ArmorMelting",0.90f},//摧毁防御50
     };
 
     /// <summary>
@@ -154,6 +155,19 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                         Common.CardDataBind(tmepObj, model);
                     }
                     gameView.Anim_DrawACard.Play("Anim_DrawACard");
+                    break;
+                #endregion
+                #region 摧毁防御
+                case "Anim_ArmorMelting":
+                    if (arg[0].ToString() == "0")//攻击AI
+                    {
+                        gameView.Anim_ArmorMelting.transform.position = gameView.img_Enemy.transform.position;
+                    }
+                    else//攻击角色
+                    {
+                        gameView.Anim_ArmorMelting.transform.position = gameView.img_Player.transform.position;
+                    }
+                    gameView.Anim_ArmorMelting.Play("Anim_ArmorMelting");
                     break;
                     #endregion
             }
