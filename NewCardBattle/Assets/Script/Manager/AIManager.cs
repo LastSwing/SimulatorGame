@@ -9,7 +9,7 @@ public class AIManager : SingletonMonoBehaviour<AIManager>
     /// AI行为
     /// </summary>
     /// <param name="aiLevel">ai强度</param>
-    public void AIDo(int aiLevel, CurrentCardPoolModel model, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect)
+    public void AIDo(int aiLevel, CurrentCardPoolModel model, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect, ref int PlayAnim)
     {
         switch (aiLevel)
         {
@@ -22,7 +22,7 @@ public class AIManager : SingletonMonoBehaviour<AIManager>
             case 7:
             case 8:
             case 9:
-                (UIManager.instance.GetView("GameView") as GameView).AiAtk(model, ref hasUseCard, ref EffectOn, ref hasEffect);
+                (UIManager.instance.GetView("GameView") as GameView).AiAtk(model, ref hasUseCard, ref EffectOn, ref hasEffect, ref PlayAnim);
                 break;
         }
     }

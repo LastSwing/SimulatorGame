@@ -26,10 +26,6 @@ public class GameView : BaseUI
     private CurrentRoleModel AiRole;        //Ai角色
 
     /// <summary>
-    /// 玩家牌库
-    /// </summary>
-    private List<CurrentCardPoolModel> PlayerCardList = new List<CurrentCardPoolModel>();
-    /// <summary>
     /// 玩家手牌
     /// </summary>
     private List<CurrentCardPoolModel> PlayerHandCardList = new List<CurrentCardPoolModel>();
@@ -46,7 +42,7 @@ public class GameView : BaseUI
     /// </summary>
     public List<CurrentCardPoolModel> UsedCardList = new List<CurrentCardPoolModel>();
     /// <summary>
-    /// AI卡池
+    /// AI手牌
     /// </summary>
     public List<CurrentCardPoolModel> AiCardList = new List<CurrentCardPoolModel>();
     /// <summary>
@@ -61,7 +57,7 @@ public class GameView : BaseUI
     #endregion
     #region 动画声明
     public GameObject AnimObj;
-    public Animation Anim_Shuffle, Anim_ShowTitle, Anim_DealCard, Anim_RecycleCard, Anim_ATK, Anim_HPDeduction, Anim_HPRestore, Anim_Armor, Anim_EnergyRestore, Anim_PlayerDie, Anim_RemoveCard, Anim_DrawACard, Anim_ArmorMelting;
+    public Animation Anim_Shuffle, Anim_ShowTitle, Anim_DealCard, Anim_RecycleCard, Anim_ATK, Anim_HPDeduction, Anim_HPRestore, Anim_Armor, Anim_EnergyRestore, Anim_PlayerDie, Anim_RemoveCard, Anim_DrawACard, Anim_ArmorMelting, Anim_Elude;
     //int cardRotationNum = 18;
     #endregion
     public string hasPlayerOrAIDie;//0AI，1角色
@@ -95,6 +91,7 @@ public class GameView : BaseUI
         Anim_RemoveCard = transform.Find("UI/Animation/Anim_RemoveCard").GetComponent<Animation>();
         Anim_DrawACard = transform.Find("UI/Animation/Anim_DrawACard").GetComponent<Animation>();
         Anim_ArmorMelting = transform.Find("UI/Animation/Anim_ArmorMelting").GetComponent<Animation>();
+        Anim_Elude = transform.Find("UI/Animation/Anim_Elude").GetComponent<Animation>();
         //AnimObj.SetActive(false);
         #endregion
 
@@ -247,6 +244,28 @@ public class GameView : BaseUI
             obj_RemoveCard.SetActive(false);
         }
     }
+
+    /// <summary>
+    /// 移除一张卡牌
+    /// </summary>
+    /// <param name="thisObj"></param>
+    public void RemoveCard(GameObject thisObj, ref float animDuration)
+    {
+        if (CardUseEffectManager.instance.CopyBoxCardExist)
+        {
+            CardItem cardItem = thisObj.GetComponent<CardItem>();
+            var model = cardItem.BasisData;//移除当前卡
+            ATKBarCardList.Remove(ATKBarCardList.Find(a => a.SingleID == model.SingleID));
+            BattleManager.instance.OwnPlayerData[0].handCardList.Remove(BattleManager.instance.OwnPlayerData[0].handCardList.Find(a => a.SingleID == model.SingleID));
+
+            DeleteGameObj(thisObj);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(thisParent);
+            CardUseEffectManager.instance.UseCopyCard = false;
+            CardUseEffectManager.instance.CopyBoxCardExist = false;
+            animDuration = AnimationManager.instance.DoAnimation("Anim_RemoveCard", null);
+            obj_RemoveCard.SetActive(false);
+        }
+    }
     #endregion
     #endregion
 
@@ -281,9 +300,7 @@ public class GameView : BaseUI
         AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == 1004);//由等级随机一个AI
         Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
-        //UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         PlayerHandCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
-        PlayerCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
         UnusedCardList = PlayerHandCardList.ListRandom();
         txt_Left_Count.text = UnusedCardList == null ? "0" : UnusedCardList.Count.ToString();//有动画后再逐一减少
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
@@ -383,82 +400,35 @@ public class GameView : BaseUI
     {
         //throw new System.NotImplementedException();
     }
+    #endregion
 
-    #region Method
-    /// <summary>
-    /// 创建攻击栏卡牌
-    /// </summary>
-    /// <param name="model"></param>
-    /// <param name="hasShow">卡牌是否需要直接展示</param>
-    public void CreateAtkBarCard(CurrentCardPoolModel model, bool hasShow = false)
-    {
-        GameObject tempObject = ResourcesManager.instance.Load("img_Card200") as GameObject;
-        tempObject = Common.AddChild(obj_CardPools.transform, tempObject);
-        tempObject.name = "imgCard_" + model.SingleID;
-
-        CardItem cardData = tempObject.GetComponent<CardItem>();
-        cardData.BasisData = model;
-        EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
-        if (trigger == null)
-        {
-            trigger = tempObject.AddComponent<EventTrigger>();
-        }
-        EventTrigger.Entry entry = new EventTrigger.Entry();
-        entry.eventID = EventTriggerType.PointerDown;
-        entry.callback.AddListener(delegate { CardPointerDown(); });
-        trigger.triggers.Add(entry);
-
-        EventTrigger.Entry entry1 = new EventTrigger.Entry();
-        entry1.eventID = EventTriggerType.PointerUp;
-        entry1.callback.AddListener(delegate { CardClick(tempObject); });
-        trigger.triggers.Add(entry1);
-        if (!hasShow)
-        {
-            tempObject.transform.localScale = Vector3.zero;
-            tempObject.transform.localRotation = new Quaternion(0, 180, 0, 0);
-        }
-        Common.CardDataBind(tempObject, model, BattleManager.instance.OwnPlayerData[0].buffList);
-    }
+    #region DataMethod
 
     /// <summary>
-    /// 创建能量图片
+    /// 同步游戏数据。以BattleManager.instance.OwnPlayerData[0].handCardList为准
     /// </summary>
-    public void CreateEnergyImage(int count)
+    /// <param name="list"></param>
+    /// <param name="PlayerOrAI">获取AI或玩家的数据;0玩家1AI</param>
+    /// <returns></returns>
+    public List<CurrentCardPoolModel> SyncGameData(List<CurrentCardPoolModel> list, int PlayerOrAI = 0)
     {
-        GameObject parentObjectBG = transform.Find("UI/CardPools/obj_EnergyBG").gameObject;
-        GameObject parentObject = transform.Find("UI/CardPools/obj_Energy").gameObject;
-        //Debug.Log(parentObject.transform.localPosition);
-        for (int i = 0; i < count; i++)
+        List<CurrentCardPoolModel> result = new List<CurrentCardPoolModel>();
+        if (PlayerOrAI == 0)
         {
-            GameObject tempBgObject = ResourcesManager.instance.Load("img_EnergyBG") as GameObject;
-            tempBgObject = Common.AddChild(parentObjectBG.transform, tempBgObject);
-            tempBgObject.name = "img_EnergyBg" + i;
-
-            GameObject tempObject = ResourcesManager.instance.Load("img_Energy") as GameObject;
-            tempObject = Common.AddChild(parentObject.transform, tempObject);
-            tempObject.name = "img_Energy" + i;
-        }
-    }
-
-    /// <summary>
-    /// AI攻击牌池绑定
-    /// </summary>
-    public void AIATKCardPoolsBind()
-    {
-        if (AiATKCardList != null && AiATKCardList?.Count > 0)
-        {
-            for (int i = 0; i < AiATKCardList.Count; i++)
+            foreach (var item in list)
             {
-                var item = AiATKCardList[i];
-                GameObject tempObj = ResourcesManager.instance.Load("AI_ATKimg_Prefab") as GameObject;
-                tempObj.name = "AiAtkimg_" + item.SingleID;
-                tempObj = Common.AddChild(AiATKBar_obj.transform, tempObj);
-                Common.AICardDataBind(tempObj, item);
+                result.Add(BattleManager.instance.OwnPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID));
             }
         }
+        else
+        {
+            foreach (var item in list)
+            {
+                result.Add(BattleManager.instance.EnemyPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID));
+            }
+        }
+        return result;
     }
-
-    #endregion
 
     /// <summary>
     /// 获取战斗双方数据
@@ -500,11 +470,6 @@ public class GameView : BaseUI
                     dic.Add(item.SingleID, item.ID);
                     list.Add(item);
                 }
-                //foreach (var item in ATKBarCardList)
-                //{
-                //    dic.Add(item.SingleID, item.ID);
-                //    list.Add(item);
-                //}
                 data.playerID = PlayerRole.RoleID;
                 data.playerName = PlayerRole.Name;
                 data.playerPos = img_Player.transform.position;
@@ -536,27 +501,6 @@ public class GameView : BaseUI
         switch (type)
         {
             case CardPoolType.OwnCards:
-                foreach (var item in PlayerCardList)
-                {
-                    if (item.SingleID > 0)
-                    {
-                        list.Add(item.SingleID);
-                    }
-                    else
-                    {
-                        var id = PlayerCardList.Max(a => a.SingleID);
-                        if (id < 1)
-                        {
-                            id = 10000;
-                        }
-                        else
-                        {
-                            id += 1;
-                            list.Add(id);
-                        }
-                        item.SingleID = id;
-                    }
-                }
                 break;
             case CardPoolType.OwnHandCards:
                 foreach (var item in PlayerHandCardList)
@@ -570,7 +514,7 @@ public class GameView : BaseUI
                         var id = PlayerHandCardList.Max(a => a.SingleID);
                         if (id < 1)
                         {
-                            id = 100000;
+                            id = 10000;
                         }
                         else
                         {
@@ -582,6 +526,8 @@ public class GameView : BaseUI
                 }
                 break;
             case CardPoolType.EnemyCards:
+                break;
+            case CardPoolType.EnemHandCards:
                 foreach (var item in AiCardList)
                 {
                     if (item.SingleID > 0)
@@ -604,157 +550,12 @@ public class GameView : BaseUI
                     }
                 }
                 break;
-            case CardPoolType.EnemHandCards:
-                foreach (var item in AiATKCardList)
-                {
-                    if (item.SingleID > 0)
-                    {
-                        list.Add(item.SingleID);
-                    }
-                    else
-                    {
-                        var id = AiATKCardList.Max(a => a.SingleID);
-                        if (id < 1)
-                        {
-                            id = 1000;
-                        }
-                        else
-                        {
-                            id += 1;
-                            list.Add(id);
-                        }
-                        item.SingleID = id;
-                    }
-                }
-                break;
         }
         return list;
     }
     #endregion
 
     #region 回合结束
-
-    /// <summary>
-    /// BUFFUI变化
-    /// 只在此方法里删除BUFF列表，用于数值恢复
-    /// </summary>
-    /// <param name="buffDatas">BUFF列表</param>
-    /// <param name="handCards">手牌列表</param>
-    /// <param name="PlayerOrAI">角色或AI。0角色，1AI</param>
-    public void BUFFUIChange(List<BuffData> buffDatas, ref List<CurrentCardPoolModel> handCards, ref CurrentCardPoolModel model, int PlayerOrAI = 0)
-    {
-        if (PlayerOrAI == 0)
-        {
-            if (CardUseEffectManager.instance.HasNumberValueChange)
-            {
-                #region 数值恢复
-                foreach (var card in handCards)
-                {
-                    if (card.CardType == 0)
-                    {
-                        card.Effect = card.InitEffect;
-                    }
-                }
-                foreach (var item in ATKBarCardList)
-                {
-                    if (item.CardType == 0)
-                    {
-                        item.Effect = item.InitEffect;
-                    }
-                }
-                #endregion
-                //Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
-                CardUseEffectManager.instance.HasNumberValueChange = false;
-            }
-            for (int i = 0; i < buffDatas?.Count; i++)
-            {
-                var item = buffDatas[i];
-                var cBuff = P_buffObj.transform.Find("img_Buff_" + item.EffectType).gameObject;
-                if (item.Num < 1)
-                {
-
-                    //如果BUFF愤怒或虚弱。相对于的数值进行保存
-                    if (BattleManager.instance.OwnPlayerData[0].buffList.Exists(a => a.EffectType == 8) ||
-                        BattleManager.instance.OwnPlayerData[0].buffList.Exists(a => a.EffectType == 11))
-                    {
-                        BattleManager.instance.OwnPlayerData[0].handCardList?.ForEach(info =>
-                        {
-                            var atkTemp = ATKBarCardList.Find(a => a.SingleID == info.SingleID);
-                            if (atkTemp != null)
-                            {
-                                ATKBarCardList.Remove(atkTemp);
-                                ATKBarCardList.Add(info);
-                            }
-                            var useTemp = UsedCardList.Find(a => a.SingleID == info.SingleID);
-                            if (useTemp != null)
-                            {
-                                UsedCardList.Remove(useTemp);
-                                UsedCardList.Add(info);
-                            }
-                            var unUseTemp = UnusedCardList.Find(a => a.SingleID == info.SingleID);
-                            if (unUseTemp != null)
-                            {
-                                UnusedCardList.Remove(unUseTemp);
-                                UnusedCardList.Add(info);
-                            }
-                        });
-                    }
-                    DestroyImmediate(cBuff);
-                    BattleManager.instance.OwnPlayerData[0].buffList.Remove(item);
-                }
-                else
-                {
-                    var txt = cBuff.transform.Find("Text").GetComponent<Text>();
-                    txt.text = item.Num.ToString();
-                }
-            }
-        }
-        else
-        {
-            if (CardUseEffectManager.instance.HasNumberValueChange)
-            {
-                #region 数值恢复
-                foreach (var card in handCards)
-                {
-                    if (card.CardType == 0)
-                    {
-                        card.Effect = card.InitEffect;
-                    }
-                }
-                foreach (var item in AiATKCardList)
-                {
-                    if (item.CardType == 0)
-                    {
-                        item.Effect = item.InitEffect;
-                    }
-                }
-                #endregion
-                CardUseEffectManager.instance.HasNumberValueChange = false;
-                //Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
-            }
-            for (int i = 0; i < buffDatas?.Count; i++)
-            {
-                var item = buffDatas[i];
-                var cBuff = E_buffObj.transform.Find("img_Buff_" + item.EffectType).gameObject;
-                if (item.Num < 1)
-                {
-                    DestroyImmediate(cBuff);
-                    BattleManager.instance.EnemyPlayerData[0].buffList.Remove(item);
-                }
-                else
-                {
-                    var txt = cBuff.transform.Find("Text").GetComponent<Text>();
-                    txt.text = item.Num.ToString();
-                }
-            }
-        }
-
-    }
-
-    public void DeleteGameObj(GameObject obj)
-    {
-        DestroyImmediate(obj);
-    }
 
     public void RoundOverClick()
     {
@@ -774,7 +575,8 @@ public class GameView : BaseUI
     /// <param name="hasUseCard">卡牌是否使用成功</param>
     /// <param name="EffectOn">效果作用在。0AI,1角色</param>
     /// <param name="hasEffect">卡牌是否有效果</param>
-    public void AiAtk(CurrentCardPoolModel AIAtk, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect)
+    /// <param name="PlayAnim">播放动画、3被闪避</param>
+    public void AiAtk(CurrentCardPoolModel AIAtk, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect, ref int PlayAnim)
     {
         CrtAIATKModel = AIAtk;
         var ownRole = BattleManager.instance.OwnPlayerData[0];
@@ -784,7 +586,7 @@ public class GameView : BaseUI
         var atkObj = AiATKBar_obj.transform.Find("AiAtkimg_" + AIAtk.SingleID + "(Clone)").gameObject;
         DestroyImmediate(atkObj);
         #region BUFF限制卡牌使用
-        var buffResult = BUFFManager.instance.BUFFApply(ref enemyRole.buffList, ownRole.buffList, ref AIAtk, ref enemyRole.handCardList);
+        var buffResult = BUFFManager.instance.BUFFApply(ref enemyRole.buffList, ownRole.buffList, ref AIAtk, ref enemyRole.handCardList, false, 1);
         if (buffResult?.Count > 0)
         {
             if (buffResult.Exists(a => a.EffectType == 1 && a.HasValid == false))//卡无效果未被使用
@@ -798,6 +600,7 @@ public class GameView : BaseUI
                 AiATKCardList.Remove(AIAtk);
                 hasUseCard = true;
                 hasEffect = false;
+                PlayAnim = 3;
                 return;
             }
         }
@@ -1181,6 +984,7 @@ public class GameView : BaseUI
     }
     #endregion
 
+    #region GameMethod
     /// <summary>
     /// 玩家死亡
     /// </summary>
@@ -1198,46 +1002,207 @@ public class GameView : BaseUI
         hasPlayerOrAIDie = "0";
         BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.GameEnd);
     }
+    #endregion
 
     #region 卡牌效果Method
+
     /// <summary>
-    /// 实时变化卡牌数据
+    /// 创建攻击栏卡牌
+    /// </summary>
+    /// <param name="model"></param>
+    /// <param name="hasShow">卡牌是否需要直接展示</param>
+    public void CreateAtkBarCard(CurrentCardPoolModel model, bool hasShow = false)
+    {
+        GameObject tempObject = ResourcesManager.instance.Load("img_Card200") as GameObject;
+        tempObject = Common.AddChild(obj_CardPools.transform, tempObject);
+        tempObject.name = "imgCard_" + model.SingleID;
+
+        CardItem cardData = tempObject.GetComponent<CardItem>();
+        cardData.BasisData = model;
+        EventTrigger trigger = tempObject.GetComponent<EventTrigger>();
+        if (trigger == null)
+        {
+            trigger = tempObject.AddComponent<EventTrigger>();
+        }
+        EventTrigger.Entry entry = new EventTrigger.Entry();
+        entry.eventID = EventTriggerType.PointerDown;
+        entry.callback.AddListener(delegate { CardPointerDown(); });
+        trigger.triggers.Add(entry);
+
+        EventTrigger.Entry entry1 = new EventTrigger.Entry();
+        entry1.eventID = EventTriggerType.PointerUp;
+        entry1.callback.AddListener(delegate { CardClick(tempObject); });
+        trigger.triggers.Add(entry1);
+        if (!hasShow)
+        {
+            tempObject.transform.localScale = Vector3.zero;
+            tempObject.transform.localRotation = new Quaternion(0, 180, 0, 0);
+        }
+        Common.CardDataBind(tempObject, model, BattleManager.instance.OwnPlayerData[0].buffList);
+    }
+
+    /// <summary>
+    /// 创建能量图片
+    /// </summary>
+    public void CreateEnergyImage(int count)
+    {
+        GameObject parentObjectBG = transform.Find("UI/CardPools/obj_EnergyBG").gameObject;
+        GameObject parentObject = transform.Find("UI/CardPools/obj_Energy").gameObject;
+        //Debug.Log(parentObject.transform.localPosition);
+        for (int i = 0; i < count; i++)
+        {
+            GameObject tempBgObject = ResourcesManager.instance.Load("img_EnergyBG") as GameObject;
+            tempBgObject = Common.AddChild(parentObjectBG.transform, tempBgObject);
+            tempBgObject.name = "img_EnergyBg" + i;
+
+            GameObject tempObject = ResourcesManager.instance.Load("img_Energy") as GameObject;
+            tempObject = Common.AddChild(parentObject.transform, tempObject);
+            tempObject.name = "img_Energy" + i;
+        }
+    }
+
+    /// <summary>
+    /// AI攻击牌池绑定
+    /// </summary>
+    public void AIATKCardPoolsBind()
+    {
+        if (AiATKCardList != null && AiATKCardList?.Count > 0)
+        {
+            for (int i = 0; i < AiATKCardList.Count; i++)
+            {
+                var item = AiATKCardList[i];
+                GameObject tempObj = ResourcesManager.instance.Load("AI_ATKimg_Prefab") as GameObject;
+                tempObj.name = "AiAtkimg_" + item.SingleID;
+                tempObj = Common.AddChild(AiATKBar_obj.transform, tempObj);
+                Common.AICardDataBind(tempObj, item);
+            }
+        }
+    }
+    /// <summary>
+    /// BUFFUI变化
+    /// 只在此方法里删除BUFF列表，用于数值恢复
+    /// </summary>
+    /// <param name="buffDatas">BUFF列表</param>
+    /// <param name="handCards">手牌列表</param>
+    /// <param name="PlayerOrAI">角色或AI。0角色，1AI</param>
+    public void BUFFUIChange(List<BuffData> buffDatas, ref List<CurrentCardPoolModel> handCards, ref CurrentCardPoolModel model, int PlayerOrAI = 0)
+    {
+        if (PlayerOrAI == 0)
+        {
+            if (CardUseEffectManager.instance.HasNumberValueChange)
+            {
+                #region 数值恢复
+                foreach (var card in handCards)
+                {
+                    if (card.CardType == 0)
+                    {
+                        card.Effect = card.InitEffect;
+                    }
+                }
+                #endregion
+                CardUseEffectManager.instance.HasNumberValueChange = false;
+            }
+            for (int i = 0; i < buffDatas?.Count; i++)
+            {
+                var item = buffDatas[i];
+                var cBuff = P_buffObj.transform.Find("img_Buff_" + item.EffectType).gameObject;
+                if (item.Num < 1)
+                {
+                    DestroyImmediate(cBuff);
+                    BattleManager.instance.OwnPlayerData[0].buffList.Remove(item);
+                }
+                else
+                {
+                    var txt = cBuff.transform.Find("Text").GetComponent<Text>();
+                    txt.text = item.Num.ToString();
+                }
+            }
+            ATKBarCardList = SyncGameData(ATKBarCardList);
+            UnusedCardList = SyncGameData(UnusedCardList);
+            UsedCardList = SyncGameData(UsedCardList);
+            RealTimeChangeCardData(PlayerOrAI);
+        }
+        else
+        {
+            if (CardUseEffectManager.instance.HasNumberValueChange)
+            {
+                #region 数值恢复
+                foreach (var card in handCards)
+                {
+                    if (card.CardType == 0)
+                    {
+                        card.Effect = card.InitEffect;
+                    }
+                }
+                foreach (var item in AiATKCardList)
+                {
+                    if (item.CardType == 0)
+                    {
+                        item.Effect = item.InitEffect;
+                    }
+                }
+                #endregion
+                CardUseEffectManager.instance.HasNumberValueChange = false;
+                //Common.SaveTxtFile(handCards.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
+            }
+            for (int i = 0; i < buffDatas?.Count; i++)
+            {
+                var item = buffDatas[i];
+                var cBuff = E_buffObj.transform.Find("img_Buff_" + item.EffectType).gameObject;
+                if (item.Num < 1)
+                {
+                    DestroyImmediate(cBuff);
+                    BattleManager.instance.EnemyPlayerData[0].buffList.Remove(item);
+                }
+                else
+                {
+                    var txt = cBuff.transform.Find("Text").GetComponent<Text>();
+                    txt.text = item.Num.ToString();
+                }
+            }
+            AiATKCardList = SyncGameData(AiATKCardList, 1);
+        }
+    }
+
+    public void DeleteGameObj(GameObject obj)
+    {
+        DestroyImmediate(obj);
+    }
+
+    /// <summary>
+    /// 实时变化攻击栏数据
     /// </summary>
     /// <param name="handCards">手牌</param>
     /// <param name="PlayerOrAI">角色或AI。0角色，1AI</param>
-    public void RealTimeChangeCardData(List<CurrentCardPoolModel> handCards, int PlayerOrAI = 0)
+    public void RealTimeChangeCardData(int PlayerOrAI = 0)
     {
-        var newAtkBar = new List<CurrentCardPoolModel>();
         if (PlayerOrAI == 0)
         {
-            var atkBar = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentATKBarCardPoolsFileName);
-            foreach (var item in atkBar)
+            if (ATKBarCardList?.Count > 0)
             {
-                newAtkBar.Add(handCards.Find(a => a.SingleID == item.SingleID));
-            }
-            atkBar = newAtkBar;
-            Common.SaveTxtFile(atkBar.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
-            foreach (var item in atkBar)
-            {
-                var tempObj = obj_CardPools.transform.Find("imgCard_" + item.SingleID).gameObject;
-                CardItem cardItem = tempObj.GetComponent<CardItem>();
-                cardItem.BasisData = item;
-                Common.CardDataBind(tempObj, item, BattleManager.instance.OwnPlayerData[0].buffList);
+                ATKBarCardList = SyncGameData(ATKBarCardList);
+                foreach (var item in ATKBarCardList)
+                {
+                    var tempObj = obj_CardPools.transform.Find("imgCard_" + item.SingleID)?.gameObject;
+                    if (tempObj != null)
+                    {
+                        CardItem cardItem = tempObj.GetComponent<CardItem>();
+                        cardItem.BasisData = item;
+                        Common.CardDataBind(tempObj, item, BattleManager.instance.OwnPlayerData[0].buffList);
+                    }
+                }
             }
         }
         else
         {
-            var atkBar = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAIATKCardPoolsFileName);
-            foreach (var item in atkBar)
+            if (AiATKCardList?.Count > 0)
             {
-                newAtkBar.Add(handCards.Find(a => a.SingleID == item.SingleID));
-            }
-            atkBar = newAtkBar;
-            Common.SaveTxtFile(atkBar.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
-            foreach (var item in atkBar)
-            {
-                var tempObj = AiATKBar_obj.transform.Find("AiAtkimg_" + item.SingleID + "(Clone)").gameObject;
-                Common.AICardDataBind(tempObj, item, BattleManager.instance.EnemyPlayerData[0].buffList);
+                AiATKCardList = SyncGameData(AiATKCardList, 1);
+                foreach (var item in AiATKCardList)
+                {
+                    var tempObj = AiATKBar_obj.transform.Find("AiAtkimg_" + item.SingleID + "(Clone)").gameObject;
+                    Common.AICardDataBind(tempObj, item, BattleManager.instance.EnemyPlayerData[0].buffList);
+                }
             }
         }
     }

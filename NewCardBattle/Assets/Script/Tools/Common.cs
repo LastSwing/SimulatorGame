@@ -577,32 +577,34 @@ namespace Assets.Script.Tools
         /// <param name="ChangeType">变化类型：1加血，0减血</param>
         public static void HPImageChange(Image HpImg, float InitHP, float ChangeHp, int ChangeType, int ImgWidth = 400)
         {
-            if (ChangeHp > 0)
+            if (ChangeHp < 0)
             {
-                RectTransform Irect = HpImg.GetComponent<RectTransform>();
-                float imgW = Irect.sizeDelta.x;
-                float OneHpWidth = ImgWidth / InitHP;//图片一滴血的宽度
-                float ChangeImgW = ChangeHp * OneHpWidth;
-                if (ChangeType == 0)
+                ChangeHp = -ChangeHp;
+                Debug.Log(ChangeHp);
+            }
+            RectTransform Irect = HpImg.GetComponent<RectTransform>();
+            float imgW = Irect.sizeDelta.x;
+            float OneHpWidth = ImgWidth / InitHP;//图片一滴血的宽度
+            float ChangeImgW = ChangeHp * OneHpWidth;
+            if (ChangeType == 0)
+            {
+                float total = imgW - ChangeImgW;
+                if (total < 0)
                 {
-                    float total = imgW - ChangeImgW;
-                    if (total < 0)
-                    {
-                        total = 0;
-                    }
-                    Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
-                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
+                    total = 0;
                 }
-                else
+                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x - ChangeImgW / 2, HpImg.transform.localPosition.y);
+            }
+            else
+            {
+                float total = imgW + ChangeImgW;
+                if (total > ImgWidth)//初始宽度400
                 {
-                    float total = imgW + ChangeImgW;
-                    if (total > ImgWidth)//初始宽度400
-                    {
-                        total = ImgWidth;
-                    }
-                    Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
-                    HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x + ChangeImgW / 2, HpImg.transform.localPosition.y);
+                    total = ImgWidth;
                 }
+                Irect.sizeDelta = new Vector2(total, Irect.sizeDelta.y);
+                HpImg.transform.localPosition = new Vector3(HpImg.transform.localPosition.x + ChangeImgW / 2, HpImg.transform.localPosition.y);
             }
         }
 
@@ -653,18 +655,15 @@ namespace Assets.Script.Tools
                 img_Up.transform.localScale = Vector3.zero;
                 img_Down.transform.localScale = Vector3.zero;
             }
-            if (buffDatas != null)
+            if (model.CardType == 0)
             {
-                if (model.CardType == 0)
+                if (model.Effect > model.InitEffect)
                 {
-                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 8))
-                    {
-                        img_Up.transform.localScale = Vector3.one;
-                    }
-                    if (buffDatas.Exists(a => a.Num > 0 && a.EffectType == 11))
-                    {
-                        img_Down.transform.localScale = Vector3.one;
-                    }
+                    img_Up.transform.localScale = Vector3.one;
+                }
+                if (model.Effect < model.InitEffect)
+                {
+                    img_Down.transform.localScale = Vector3.one;
                 }
             }
             switch (cardType)
@@ -690,7 +689,7 @@ namespace Assets.Script.Tools
                     Card_ATK_img.transform.localScale = Vector3.zero;
                     break;
             }
-            
+
             if (model.AtkNumber > 1)
             {
                 Card_ATKNumber.text = $"{model.Effect}*{model.AtkNumber}";
@@ -713,6 +712,10 @@ namespace Assets.Script.Tools
             var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
             ImageBind(model.CardUrl, Card_Skill_img);
             Card_Energy.text = model.Consume.ToString();
+            if (cardType == 31)
+            {
+                Card_Energy.text = "?";
+            }
             Card_Title.text = model.CardName;
             if (model.UpgradeCount == 1)
             {

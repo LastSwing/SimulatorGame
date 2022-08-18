@@ -424,14 +424,14 @@
     {
         "ID":1021,
         "ParentID":0,
-        "CardType":1,
+        "CardType":2,
         "EffectType":13,
         "AtkNumber":0,
         "CardName":"蓄力",
         "CardUrl":"",
         "CardDetail":"敌人每次攻击。所有手牌攻击力+1。",
         "Consume":0,
-        "Effect":1,
+        "Effect":2,
         "PlayerOrAI":0,
         "CardLevel":3,
         "CardPrice":130,
@@ -567,7 +567,7 @@
         "AtkNumber":1,
         "CardName":"束缚",
         "CardUrl":"",
-        "CardDetail":"技能。在此状态下攻击卡不能使用。移除。",
+        "CardDetail":"技能施加1层束缚。在此状态下攻击卡不能使用。移除。",
         "Consume":2,
         "Effect":1,
         "PlayerOrAI":0,
@@ -861,12 +861,6 @@
 
         ],
         "UsingBeforeTriggerList":[
-            {
-                "TriggerCondition":5,
-                "TriggerState":24,
-                "TriggerValue":0,
-                "Sort":1
-            }
         ],
         "InitEffect":-7
     },
@@ -889,12 +883,6 @@
 
         ],
         "UsingBeforeTriggerList":[
-            {
-                "TriggerCondition":5,
-                "TriggerState":24,
-                "TriggerValue":0,
-                "Sort":1
-            }
         ],
         "InitEffect":7
     },
@@ -1151,7 +1139,7 @@
         "AtkNumber":1,
         "CardName":"破损的盾牌",
         "CardUrl":"",
-        "CardDetail":"消耗1点能量，增加10点防御，获得1暴击标记。",
+        "CardDetail":"消耗1点能量，增加10点防御，获得1层朝夕不保标记。",
         "Consume":1,
         "Effect":10,
         "PlayerOrAI":0,
@@ -1161,7 +1149,7 @@
         "TriggerAfterUsingList":[
             {
                 "TriggerCondition":0,
-                "TriggerState":10,
+                "TriggerState":34,
                 "TriggerValue":1,
                 "Sort":1
             }
@@ -1175,7 +1163,7 @@
         "ID":1050,
         "ParentID":0,
         "CardType":1,
-        "EffectType":26,
+        "EffectType":27,
         "AtkNumber":1,
         "CardName":"磐石功",
         "CardUrl":"",
@@ -1390,7 +1378,7 @@
         "CardName":"混乱杀机",
         "CardUrl":"",
         "CardDetail":"每有一层混乱，当前手牌攻击力+1",
-        "Consume":2,
+        "Consume":1,
         "Effect":0,
         "PlayerOrAI":0,
         "CardLevel":3,
@@ -1431,7 +1419,7 @@
         "ID":1060,
         "ParentID":0,
         "CardType":0,
-        "EffectType":32,
+        "EffectType":1,
         "AtkNumber":1,
         "CardName":"精致的短刀",
         "CardUrl":"",
@@ -1443,7 +1431,12 @@
         "CardPrice":40,
         "HasShoppingShow":1,
         "TriggerAfterUsingList":[
-
+        {
+                "TriggerCondition":0,
+                "TriggerState":32,
+                "TriggerValue":3,
+                "Sort":1
+            }
         ],
         "UsingBeforeTriggerList":[
 
