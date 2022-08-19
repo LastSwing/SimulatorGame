@@ -912,6 +912,13 @@ public class Battle_PlayEffect : State
                         }
                         break;
                     #endregion
+                    #region 耗血攻击
+                    case 35:
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1" });
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        break;
+                    #endregion
                     default:
                         BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AfterCardUse);
                         break;

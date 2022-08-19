@@ -343,8 +343,7 @@ public class AllSkillView : BaseUI
                 tempImg.name = "img_Detail" + model.ID;
                 tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y - 50);
 
-                GameObject temp = tempImg.transform.Find("Text").gameObject;
-                temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
+                Common.CardDetailDataBind(tempImg, model);
             }
             else
             {

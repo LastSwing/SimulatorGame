@@ -212,8 +212,7 @@ public class GameView : BaseUI
                 GameObject tempObject = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
                 tempObject = Common.AddChild(CardDetailObj.transform, tempObject);
                 tempObject.name = "img_Detail" + model.SingleID;
-                GameObject temp = tempObject.transform.Find("Text").gameObject;
-                temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail.Trim()}";
+                Common.CardDetailDataBind(tempObject, model);
             }
         }
         //}

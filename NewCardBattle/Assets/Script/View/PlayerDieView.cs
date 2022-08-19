@@ -237,9 +237,7 @@ public class PlayerDieView : BaseUI
             tempImg.name = "img_Detail";
             tempImg.transform.localPosition = new Vector2(0, 160);
 
-            GameObject temp = tempImg.transform.Find("Text").gameObject;
-            temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
-
+            Common.CardDetailDataBind(tempImg, model);
         }
     }
 

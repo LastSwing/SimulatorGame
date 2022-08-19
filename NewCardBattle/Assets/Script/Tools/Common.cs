@@ -650,6 +650,7 @@ namespace Assets.Script.Tools
             var Card_ATKNumber = tempObject.transform.Find("img_ATK/Text").GetComponent<Text>();
             var img_Up = tempObject.transform.Find("img_ATK/Text/Up")?.GetComponent<Image>();
             var img_Down = tempObject.transform.Find("img_ATK/Text/Down")?.GetComponent<Image>();
+            #region 数值变化
             if (img_Up != null && img_Down != null)
             {
                 img_Up.transform.localScale = Vector3.zero;
@@ -666,6 +667,7 @@ namespace Assets.Script.Tools
                     img_Down.transform.localScale = Vector3.one;
                 }
             }
+            #endregion
             switch (cardType)
             {
                 case 1:
@@ -674,6 +676,7 @@ namespace Assets.Script.Tools
                 case 14:
                 case 31:
                 case 32:
+                case 35:
                     ImageBind("Images/Atk_Icon", Card_ATK_icon);
                     break;
                 case 2:
@@ -707,6 +710,11 @@ namespace Assets.Script.Tools
             }
             #endregion
             var Card_energy_img = tempObject.transform.Find("img_Energy").GetComponent<Image>();
+            if (cardType == 35)//消耗血量
+            {
+                ImageBind("Images/HP_Icon", Card_energy_img);
+                Card_energy_img.transform.localScale = new Vector3(0.75f, 0.9f);
+            }
             var Card_Skill_img = tempObject.transform.Find("img_Skill").GetComponent<Image>();
             var Card_Energy = tempObject.transform.Find("img_Energy/Text").GetComponent<Text>();
             var Card_Title = tempObject.transform.Find("img_Title/Text").GetComponent<Text>();
@@ -724,6 +732,19 @@ namespace Assets.Script.Tools
                 Card_Title.text = "* " + Card_Title.text;
             }
             #endregion
+        }
+
+        /// <summary>
+        /// 卡详情数据绑定
+        /// </summary>
+        /// <param name="tempObject">详情对象</param>
+        /// <param name="model">卡数据</param>
+        public static void CardDetailDataBind(GameObject tempObject, CurrentCardPoolModel model)
+        {
+            Text txt = tempObject.transform.Find("Text").GetComponent<Text>();
+            string CardDetails = model.CardDetail.Replace("@effect", model.Effect.ToString());
+            CardDetails = CardDetails.Replace("@consume", model.Consume.ToString());
+            txt.text = $"{model.CardName}\n{CardDetails.Trim()}";
         }
 
         /// <summary>
