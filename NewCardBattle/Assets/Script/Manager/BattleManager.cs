@@ -110,6 +110,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
     /// </summary>
     public void ResetBattle()
     {
+        BattleStateMachine = null;
         UpdateAction = null;
     }
     private void Update()
@@ -202,7 +203,7 @@ public class Battle_TurnStart : State
                     foreach (var item in bUFFEffects)
                     {
                         CardUseEffectManager.instance.HPChange(item.HPChange, 0);
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1" });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", item.HPChange });
                     }
                 }
                 #endregion
@@ -237,7 +238,7 @@ public class Battle_TurnStart : State
                     foreach (var item in bUFFEffects)
                     {
                         CardUseEffectManager.instance.HPChange(item.HPChange, 1);
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "0" });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "0", item.HPChange });
                     }
                 }
                 #endregion
@@ -425,7 +426,7 @@ public class Battle_DrawCard : State
                                     }
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
-                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", null);
+                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
                                 break;
                             case 4:
                                 if (crtModel.Effect < 0)//扣能量
@@ -535,7 +536,7 @@ public class Battle_DrawCard : State
                                     }
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
-                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", null);
+                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
                                 break;
                             case 4:
                                 if (crtModel.Effect < 0)//扣能量
@@ -672,21 +673,22 @@ public class Battle_BeforeCardUse : State
                 break;
         }
         string EffectOn = "";
-        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model, PlayerOrAI, ref EffectOn);
+        float AnimEffect = 0;
+        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model, PlayerOrAI, ref EffectOn, ref AnimEffect);
         switch (result)
         {
             case 1:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             case 2:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", null);
                 break;
             case 3:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 break;
             case 4:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 break;
             case 5:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
@@ -698,7 +700,7 @@ public class Battle_BeforeCardUse : State
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
                 break;
             case 8:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 break;
             case 9:
                 //摧毁防御动画
@@ -710,7 +712,14 @@ public class Battle_BeforeCardUse : State
             case 17://移除一张手牌
                 gameView.obj_RemoveCard.SetActive(true);
                 CardUseEffectManager.instance.UseCopyCard = true;
+                gameView.btn_CopyCard.onClick.RemoveAllListeners();
                 gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.RemoveCard(CardUseEffectManager.instance.CurrentCard, ref AnimDuration); });
+                break;
+            case 36://丢弃一张手牌
+                gameView.obj_RemoveCard.SetActive(true);
+                CardUseEffectManager.instance.UseCopyCard = true;
+                gameView.btn_CopyCard.onClick.RemoveAllListeners();
+                gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.DiscardOneCard(CardUseEffectManager.instance.CurrentCard, ref AnimDuration); });
                 break;
         }
     }
@@ -787,6 +796,7 @@ public class Battle_PlayEffect : State
         bool hasEffect = true;
         bool playerUseCard = false;
         int playAnim = 0;
+        float AnimEffect = 0;
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
         CurrentCardPoolModel model = null;
         switch (nowPlayer.playerType)
@@ -800,7 +810,7 @@ public class Battle_PlayEffect : State
                 {
                     model = CardUseEffectManager.instance.CurrentCardModel;
                 }
-                CardUseEffectManager.instance.CardUseEffect(model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
+                CardUseEffectManager.instance.CardUseEffect(model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim, ref AnimEffect);
                 playerUseCard = true;
                 break;
             case PlayerType.NormalRobot:
@@ -845,7 +855,7 @@ public class Battle_PlayEffect : State
                     case 31:
                     case 32:
                         AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 连续攻击
@@ -860,24 +870,24 @@ public class Battle_PlayEffect : State
                             CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
                         }
                         AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 防御
                     case 2:
                     case 27:
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 血量变化
                     case 3:
                         if (model.Effect > 0)
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, model.Effect });
                         }
                         else
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         }
                         break;
                     #endregion
@@ -892,6 +902,7 @@ public class Battle_PlayEffect : State
                     #region 复制卡
                     case 12:
                         CardUseEffectManager.instance.UseCopyCard = true;
+                        gameView.btn_CopyCard.onClick.RemoveAllListeners();
                         gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.CopyCard(CardUseEffectManager.instance.CurrentCard); });
                         break;
                     #endregion
@@ -904,7 +915,7 @@ public class Battle_PlayEffect : State
                     case 28:
                         if (playAnim == 1)
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, model.Effect });
                         }
                         else
                         {
@@ -914,9 +925,9 @@ public class Battle_PlayEffect : State
                     #endregion
                     #region 耗血攻击
                     case 35:
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1" });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", model.Consume });
                         AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     default:
@@ -929,11 +940,11 @@ public class Battle_PlayEffect : State
             {
                 if (playAnim == 4)//扣血
                 {
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 }
                 else if (playAnim == 5)//回血
                 {
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 }
                 else if (playAnim == 3)//闪避动画
                 {
@@ -970,20 +981,21 @@ public class Battle_PlayEffect : State
                 else
                 {
                     string EffectOn = "";
+                    CurrentCardPoolModel model;
                     if (nowPlayer.playerType == PlayerType.OwnHuman)
                     {
-                        var model = CardUseEffectManager.instance.CurrentCardModel;
+                        model = CardUseEffectManager.instance.CurrentCardModel;
                         CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
                         EffectOn = "0";
                     }
                     else
                     {
-                        var model = gameView.CrtAIATKModel;
+                        model = gameView.CrtAIATKModel;
                         CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
                         EffectOn = "1";
                     }
                     AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                     comboATKNum--;
                 }
             }
@@ -1045,7 +1057,8 @@ public class Battle_AfterCardUse : State
                 break;
         }
         string EffectOn = "";
-        result = CardUseEffectManager.instance.CardUseAfterTriggerEvent(model, ref EffectOn, ref DrawACard);
+        float AnimEffect = 0;
+        result = CardUseEffectManager.instance.CardUseAfterTriggerEvent(model, ref EffectOn, ref DrawACard, ref AnimEffect);
         switch (result)
         {
             #region 卡牌回收
@@ -1055,20 +1068,20 @@ public class Battle_AfterCardUse : State
             #endregion
             #region 攻击和卡牌回收
             case 2:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             #endregion
             #region 防御和卡牌回收
             case 3:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             #endregion
             #region HP恢复和卡牌回收
             case 4:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             #endregion
@@ -1090,29 +1103,29 @@ public class Battle_AfterCardUse : State
             #endregion
             #region 攻击
             case 8:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
                 break;
             #endregion
             #region 防御
             case 9:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 break;
             #endregion
             #region 扣血和卡牌回收
             case 10:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             #endregion
             #region 血量恢复
             case 11:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 break;
             #endregion
             #region 血量扣减
             case 12:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 break;
             #endregion
             #region 销毁防御
@@ -1248,7 +1261,7 @@ public class Battle_AfterCardUse : State
                                 }
                             }
                             gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
-                            AnimationManager.instance.DoAnimation("Anim_HPDeduction", null);
+                            AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
                             break;
                         case 4:
                             if (crtModel.Effect < 0)//扣能量
@@ -1444,6 +1457,7 @@ public class Battle_GameEnd : State
         gameView.AnimObj.SetActive(true);
         if (gameView.hasPlayerOrAIDie == "0")//AI死亡
         {
+            BattleManager.instance.ResetBattle();
             UIManager.instance.OpenView("AiDieView");
             UIManager.instance.CloseView("GameView");
         }

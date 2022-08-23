@@ -13,8 +13,8 @@ public class GameView : BaseUI
 {
     #region 控件字段
     Image img_Background;//背景图片
-    public Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1, txt_CardType, txt_HasClickSetting;
-    public Button btn_Setting, btn_RoundOver, btn_leftCards, btn_rightCards, btn_CopyCard;
+    public Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1, txt_CardType, txt_HasClickSetting, txt_ClickPlayerOrAI;
+    public Button btn_Setting, btn_RoundOver, btn_leftCards, btn_rightCards, btn_CopyCard, btn_Player, btn_Enemy;
     public Image img_Player, img_Enemy, Pimg_HP, Eimg_HP, Pimg_Armor, Eimg_Armor;
     public GameObject obj_CardPools, P_buffObj, E_buffObj, MagnifyObj, CardDetailObj, obj_RemoveCard, AiATKBar_obj;
     public Text txt_P_HP, txt_E_HP, txt_P_Armor, txt_E_Armor, txt_Left_Count, txt_Right_Count;
@@ -101,6 +101,7 @@ public class GameView : BaseUI
         txt_SettingHasBtn = GameObject.Find("MainCanvas/txt_SettingHasBtn").GetComponent<Text>();
         txt_CardType = GameObject.Find("MainCanvas/txt_CardType").GetComponent<Text>();
         txt_HasClickSetting = GameObject.Find("MainCanvas/txt_HasClickSetting").GetComponent<Text>();
+        txt_ClickPlayerOrAI = GameObject.Find("MainCanvas/txt_ClickPlayerOrAI").GetComponent<Text>();
 
         img_Background = transform.Find("BG").GetComponent<Image>();
         btn_Setting = transform.Find("UI/Setting").GetComponent<Button>();
@@ -108,6 +109,8 @@ public class GameView : BaseUI
         btn_leftCards = transform.Find("UI/CardPools/left_Card").GetComponent<Button>();
         btn_rightCards = transform.Find("UI/CardPools/right_Card").GetComponent<Button>();
         btn_CopyCard = transform.Find("UI/CardPools/obj_RemoveCard/Button").GetComponent<Button>();
+        btn_Player = transform.Find("UI/Player/Player").GetComponent<Button>();
+        btn_Enemy = transform.Find("UI/Enemy/Enemy").GetComponent<Button>();
 
         img_Player = transform.Find("UI/Player/Player").GetComponent<Image>();
         img_Enemy = transform.Find("UI/Enemy/Enemy").GetComponent<Image>();
@@ -144,9 +147,27 @@ public class GameView : BaseUI
         btn_leftCards.onClick.AddListener(LeftCardsClick);
         btn_rightCards.onClick.AddListener(RightCardsClick);
         btn_RoundOver.onClick.AddListener(RoundOverClick);
+        btn_Player.onClick.AddListener(delegate { ShowBuffDetails("0"); });
+        btn_Enemy.onClick.AddListener(delegate { ShowBuffDetails("1"); });
     }
 
+    #endregion
+
     #region 点击事件
+    /// <summary>
+    /// 点击展示角色所拥有的的buff详情
+    /// </summary>
+    /// <param name="playerOrAI"></param>
+    public void ShowBuffDetails(string playerOrAI)
+    {
+        txt_ReturnView.text = "GameView";
+        txt_CardType.text = "1";
+        txt_HasClickSetting.text = "1";
+        txt_ClickPlayerOrAI.text = playerOrAI;
+        UIManager.instance.OpenView("BUFFDetailsView");
+        UIManager.instance.CloseView("GameView");
+    }
+
     public void SettingClick()
     {
         txt_ReturnView.text = "GameView";
@@ -261,13 +282,36 @@ public class GameView : BaseUI
             LayoutRebuilder.ForceRebuildLayoutImmediate(thisParent);
             CardUseEffectManager.instance.UseCopyCard = false;
             CardUseEffectManager.instance.CopyBoxCardExist = false;
+            CardUseEffectManager.instance.hasExecuteCardEffect = true;
             animDuration = AnimationManager.instance.DoAnimation("Anim_RemoveCard", null);
             obj_RemoveCard.SetActive(false);
         }
     }
-    #endregion
-    #endregion
 
+    /// <summary>
+    /// 丢弃一张手牌
+    /// </summary>
+    /// <param name="thisObj"></param>
+    public void DiscardOneCard(GameObject thisObj, ref float animDuration)
+    {
+        if (CardUseEffectManager.instance.CopyBoxCardExist)
+        {
+            CardItem cardItem = thisObj.GetComponent<CardItem>();
+            var model = cardItem.BasisData;//移除当前卡
+            var discard = ATKBarCardList.Find(a => a.SingleID == model.SingleID);
+            ATKBarCardList.Remove(discard);
+            UsedCardList.Add(discard);
+            
+            DeleteGameObj(thisObj);
+            animDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(thisParent);
+            CardUseEffectManager.instance.UseCopyCard = false;
+            CardUseEffectManager.instance.CopyBoxCardExist = false;
+            CardUseEffectManager.instance.hasExecuteCardEffect = true;
+            obj_RemoveCard.SetActive(false);
+        }
+    }
+    #endregion
     #region OnOpen
     public override void OnOpen()
     {
@@ -294,6 +338,9 @@ public class GameView : BaseUI
         chpterID = 1;//目前使用测试数据，固定为第一关
 
         #region 数据源初始化
+        AiCardList = new List<CurrentCardPoolModel>();
+        AiATKCardList = new List<CurrentCardPoolModel>();
+        UsedCardList = new List<CurrentCardPoolModel>();
         Common.SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
         AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == 1004);//由等级随机一个AI
@@ -359,6 +406,14 @@ public class GameView : BaseUI
     /// </summary>
     private void InitUIState()
     {
+        #region 血量初始化
+        RectTransform pRect = Pimg_HP.GetComponent<RectTransform>();
+        pRect.sizeDelta = new Vector2(400, 45);
+        Pimg_HP.transform.localPosition = new Vector3(0, Pimg_HP.transform.localPosition.y);
+        RectTransform eRect = Eimg_HP.GetComponent<RectTransform>();
+        eRect.sizeDelta = new Vector2(400, 45);
+        Eimg_HP.transform.localPosition = new Vector3(0, Pimg_HP.transform.localPosition.y);
+        #endregion
         txt_Right_Count.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
         txt_P_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
         Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0);
@@ -367,7 +422,16 @@ public class GameView : BaseUI
         Common.ImageBind(AiRole.RoleImgUrl, img_Enemy);
         CreateEnergyImage(PlayerRole.Energy);
         AIATKCardPoolsBind();
-
+        #region 清空攻击栏的对象
+        if (obj_CardPools != null)
+        {
+            int childCount = obj_CardPools.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(obj_CardPools.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        } 
+        #endregion
     }
 
     private void InitBUFF()
@@ -1047,6 +1111,15 @@ public class GameView : BaseUI
     {
         GameObject parentObjectBG = transform.Find("UI/CardPools/obj_EnergyBG").gameObject;
         GameObject parentObject = transform.Find("UI/CardPools/obj_Energy").gameObject;
+        if (parentObjectBG != null)
+        {
+            int childCount = parentObjectBG.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(parentObjectBG.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+                DestroyImmediate(parentObject.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
         //Debug.Log(parentObject.transform.localPosition);
         for (int i = 0; i < count; i++)
         {
@@ -1065,6 +1138,14 @@ public class GameView : BaseUI
     /// </summary>
     public void AIATKCardPoolsBind()
     {
+        if (AiATKBar_obj != null)
+        {
+            int childCount = AiATKBar_obj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(AiATKBar_obj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
         if (AiATKCardList != null && AiATKCardList?.Count > 0)
         {
             for (int i = 0; i < AiATKCardList.Count; i++)

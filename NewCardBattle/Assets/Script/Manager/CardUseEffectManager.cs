@@ -27,6 +27,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     public bool HasNumberValueChange = false;//是否数值恢复
     public int BeRemoveCardNum = 0;//被移除的卡数量
     public bool HasCrit = false;//暴击BUFF是否已被使用
+    public bool hasExecuteCardEffect = true;
     #endregion
 
     /// <summary>
@@ -38,7 +39,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     /// <returns>0没有动画、1卡牌回收、2攻击、3防御、4血量恢复、5能量恢复、6移除卡牌、7抽卡动画、8血量扣除、9摧毁防御
     /// 24移除所有手牌
     /// </returns>
-    public int CardUseBeforeTriggerEvent(CurrentCardPoolModel model, int PlayerOrAI, ref string EffectOn)
+    public int CardUseBeforeTriggerEvent(CurrentCardPoolModel model, int PlayerOrAI, ref string EffectOn, ref float AnimEffect)
     {
         var ownRole = BattleManager.instance.OwnPlayerData[0];
         var AiRole = BattleManager.instance.EnemyPlayerData[0];
@@ -240,6 +241,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 gameView.txt_E_Armor.text = AiRole.Armor.ToString();
                                 EffectOn = "0";
                             }
+                            AnimEffect = item.TriggerValue;
                             result = 3;
                             break;
                         #endregion
@@ -261,6 +263,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, item.TriggerValue, 0);
                                         ownRole.bloodNow += Convert.ToInt32(item.TriggerValue);
                                     }
+                                    AnimEffect = item.TriggerValue;
                                     result = 8;
 
                                 }
@@ -273,6 +276,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         ownRole.bloodNow = ownRole.bloodMax;
                                     }
                                     result = 4;
+                                    AnimEffect = item.TriggerValue;
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
                                 EffectOn = "1";
@@ -293,6 +297,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, item.TriggerValue, 0);
                                         AiRole.bloodNow += Convert.ToInt32(item.TriggerValue);
                                     }
+                                    AnimEffect = item.TriggerValue;
                                     result = 8;
 
                                 }
@@ -305,6 +310,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         AiRole.bloodNow = AiRole.bloodMax;
                                     }
                                     result = 4;
+                                    AnimEffect = item.TriggerValue;
                                 }
                                 gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
                                 EffectOn = "0";
@@ -392,6 +398,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             result = 17;
                             break;
                         #endregion
+                        #region 丢弃一张手牌
+                        case 36:
+                            result = 36;
+                            break;
+                        #endregion
                         #region 移除所有手牌
                         case 24:
                             BeRemoveCardNum = gameView.ATKBarCardList.Count - 1;
@@ -401,6 +412,10 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                         default:
                             break;
                     }
+                }
+                else
+                {
+                    hasExecuteCardEffect = false;
                 }
             }
         }
@@ -414,352 +429,227 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     /// <param name="EffectOn">效果作用在。0AI,1角色</param>
     /// <param name="hasEffect">是否有效果</param>
     /// <param name="PlayAnim">播放什么动画0无、1防御、2摧毁防御、3闪避动画、4扣血、5回血</param>
-    public void CardUseEffect(CurrentCardPoolModel CardData, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect, ref int PlayAnim)
+    public void CardUseEffect(CurrentCardPoolModel CardData, ref bool hasUseCard, ref string EffectOn, ref bool hasEffect, ref int PlayAnim, ref float AnimEffect)
     {
-        var ownRole = BattleManager.instance.OwnPlayerData[0];
-        var AiRole = BattleManager.instance.EnemyPlayerData[0];
-        Dictionary<string, string> dic = new Dictionary<string, string>();
-        Common.DicDataRead(ref dic, GlobalAttr.EffectTypeFileName, "Card");
-        //能量不足无法使用卡牌
-        if (CardData.EffectType != 35)
+        if (hasExecuteCardEffect)
         {
-            if (ownRole.Energy < CardData.Consume)
+            var ownRole = BattleManager.instance.OwnPlayerData[0];
+            var AiRole = BattleManager.instance.EnemyPlayerData[0];
+            Dictionary<string, string> dic = new Dictionary<string, string>();
+            Common.DicDataRead(ref dic, GlobalAttr.EffectTypeFileName, "Card");
+            //能量不足无法使用卡牌
+            if (CardData.EffectType != 35)
             {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                return;
+                if (ownRole.Energy < CardData.Consume)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    return;
+                }
             }
-        }
-        #region BUFF限制卡牌使用
-        var buffResult = BUFFManager.instance.BUFFApply(ref ownRole.buffList, AiRole.buffList, ref CardData, ref ownRole.handCardList);
-        if (buffResult?.Count > 0)
-        {
-            if (buffResult.Exists(a => a.EffectType == 1 && a.HasValid == false))//卡无效果未被使用
+            #region BUFF限制卡牌使用
+            var buffResult = BUFFManager.instance.BUFFApply(ref ownRole.buffList, AiRole.buffList, ref CardData, ref ownRole.handCardList);
+            if (buffResult?.Count > 0)
             {
-                hasUseCard = false;
-                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                return;
+                if (buffResult.Exists(a => a.EffectType == 1 && a.HasValid == false))//卡无效果未被使用
+                {
+                    hasUseCard = false;
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    return;
+                }
+                else if (buffResult.Exists(a => a.EffectType == 2 && a.HasValid == false))//卡无效果已被使用
+                {
+                    hasUseCard = true;
+                    hasEffect = false;
+                    PlayAnim = 3;
+                    EffectOn = "1";
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    return;
+                }
+                else if (buffResult.Exists(a => a.HPChange > 0))//狂暴回血
+                {
+                    var buff = buffResult.Find(a => a.HPChange != 0);
+                    if (ownRole.bloodNow != ownRole.bloodMax)
+                    {
+                        var changeHP = buff.HPChange;
+                        if (ownRole.bloodNow + buff.HPChange > ownRole.bloodMax)
+                        {
+                            changeHP = ownRole.bloodMax - ownRole.bloodNow;
+                            ownRole.bloodNow = ownRole.bloodMax;
+                        }
+                        else
+                        {
+                            ownRole.bloodNow += Convert.ToInt32(changeHP);
+                        }
+                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
+                    }
+                    AnimEffect = buff.HPChange;
+                    PlayAnim = 5;
+                    gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                }
             }
-            else if (buffResult.Exists(a => a.EffectType == 2 && a.HasValid == false))//卡无效果已被使用
+            #endregion
+            #region 卡牌拖动到任意位置
+            #region 血量变化
+            if (CardData.EffectType == 3)//血量变化
             {
                 hasUseCard = true;
-                hasEffect = false;
-                PlayAnim = 3;
-                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                return;
-            }
-            else if (buffResult.Exists(a => a.HPChange > 0))//狂暴回血
-            {
-                var buff = buffResult.Find(a => a.HPChange != 0);
-                if (ownRole.bloodNow != ownRole.bloodMax)
+                if (CardData.Consume > 0)
                 {
-                    var changeHP = buff.HPChange;
-                    if (ownRole.bloodNow + buff.HPChange > ownRole.bloodMax)
+                    Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                    ownRole.Energy -= CardData.Consume;
+                }
+                if (CardData.Effect < 0)
+                {
+                    var effect = ownRole.bloodNow + Convert.ToInt32(CardData.Effect);
+                    if (effect < 0)//血量不足以使用此卡
                     {
-                        changeHP = ownRole.bloodMax - ownRole.bloodNow;
-                        ownRole.bloodNow = ownRole.bloodMax;
+                        hasUseCard = false;
                     }
                     else
                     {
-                        ownRole.bloodNow += Convert.ToInt32(changeHP);
+                        Destroy(CurrentCard);
+                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, CardData.Effect, 0);
+                        ownRole.bloodNow += Convert.ToInt32(CardData.Effect);
                     }
-                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
                 }
-                PlayAnim = 5;
+                else
+                {
+                    Destroy(CurrentCard);
+                    if (ownRole.bloodNow != ownRole.bloodMax)
+                    {
+                        var changeHP = CardData.Effect;
+                        if (ownRole.bloodNow + CardData.Effect > ownRole.bloodMax)
+                        {
+                            changeHP = ownRole.bloodMax - ownRole.bloodNow;
+                            ownRole.bloodNow = ownRole.bloodMax;
+                        }
+                        else
+                        {
+                            ownRole.bloodNow += Convert.ToInt32(changeHP);
+                        }
+                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
+                    }
+                }
+                EffectOn = "1";
                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
             }
-        }
-        #endregion
-        #region 卡牌拖动到任意位置
-        #region 血量变化
-        if (CardData.EffectType == 3)//血量变化
-        {
-            hasUseCard = true;
-            if (CardData.Consume > 0)
+            #endregion
+            #region 能量变化
+            else if (CardData.EffectType == 4)//能量变化
             {
-                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                ownRole.Energy -= CardData.Consume;
-            }
-            if (CardData.Effect < 0)
-            {
-                var effect = ownRole.bloodNow + Convert.ToInt32(CardData.Effect);
-                if (effect < 0)//血量不足以使用此卡
+                hasUseCard = true;
+                if (CardData.Effect < 0)//扣能量
                 {
-                    hasUseCard = false;
-                }
-                else
-                {
-                    Destroy(CurrentCard);
-                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, CardData.Effect, 0);
-                    ownRole.bloodNow += Convert.ToInt32(CardData.Effect);
-                }
-            }
-            else
-            {
-                Destroy(CurrentCard);
-                if (ownRole.bloodNow != ownRole.bloodMax)
-                {
-                    var changeHP = CardData.Effect;
-                    if (ownRole.bloodNow + CardData.Effect > ownRole.bloodMax)
+                    var effect = ownRole.Energy + Convert.ToInt32(CardData.Effect);
+                    if (effect < 0)//能量不足以使用此卡
                     {
-                        changeHP = ownRole.bloodMax - ownRole.bloodNow;
-                        ownRole.bloodNow = ownRole.bloodMax;
+                        hasUseCard = false;
                     }
                     else
                     {
-                        ownRole.bloodNow += Convert.ToInt32(changeHP);
+                        Destroy(CurrentCard);
+                        Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(CardData.Effect * -1), 0, ownRole.EnergyMax);
+                        ownRole.Energy += Convert.ToInt32(CardData.Effect);
                     }
-                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
-                }
-            }
-            EffectOn = "1";
-            gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
-        }
-        #endregion
-        #region 能量变化
-        else if (CardData.EffectType == 4)//能量变化
-        {
-            hasUseCard = true;
-            if (CardData.Effect < 0)//扣能量
-            {
-                var effect = ownRole.Energy + Convert.ToInt32(CardData.Effect);
-                if (effect < 0)//能量不足以使用此卡
-                {
-                    hasUseCard = false;
                 }
                 else
                 {
                     Destroy(CurrentCard);
-                    Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(CardData.Effect * -1), 0, ownRole.EnergyMax);
-                    ownRole.Energy += Convert.ToInt32(CardData.Effect);
-                }
-            }
-            else
-            {
-                Destroy(CurrentCard);
-                int effect = Convert.ToInt32(CardData.Effect);
-                if (ownRole.Energy + effect > ownRole.EnergyMax)
-                {
-                    effect = ownRole.EnergyMax - ownRole.Energy;
-                }
-                Common.EnergyImgChange(ownRole.Energy, effect, 1, ownRole.EnergyMax);
-                ownRole.Energy += effect;
-            }
-            EffectOn = "1";
-        }
-        #endregion
-        #region 复制卡
-        else if (CardData.EffectType == 12)//复制卡
-        {
-            hasUseCard = true;
-            Destroy(CurrentCard);
-            if (CardData.Consume > 0)
-            {
-                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                ownRole.Energy -= CardData.Consume;
-            }
-            gameView.obj_RemoveCard.SetActive(true);
-        }
-        #endregion
-        #region 混乱杀机
-        else if (CardData.EffectType == 30)//每有一层混乱手牌攻击力+1
-        {
-            hasUseCard = true;
-            Destroy(CurrentCard);
-            if (CardData.Consume > 0)
-            {
-                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                ownRole.Energy -= CardData.Consume;
-            }
-            if (ownRole.buffList?.Count > 0)
-            {
-                var chaos = ownRole.buffList.Find(a => a.EffectType == 29);
-                if (chaos != null)
-                {
-                    foreach (var item in gameView.ATKBarCardList)
+                    int effect = Convert.ToInt32(CardData.Effect);
+                    if (ownRole.Energy + effect > ownRole.EnergyMax)
                     {
-                        if (item.CardType == 0)
-                        {
-                            item.Effect += chaos.Num;
-                        }
+                        effect = ownRole.EnergyMax - ownRole.Energy;
                     }
-                    gameView.RealTimeChangeCardData(0);
-                    HasNumberValueChange = true;
+                    Common.EnergyImgChange(ownRole.Energy, effect, 1, ownRole.EnergyMax);
+                    ownRole.Energy += effect;
                 }
-            }
-        }
-        #endregion
-        #region 混乱杀机
-        else if (CardData.EffectType == 27)//当前护甲翻倍
-        {
-            hasUseCard = true;
-            Destroy(CurrentCard);
-            if (CardData.Consume > 0)
-            {
-                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                ownRole.Energy -= CardData.Consume;
-            }
-            if (ownRole.Armor > 0)
-            {
-                gameView.Pimg_Armor.transform.localScale = Vector3.one;
-                ownRole.Armor *= 2;
-                if (ownRole.Armor > ownRole.bloodMax)
-                {
-                    ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
-                }
-                gameView.txt_P_Armor.text = ownRole.Armor.ToString();
                 EffectOn = "1";
             }
-        }
-        #endregion
-        #region 无效果
-        else if (CardData.EffectType == 0)
-        {
-            hasUseCard = true;
-            PlayAnim = 0;
-            Destroy(CurrentCard);
-        }
-        #endregion
-        #endregion
-        if (!hasUseCard)
-        {
-            if (CardToRoleID == 0)
+            #endregion
+            #region 复制卡
+            else if (CardData.EffectType == 12)//复制卡
             {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                return;
+                hasUseCard = true;
+                Destroy(CurrentCard);
+                if (CardData.Consume > 0)
+                {
+                    Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                    ownRole.Energy -= CardData.Consume;
+                }
+                gameView.obj_RemoveCard.SetActive(true);
             }
-            else
+            #endregion
+            #region 混乱杀机
+            else if (CardData.EffectType == 30)//每有一层混乱手牌攻击力+1
             {
-                #region 愤怒、虚弱等作用在数值的Buff
-                if (CardData.EffectType == 8 || CardData.EffectType == 11)//愤怒
+                hasUseCard = true;
+                Destroy(CurrentCard);
+                if (CardData.Consume > 0)
                 {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
+                    Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                    ownRole.Energy -= CardData.Consume;
+                }
+                if (ownRole.buffList?.Count > 0)
+                {
+                    var chaos = ownRole.buffList.Find(a => a.EffectType == 29);
+                    if (chaos != null)
                     {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
-                    }
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        foreach (var item in gameView.ATKBarCardList)
+                        {
+                            if (item.CardType == 0)
+                            {
+                                item.Effect += chaos.Num;
+                            }
+                        }
+                        gameView.RealTimeChangeCardData(0);
+                        HasNumberValueChange = true;
                     }
                 }
-                #endregion
-                #region 暴击等作用在攻击的Buff
-                else if (CardData.EffectType == 10)//暴击
+            }
+            #endregion
+            #region 混乱杀机
+            else if (CardData.EffectType == 27)//当前护甲翻倍
+            {
+                hasUseCard = true;
+                Destroy(CurrentCard);
+                if (CardData.Consume > 0)
                 {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
-                    {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
-                    }
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
+                    Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                    ownRole.Energy -= CardData.Consume;
                 }
-                #endregion
-                #region 束缚、缠绕
-                else if (CardData.EffectType == 20 || CardData.EffectType == 21)
+                if (ownRole.Armor > 0)
                 {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
+                    gameView.Pimg_Armor.transform.localScale = Vector3.one;
+                    ownRole.Armor *= 2;
+                    if (ownRole.Armor > ownRole.bloodMax)
                     {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
+                        ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
                     }
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 1, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 1, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
+                    gameView.txt_P_Armor.text = ownRole.Armor.ToString();
+                    EffectOn = "1";
                 }
-                #endregion
-                #region 免疫
-                else if (CardData.EffectType == 9)//免疫
+            }
+            #endregion
+            #region 无效果
+            else if (CardData.EffectType == 0)
+            {
+                hasUseCard = true;
+                PlayAnim = 0;
+                Destroy(CurrentCard);
+            }
+            #endregion
+            #endregion
+            if (!hasUseCard)
+            {
+                if (CardToRoleID == 0)
                 {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
-                    {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
-                    }
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 3, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 3, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    return;
                 }
-                #endregion
-                #region 混乱
-                else if (CardData.EffectType == 29)
+                else
                 {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
-                    {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
-                    }
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                }
-                #endregion
-                #region 重伤
-                else if (CardData.EffectType == 22)
-                {
-                    hasUseCard = true;
-                    Destroy(CurrentCard);
-                    if (CardData.Consume > 0)
-                    {
-                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                        ownRole.Energy -= CardData.Consume;
-                    }
-                    int effectValue = Convert.ToInt32(CardData.Effect);
-                    if (BeRemoveCardNum > 0)
-                    {
-                        effectValue *= BeRemoveCardNum;
-                    }
-                    Debug.Log(effectValue);
-                    if (CardToRoleID == ownRole.playerID)//加到角色上
-                    {
-                        AddBUFF(0, 2, CardData.EffectType, effectValue, ref CardData);
-                    }
-                    else if (CardToRoleID == AiRole.playerID)//加到AI上
-                    {
-                        AddBUFF(1, 2, CardData.EffectType, effectValue, ref CardData);
-                    }
-                }
-                #endregion
-                #region 卡牌拖动到角色位置
-                else if (BattleManager.instance.OwnPlayerData.Find(a => a.playerID == CardToRoleID) != null)//卡牌拖动到角色位置
-                {
-                    #region 防御
-                    if (CardData.EffectType == 2)//防御
+                    #region 愤怒、虚弱等作用在数值的Buff
+                    if (CardData.EffectType == 8 || CardData.EffectType == 11)//愤怒
                     {
                         hasUseCard = true;
                         Destroy(CurrentCard);
@@ -768,18 +658,18 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
                             ownRole.Energy -= CardData.Consume;
                         }
-                        gameView.Pimg_Armor.transform.localScale = Vector3.one;
-                        ownRole.Armor += Convert.ToInt32(CardData.Effect);
-                        if (ownRole.Armor > ownRole.bloodMax)
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
                         {
-                            ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
+                            AddBUFF(0, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
                         }
-                        gameView.txt_P_Armor.text = ownRole.Armor.ToString();
-                        EffectOn = "1";
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
+                        {
+                            AddBUFF(1, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
                     }
                     #endregion
-                    #region 概率防御
-                    else if (CardData.EffectType == 28)
+                    #region 暴击等作用在攻击的Buff
+                    else if (CardData.EffectType == 10)//暴击
                     {
                         hasUseCard = true;
                         Destroy(CurrentCard);
@@ -788,19 +678,115 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
                             ownRole.Energy -= CardData.Consume;
                         }
-                        int random = UnityEngine.Random.Range(0, 4);
-                        if (random == 0)//销毁防御
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
                         {
-                            if (ownRole.Armor > 0)
-                            {
-                                ownRole.Armor = 0;
-                                gameView.txt_P_Armor.text = AiRole.Armor.ToString();
-                                gameView.Pimg_Armor.transform.localScale = Vector3.zero;
-                            }
-                            PlayAnim = 2;
+                            AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
                         }
-                        else//加护甲
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
                         {
+                            AddBUFF(1, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                    }
+                    #endregion
+                    #region 束缚、缠绕
+                    else if (CardData.EffectType == 20 || CardData.EffectType == 21)
+                    {
+                        hasUseCard = true;
+                        Destroy(CurrentCard);
+                        if (CardData.Consume > 0)
+                        {
+                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                            ownRole.Energy -= CardData.Consume;
+                        }
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
+                        {
+                            AddBUFF(0, 1, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
+                        {
+                            AddBUFF(1, 1, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                    }
+                    #endregion
+                    #region 免疫
+                    else if (CardData.EffectType == 9)//免疫
+                    {
+                        hasUseCard = true;
+                        Destroy(CurrentCard);
+                        if (CardData.Consume > 0)
+                        {
+                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                            ownRole.Energy -= CardData.Consume;
+                        }
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
+                        {
+                            AddBUFF(0, 3, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
+                        {
+                            AddBUFF(1, 3, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                    }
+                    #endregion
+                    #region 混乱
+                    else if (CardData.EffectType == 29)
+                    {
+                        hasUseCard = true;
+                        Destroy(CurrentCard);
+                        if (CardData.Consume > 0)
+                        {
+                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                            ownRole.Energy -= CardData.Consume;
+                        }
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
+                        {
+                            AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
+                        {
+                            AddBUFF(1, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                    }
+                    #endregion
+                    #region 重伤
+                    else if (CardData.EffectType == 22)
+                    {
+                        hasUseCard = true;
+                        Destroy(CurrentCard);
+                        if (CardData.Consume > 0)
+                        {
+                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                            ownRole.Energy -= CardData.Consume;
+                        }
+                        int effectValue = Convert.ToInt32(CardData.Effect);
+                        if (BeRemoveCardNum > 0)
+                        {
+                            effectValue *= BeRemoveCardNum;
+                        }
+                        Debug.Log(effectValue);
+                        if (CardToRoleID == ownRole.playerID)//加到角色上
+                        {
+                            AddBUFF(0, 2, CardData.EffectType, effectValue, ref CardData);
+                        }
+                        else if (CardToRoleID == AiRole.playerID)//加到AI上
+                        {
+                            AddBUFF(1, 2, CardData.EffectType, effectValue, ref CardData);
+                        }
+                    }
+                    #endregion
+                    #region 卡牌拖动到角色位置
+                    else if (BattleManager.instance.OwnPlayerData.Find(a => a.playerID == CardToRoleID) != null)//卡牌拖动到角色位置
+                    {
+                        #region 防御
+                        if (CardData.EffectType == 2)//防御
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
                             gameView.Pimg_Armor.transform.localScale = Vector3.one;
                             ownRole.Armor += Convert.ToInt32(CardData.Effect);
                             if (ownRole.Armor > ownRole.bloodMax)
@@ -808,262 +794,99 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
                             }
                             gameView.txt_P_Armor.text = ownRole.Armor.ToString();
-                            PlayAnim = 1;
+                            EffectOn = "1";
                         }
-                        EffectOn = "1";
-                    }
-                    #endregion
-                    #region 蓄力
-                    else if (CardData.EffectType == 13)//AI每次攻击手牌攻击力+1
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        AddBUFF(0, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    #endregion
-                    #region 闪避
-                    else if (CardData.EffectType == 26)//百分之五十的闪避
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    #endregion
-                    #region 狂暴
-                    else if (CardData.EffectType == 33)//下次攻击全能吸血
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
-                    }
-                    #endregion
-                }
-                #endregion
-                #region 卡牌拖动到敌人位置
-                else if (BattleManager.instance.EnemyPlayerData.Find(a => a.playerID == CardToRoleID) != null)//卡牌拖动到敌人位置
-                {
-                    #region 攻击
-                    if (CardData.EffectType == 1)//攻击
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        int DeductionHp = Convert.ToInt32(CardData.Effect);
-                        if (AiRole.Armor > 0)
-                        {
-                            if (AiRole.Armor >= CardData.Effect)
-                            {
-                                DeductionHp = 0;
-                                AiRole.Armor -= Convert.ToInt32(CardData.Effect);
-                                gameView.txt_E_Armor.text = AiRole.Armor.ToString();
-                            }
-                            else
-                            {
-                                DeductionHp -= AiRole.Armor;
-                                AiRole.Armor = 0;
-                            }
-                            if (AiRole.Armor == 0)
-                            {
-                                gameView.Eimg_Armor.transform.localScale = Vector3.zero;
-                            }
-                        }
-                        Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
-                        AiRole.bloodNow -= DeductionHp;
-                        if (AiRole.bloodNow <= 0)
-                        {
-                            AiRole.bloodNow = 0;
-                            //AI死亡
-                            gameView.AiDie();
-                        }
-                        gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
-                        EffectOn = "0";
-                        //攻击结束后、更新一遍buffUI操作
-                        gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
-                    }
-                    #endregion
-                    #region 攻击后卡牌攻击力叠加
-                    else if (CardData.EffectType == 14)//卡牌攻击力叠加
-                    {
-                        #region 攻击
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        if (SuperPositionEffect < CardData.InitEffect)
-                        {
-                            SuperPositionEffect = CardData.InitEffect;
-                        }
-                        int DeductionHp = Convert.ToInt32(SuperPositionEffect);
-                        if (AiRole.Armor > 0)
-                        {
-                            if (AiRole.Armor >= SuperPositionEffect)
-                            {
-                                DeductionHp = 0;
-                                AiRole.Armor -= Convert.ToInt32(SuperPositionEffect);
-                                gameView.txt_E_Armor.text = AiRole.Armor.ToString();
-                            }
-                            else
-                            {
-                                DeductionHp -= AiRole.Armor;
-                                AiRole.Armor = 0;
-                            }
-                            if (AiRole.Armor == 0)
-                            {
-                                gameView.Eimg_Armor.transform.localScale = Vector3.zero;
-                            }
-                        }
-                        Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
-                        AiRole.bloodNow -= DeductionHp;
-                        if (AiRole.bloodNow <= 0)
-                        {
-                            AiRole.bloodNow = 0;
-                            //AI死亡
-                            gameView.AiDie();
-                        }
-                        gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
-                        EffectOn = "0";
-                        //攻击结束后、更新一遍buffUI操作
-                        gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
                         #endregion
-
-                        var cardData = ownRole.handCardList.Find(a => a.SingleID == CardData.SingleID);
-                        ActivateSuperPos = true;
-                        SuperPositionEffect = cardData.InitEffect;
-                        cardData.Effect = cardData.InitEffect;
-                        hasUseCard = true;
-                    }
-                    #endregion
-                    #region 连续攻击
-                    else if (CardData.EffectType == 5)//连续攻击
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        EffectOn = "0";
-                    }
-                    #endregion
-                    #region 攻击无视防御
-                    else if (CardData.EffectType == 7)//攻击无视防御
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        int DeductionHp = Convert.ToInt32(CardData.Effect);
-                        Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
-                        AiRole.bloodNow -= DeductionHp;
-                        if (AiRole.bloodNow <= 0)
-                        {
-                            AiRole.bloodNow = 0;
-                            //AI死亡
-                            gameView.AiDie();
-                        }
-                        gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
-                        EffectOn = "0";
-                    }
-                    #endregion
-                    #region 销毁防御
-                    else if (CardData.EffectType == 6)//销毁防御
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        if (CardData.Consume > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                            ownRole.Energy -= CardData.Consume;
-                        }
-                        if (AiRole.Armor > 0)
-                        {
-                            AiRole.Armor = 0;
-                            gameView.txt_E_Armor.text = AiRole.Armor.ToString();
-                            gameView.Eimg_Armor.transform.localScale = Vector3.zero;
-                        }
-                    }
-                    #endregion
-                    #region 火力全开
-                    if (CardData.EffectType == 31)//攻击
-                    {
-                        hasUseCard = true;
-                        Destroy(CurrentCard);
-                        int DeductionHp = Convert.ToInt32(CardData.Effect * ownRole.Energy);
-                        if (ownRole.Energy > 0)
-                        {
-                            Common.EnergyImgChange(ownRole.Energy, ownRole.Energy, 0, ownRole.EnergyMax);
-                            ownRole.Energy = 0;
-                        }
-                        if (AiRole.Armor > 0)
-                        {
-                            if (AiRole.Armor >= CardData.Effect)
-                            {
-                                DeductionHp = 0;
-                                AiRole.Armor -= Convert.ToInt32(CardData.Effect);
-                                gameView.txt_E_Armor.text = AiRole.Armor.ToString();
-                            }
-                            else
-                            {
-                                DeductionHp -= AiRole.Armor;
-                                AiRole.Armor = 0;
-                            }
-                            if (AiRole.Armor == 0)
-                            {
-                                gameView.Eimg_Armor.transform.localScale = Vector3.zero;
-                            }
-                        }
-                        Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
-                        AiRole.bloodNow -= DeductionHp;
-                        if (AiRole.bloodNow <= 0)
-                        {
-                            AiRole.bloodNow = 0;
-                            //AI死亡
-                            gameView.AiDie();
-                        }
-                        gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
-                        EffectOn = "0";
-                        //攻击结束后、更新一遍buffUI操作
-                        gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
-                    }
-                    #endregion
-                    #region 耗血攻击
-                    if (CardData.EffectType == 35)//攻击
-                    {
-                        if (ownRole.bloodNow > CardData.Consume)
+                        #region 概率防御
+                        else if (CardData.EffectType == 28)
                         {
                             hasUseCard = true;
                             Destroy(CurrentCard);
-                            #region 血量消耗
-                            Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, CardData.Consume, 0);
-                            ownRole.bloodNow -= Convert.ToInt32(CardData.Consume);
-                            gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
-                            #endregion
-
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            int random = UnityEngine.Random.Range(0, 4);
+                            if (random == 0)//销毁防御
+                            {
+                                if (ownRole.Armor > 0)
+                                {
+                                    ownRole.Armor = 0;
+                                    gameView.txt_P_Armor.text = AiRole.Armor.ToString();
+                                    gameView.Pimg_Armor.transform.localScale = Vector3.zero;
+                                }
+                                PlayAnim = 2;
+                            }
+                            else//加护甲
+                            {
+                                gameView.Pimg_Armor.transform.localScale = Vector3.one;
+                                ownRole.Armor += Convert.ToInt32(CardData.Effect);
+                                if (ownRole.Armor > ownRole.bloodMax)
+                                {
+                                    ownRole.Armor = Convert.ToInt32(ownRole.bloodMax);
+                                }
+                                gameView.txt_P_Armor.text = ownRole.Armor.ToString();
+                                AnimEffect = CardData.Effect;
+                                PlayAnim = 1;
+                            }
+                            EffectOn = "1";
+                        }
+                        #endregion
+                        #region 蓄力
+                        else if (CardData.EffectType == 13)//AI每次攻击手牌攻击力+1
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            AddBUFF(0, 0, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        #endregion
+                        #region 闪避
+                        else if (CardData.EffectType == 26)//百分之五十的闪避
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        #endregion
+                        #region 狂暴
+                        else if (CardData.EffectType == 33)//下次攻击全能吸血
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            AddBUFF(0, 4, CardData.EffectType, Convert.ToInt32(CardData.Effect), ref CardData);
+                        }
+                        #endregion
+                    }
+                    #endregion
+                    #region 卡牌拖动到敌人位置
+                    else if (BattleManager.instance.EnemyPlayerData.Find(a => a.playerID == CardToRoleID) != null)//卡牌拖动到敌人位置
+                    {
+                        #region 攻击
+                        if (CardData.EffectType == 1)//攻击
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
                             int DeductionHp = Convert.ToInt32(CardData.Effect);
                             if (AiRole.Armor > 0)
                             {
@@ -1096,16 +919,219 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             //攻击结束后、更新一遍buffUI操作
                             gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
                         }
-                        else
+                        #endregion
+                        #region 攻击后卡牌攻击力叠加
+                        else if (CardData.EffectType == 14)//卡牌攻击力叠加
                         {
-                            hasUseCard = false;
+                            #region 攻击
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            if (SuperPositionEffect < CardData.InitEffect)
+                            {
+                                SuperPositionEffect = CardData.InitEffect;
+                            }
+                            int DeductionHp = Convert.ToInt32(SuperPositionEffect);
+                            if (AiRole.Armor > 0)
+                            {
+                                if (AiRole.Armor >= SuperPositionEffect)
+                                {
+                                    DeductionHp = 0;
+                                    AiRole.Armor -= Convert.ToInt32(SuperPositionEffect);
+                                    gameView.txt_E_Armor.text = AiRole.Armor.ToString();
+                                }
+                                else
+                                {
+                                    DeductionHp -= AiRole.Armor;
+                                    AiRole.Armor = 0;
+                                }
+                                if (AiRole.Armor == 0)
+                                {
+                                    gameView.Eimg_Armor.transform.localScale = Vector3.zero;
+                                }
+                            }
+                            Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
+                            AiRole.bloodNow -= DeductionHp;
+                            if (AiRole.bloodNow <= 0)
+                            {
+                                AiRole.bloodNow = 0;
+                                //AI死亡
+                                gameView.AiDie();
+                            }
+                            gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                            EffectOn = "0";
+                            //攻击结束后、更新一遍buffUI操作
+                            gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
+                            #endregion
+
+                            var cardData = ownRole.handCardList.Find(a => a.SingleID == CardData.SingleID);
+                            ActivateSuperPos = true;
+                            SuperPositionEffect = cardData.InitEffect;
+                            cardData.Effect = cardData.InitEffect;
+                            hasUseCard = true;
                         }
+                        #endregion
+                        #region 连续攻击
+                        else if (CardData.EffectType == 5)//连续攻击
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            EffectOn = "0";
+                        }
+                        #endregion
+                        #region 攻击无视防御
+                        else if (CardData.EffectType == 7)//攻击无视防御
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            int DeductionHp = Convert.ToInt32(CardData.Effect);
+                            Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
+                            AiRole.bloodNow -= DeductionHp;
+                            if (AiRole.bloodNow <= 0)
+                            {
+                                AiRole.bloodNow = 0;
+                                //AI死亡
+                                gameView.AiDie();
+                            }
+                            gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                            EffectOn = "0";
+                        }
+                        #endregion
+                        #region 销毁防御
+                        else if (CardData.EffectType == 6)//销毁防御
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            if (CardData.Consume > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                                ownRole.Energy -= CardData.Consume;
+                            }
+                            if (AiRole.Armor > 0)
+                            {
+                                AiRole.Armor = 0;
+                                gameView.txt_E_Armor.text = AiRole.Armor.ToString();
+                                gameView.Eimg_Armor.transform.localScale = Vector3.zero;
+                            }
+                        }
+                        #endregion
+                        #region 火力全开
+                        if (CardData.EffectType == 31)//攻击
+                        {
+                            hasUseCard = true;
+                            Destroy(CurrentCard);
+                            int DeductionHp = Convert.ToInt32(CardData.Effect * ownRole.Energy);
+                            if (ownRole.Energy > 0)
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, ownRole.Energy, 0, ownRole.EnergyMax);
+                                ownRole.Energy = 0;
+                            }
+                            if (AiRole.Armor > 0)
+                            {
+                                if (AiRole.Armor >= CardData.Effect)
+                                {
+                                    DeductionHp = 0;
+                                    AiRole.Armor -= Convert.ToInt32(CardData.Effect);
+                                    gameView.txt_E_Armor.text = AiRole.Armor.ToString();
+                                }
+                                else
+                                {
+                                    DeductionHp -= AiRole.Armor;
+                                    AiRole.Armor = 0;
+                                }
+                                if (AiRole.Armor == 0)
+                                {
+                                    gameView.Eimg_Armor.transform.localScale = Vector3.zero;
+                                }
+                            }
+                            Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
+                            AiRole.bloodNow -= DeductionHp;
+                            if (AiRole.bloodNow <= 0)
+                            {
+                                AiRole.bloodNow = 0;
+                                //AI死亡
+                                gameView.AiDie();
+                            }
+                            gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                            EffectOn = "0";
+                            //攻击结束后、更新一遍buffUI操作
+                            gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
+                        }
+                        #endregion
+                        #region 耗血攻击
+                        if (CardData.EffectType == 35)//攻击
+                        {
+                            if (ownRole.bloodNow > CardData.Consume)
+                            {
+                                hasUseCard = true;
+                                Destroy(CurrentCard);
+                                #region 血量消耗
+                                Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, CardData.Consume, 0);
+                                ownRole.bloodNow -= Convert.ToInt32(CardData.Consume);
+                                gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                                #endregion
+
+                                int DeductionHp = Convert.ToInt32(CardData.Effect);
+                                if (AiRole.Armor > 0)
+                                {
+                                    if (AiRole.Armor >= CardData.Effect)
+                                    {
+                                        DeductionHp = 0;
+                                        AiRole.Armor -= Convert.ToInt32(CardData.Effect);
+                                        gameView.txt_E_Armor.text = AiRole.Armor.ToString();
+                                    }
+                                    else
+                                    {
+                                        DeductionHp -= AiRole.Armor;
+                                        AiRole.Armor = 0;
+                                    }
+                                    if (AiRole.Armor == 0)
+                                    {
+                                        gameView.Eimg_Armor.transform.localScale = Vector3.zero;
+                                    }
+                                }
+                                Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, DeductionHp, 0);
+                                AiRole.bloodNow -= DeductionHp;
+                                if (AiRole.bloodNow <= 0)
+                                {
+                                    AiRole.bloodNow = 0;
+                                    //AI死亡
+                                    gameView.AiDie();
+                                }
+                                gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
+                                EffectOn = "0";
+                                //攻击结束后、更新一遍buffUI操作
+                                gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref CardData);
+                            }
+                            else
+                            {
+                                hasUseCard = false;
+                            }
+                        }
+                        #endregion
+
                     }
                     #endregion
-
                 }
-                #endregion
             }
+        }
+        else
+        {
+            hasUseCard = false;
+            hasEffect = false;
         }
     }
 
@@ -1119,7 +1145,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     /// 8攻击动画、9防御动画、10血量扣减和卡牌回收、11血量恢复动画、12血量扣减动画、13销毁防御、14销毁防御和卡牌回收、
     /// 25抽BeRemoveCardNum数量的手牌
     /// </returns>
-    public int CardUseAfterTriggerEvent(CurrentCardPoolModel model, ref string EffectOn, ref List<CurrentCardPoolModel> DrawACard)
+    public int CardUseAfterTriggerEvent(CurrentCardPoolModel model, ref string EffectOn, ref List<CurrentCardPoolModel> DrawACard, ref float AnimEffect)
     {
         var ownRole = BattleManager.instance.OwnPlayerData[0];
         var AiRole = BattleManager.instance.EnemyPlayerData[0];
@@ -1241,6 +1267,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
                                 EffectOn = "0";
+                                AnimEffect = item.TriggerValue;
                                 result = 2;
                                 //攻击结束后、更新一遍buffUI操作
                                 gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref model);
@@ -1276,6 +1303,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
                                 EffectOn = "1";
+                                AnimEffect = item.TriggerValue;
                                 result = 8;
                                 //攻击结束后、更新一遍buffUI操作
                                 gameView.BUFFUIChange(ownRole.buffList, ref ownRole.handCardList, ref model, 1);
@@ -1295,6 +1323,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_P_Armor.text = ownRole.Armor.ToString();
                                 result = 3;
+                                AnimEffect = item.TriggerValue;
                                 EffectOn = "1";
                             }
                             else
@@ -1307,6 +1336,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_E_Armor.text = AiRole.Armor.ToString();
                                 result = 9;
+                                AnimEffect = item.TriggerValue;
                                 EffectOn = "0";
                             }
                         }
@@ -1330,6 +1360,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, item.TriggerValue, 0);
                                         ownRole.bloodNow += Convert.ToInt32(item.TriggerValue);
                                     }
+                                    AnimEffect = item.TriggerValue;
                                     result = 10;
                                 }
                                 else
@@ -1341,6 +1372,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         ownRole.bloodNow = ownRole.bloodMax;
                                     }
                                     result = 4;
+                                    AnimEffect = item.TriggerValue;
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
                                 EffectOn = "1";
@@ -1361,6 +1393,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                         Common.HPImageChange(gameView.Eimg_HP, AiRole.bloodMax, item.TriggerValue, 0);
                                         AiRole.bloodNow += Convert.ToInt32(item.TriggerValue);
                                     }
+                                    AnimEffect = item.TriggerValue;
                                     result = 12;
                                 }
                                 else
@@ -1371,6 +1404,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                     {
                                         AiRole.bloodNow = AiRole.bloodMax;
                                     }
+                                    AnimEffect = item.TriggerValue;
                                     result = 11;
                                 }
                                 gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
@@ -1452,6 +1486,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_E_HP.text = $"{AiRole.bloodMax}/{AiRole.bloodNow}";
                                 EffectOn = "0";
+                                AnimEffect = item.TriggerValue;
                                 result = 2;
                             }
                             else
@@ -1467,6 +1502,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                                 }
                                 gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
                                 EffectOn = "1";
+                                AnimEffect = item.TriggerValue;
                                 result = 8;
                             }
                         }
@@ -1810,7 +1846,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     tempBuff = Common.AddChild(gameView.P_buffObj.transform, tempBuff);
                     tempBuff.name = "img_Buff_" + buffEffectType;
                     var img = tempBuff.GetComponent<Image>();
-                    Common.ImageBind(buffCardData.CardUrl, img);
+                    Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                     var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                     txt_buffNum.text = (Convert.ToInt32(txt_buffNum.text) + buffNum).ToString();
                     BUFFManager.instance.BUFFApply(ref ownRole.buffList, AiRole.buffList, ref buffCardData, ref ownRole.handCardList);
@@ -1839,7 +1875,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                         tempBuff = Common.AddChild(gameView.P_buffObj.transform, tempBuff);
                         tempBuff.name = "img_Buff_" + buffEffectType;
                         var img = tempBuff.GetComponent<Image>();
-                        Common.ImageBind(buffCardData.CardUrl, img);
+                        Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                         var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                         txt_buffNum.text = (Convert.ToUInt32(txt_buffNum.text) + buffNum).ToString();
                         //UI操作
@@ -1866,7 +1902,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     tempBuff = Common.AddChild(gameView.P_buffObj.transform, tempBuff);
                     tempBuff.name = "img_Buff_" + buffEffectType;
                     var img = tempBuff.GetComponent<Image>();
-                    Common.ImageBind(buffCardData.CardUrl, img);
+                    Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                     var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                     txt_buffNum.text = (Convert.ToInt32(txt_buffNum.text) + buffNum).ToString();
                     bool dataChange = false;
@@ -1907,7 +1943,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             tempBuff = Common.AddChild(gameView.P_buffObj.transform, tempBuff);
                             tempBuff.name = "img_Buff_" + buffEffectType;
                             var img = tempBuff.GetComponent<Image>();
-                            Common.ImageBind(buffCardData.CardUrl, img);
+                            Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                             var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                             txt_buffNum.text = (Convert.ToUInt32(txt_buffNum.text) + buffNum).ToString();
                             //UI操作
@@ -2032,6 +2068,18 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                 #endregion
             }
         }
+    }
+
+    /// <summary>
+    /// 按buff名称获取BUFF图片路径
+    /// </summary>
+    /// <param name="BuffName"></param>
+    /// <returns></returns>
+    public string GetBUFFUrl(string BuffName)
+    {
+        Dictionary<string, string> dic = new Dictionary<string, string>();
+        Common.DicDataRead(ref dic, GlobalAttr.BUFFUrlFileName, "Card");
+        return dic[BuffName].ToString();
     }
 
     /// <summary>

@@ -677,7 +677,7 @@
         "AtkNumber":0,
         "CardName":"破损的水晶瓶",
         "CardUrl":"Images/CardIcon/ShuiJingPin",
-        "CardDetail":"丢弃一张手牌，回复@effect点能量。",
+        "CardDetail":"移除一张手牌，回复@effect点能量。",
         "Consume":0,
         "Effect":2,
         "PlayerOrAI":0,
@@ -1220,7 +1220,7 @@
         "UsingBeforeTriggerList":[
             {
                 "TriggerCondition":5,
-                "TriggerState":17,
+                "TriggerState":36,
                 "TriggerValue":1,
                 "Sort":1
             }

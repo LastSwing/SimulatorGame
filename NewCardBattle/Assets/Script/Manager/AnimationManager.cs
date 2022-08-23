@@ -39,6 +39,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
     public float DoAnimation(string name, object[] arg)
     {
         GameView gameView = UIManager.instance.GetView("GameView") as GameView;
+        Text txt_Effect;
         if (animationDic.ContainsKey(name))
         {
             switch (name)
@@ -95,6 +96,8 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_HPDeduction.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_HPDeduction.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_HPDeduction.Play("Anim_HPDeduction");
                     break;
                 #endregion
@@ -108,6 +111,8 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_HPRestore.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_HPRestore.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_HPRestore.Play("Anim_HPRestore");
                     break;
                 #endregion
@@ -121,6 +126,8 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_Armor.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_Armor.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_Armor.Play("Anim_Armor");
                     break;
                 #endregion
