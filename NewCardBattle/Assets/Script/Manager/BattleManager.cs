@@ -110,6 +110,7 @@ public class BattleManager : SingletonMonoBehaviour<BattleManager>
     /// </summary>
     public void ResetBattle()
     {
+        BattleStateMachine = null;
         UpdateAction = null;
     }
     private void Update()
@@ -182,8 +183,11 @@ public class Battle_TurnStart : State
     public override void Enter()
     {
         gameView.AnimObj.SetActive(true);
-
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
+        var ownRole = BattleManager.instance.OwnPlayerData[0];
+        var AiRole = BattleManager.instance.EnemyPlayerData[0];
+        List<BUFFEffect> buffResult = null;
+        List<BUFFEffect> bUFFEffects = null;
         switch (nowPlayer.playerType)
         {
             case PlayerType.OwnHuman:
@@ -191,14 +195,75 @@ public class Battle_TurnStart : State
                 {
                     TitleDuration = AnimationManager.instance.DoAnimation("Anim_ShowTitle", new object[] { "你的回合" });
                 }
+                #region 回合开始BUFF作用
+                buffResult = BUFFManager.instance.BUFFApply(ref ownRole.buffList, AiRole.buffList, ref CardUseEffectManager.instance.CurrentCardModel, ref ownRole.handCardList);
+                bUFFEffects = buffResult?.FindAll(a => a.BUFFType == 2);
+                if (bUFFEffects?.Count > 0)
+                {
+                    foreach (var item in bUFFEffects)
+                    {
+                        CardUseEffectManager.instance.HPChange(item.HPChange, 0);
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", item.HPChange });
+                    }
+                }
+                #endregion
+                #region PlayerBUFF变化
+                if (BattleManager.instance.OwnPlayerData[0].buffList != null)
+                {
+                    foreach (var item in BattleManager.instance.OwnPlayerData[0].buffList)
+                    {
+                        //除了暴击、吸血BUFF都-1
+                        if (item.EffectType != 10 && item.EffectType != 33)
+                        {
+                            item.Num -= 1;
+                        }
+                    }
+                    gameView.BUFFUIChange(BattleManager.instance.OwnPlayerData[0].buffList, ref BattleManager.instance.OwnPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel);
+                    //存储上一回合数据
+                    Common.SaveTxtFile(gameView.ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+                    Common.SaveTxtFile(gameView.UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                    Common.SaveTxtFile(gameView.UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
+
+                }
+                #endregion
                 break;
             case PlayerType.NormalRobot:
             case PlayerType.AiRobot:
                 TitleDuration = AnimationManager.instance.DoAnimation("Anim_ShowTitle", new object[] { "AI回合" });
+                #region 回合开始BUFF作用
+                buffResult = BUFFManager.instance.BUFFApply(ref AiRole.buffList, ownRole.buffList, ref gameView.CrtAIATKModel, ref AiRole.handCardList, false, 1);
+                bUFFEffects = buffResult?.FindAll(a => a.BUFFType == 2);
+                if (bUFFEffects?.Count > 0)
+                {
+                    foreach (var item in bUFFEffects)
+                    {
+                        CardUseEffectManager.instance.HPChange(item.HPChange, 1);
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "0", item.HPChange });
+                    }
+                }
+                #endregion
+                #region AI BUFF次数-1
+                if (BattleManager.instance.EnemyPlayerData[0].buffList != null)
+                {
+                    foreach (var item in BattleManager.instance.EnemyPlayerData[0].buffList)
+                    {
+                        //除了暴击、吸血BUFF都-1
+                        if (item.EffectType != 10 || item.EffectType != 33)
+                        {
+                            item.Num -= 1;
+                        }
+                    }
+                    gameView.BUFFUIChange(BattleManager.instance.EnemyPlayerData[0].buffList, ref BattleManager.instance.EnemyPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel, 1);
+                    //存储上一回合数据
+                    Common.SaveTxtFile(gameView.AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
+                }
+                #endregion
+
                 break;
             case PlayerType.OtherHuman:
                 break;
         }
+
 
     }
     public override void Execute()
@@ -230,6 +295,7 @@ public class Battle_DrawCard : State
     int cardRotaionNum = 0;
     bool hasCardRecycle, hasPlayer;
     int cardRecycleBeforeNum = 0;
+    bool BlackCardEffectExecute = false;
     public Battle_DrawCard()
     {
         ID = BattleStateID.DrawCard;
@@ -326,7 +392,72 @@ public class Battle_DrawCard : State
                     //初次进入deltaTime=0.22
                     //Debug.Log("动画执行完成旋转卡牌");
                     rotationTime += Time.deltaTime;
-                    gameView.CardRotating(gameView.obj_CardPools.transform.Find("imgCard_" + gameView.ATKBarCardList[CardNum].SingleID).gameObject, ref rotationTime, ref cardRotaionNum);
+                    var crtModel = gameView.ATKBarCardList[CardNum];
+                    gameView.CardRotating(gameView.obj_CardPools.transform.Find("imgCard_" + crtModel.SingleID).gameObject, ref rotationTime, ref cardRotaionNum);
+                    #region 抽到了有效果的黑卡
+                    if (crtModel.CardType == 2 && !BlackCardEffectExecute)//
+                    {
+                        var ownRole = BattleManager.instance.OwnPlayerData[0];
+                        switch (crtModel.EffectType)//血量变化
+                        {
+                            case 3:
+                                if (crtModel.Effect < 0)
+                                {
+                                    var effect = ownRole.bloodNow + Convert.ToInt32(crtModel.Effect);
+                                    if (effect < 0)
+                                    {
+                                        ownRole.bloodNow = 0;
+                                        //玩家死亡
+                                        gameView.PlayerDie();
+                                    }
+                                    else
+                                    {
+                                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 0);
+                                        ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                    }
+                                }
+                                else
+                                {
+                                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 1);
+                                    ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                    if (ownRole.bloodNow > ownRole.bloodMax)
+                                    {
+                                        ownRole.bloodNow = ownRole.bloodMax;
+                                    }
+                                }
+                                gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
+                                break;
+                            case 4:
+                                if (crtModel.Effect < 0)//扣能量
+                                {
+                                    var effect = ownRole.Energy + Convert.ToInt32(crtModel.Effect);
+                                    if (effect < 0)
+                                    {
+                                        Common.EnergyImgChange(ownRole.Energy, ownRole.Energy, 0, ownRole.EnergyMax);
+                                        ownRole.Energy = 0;
+                                    }
+                                    else
+                                    {
+                                        Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect * -1), 0, ownRole.EnergyMax);
+                                        ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                    }
+                                }
+                                else
+                                {
+                                    Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect), 1, ownRole.EnergyMax);
+                                    ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                    if (ownRole.Energy > ownRole.EnergyMax)
+                                    {
+                                        ownRole.Energy = ownRole.EnergyMax;
+                                    }
+                                }
+                                AnimationManager.instance.DoAnimation("Anim_EnergyRestore", null);
+                                break;
+                        }
+                        BlackCardEffectExecute = true;
+                    }
+                    #endregion
                     if (cardRotaionNum == 18)
                     {
                         gameView.txt_Left_Count.text = gameView.txt_Left_Count.text == "0" ? "0" : (Convert.ToInt32(gameView.txt_Left_Count.text) - 1).ToString();
@@ -335,6 +466,7 @@ public class Battle_DrawCard : State
                         {
                             AnimationManager.instance.DoAnimation("Anim_DealCard", null);
                         }
+                        BlackCardEffectExecute = false;
                         cardRotaionNum = 0;
                         deltaTime = 0;
                         DealCardDuration = 0;
@@ -370,7 +502,72 @@ public class Battle_DrawCard : State
                     //初次进入deltaTime=0.22
                     //Debug.Log("动画执行完成旋转卡牌");
                     rotationTime += Time.deltaTime;
-                    gameView.CardRotating(gameView.obj_CardPools.transform.Find("imgCard_" + gameView.ATKBarCardList[CardNum].SingleID).gameObject, ref rotationTime, ref cardRotaionNum);
+                    var crtModel = gameView.ATKBarCardList[CardNum];
+                    gameView.CardRotating(gameView.obj_CardPools.transform.Find("imgCard_" + crtModel.SingleID).gameObject, ref rotationTime, ref cardRotaionNum);
+                    #region 抽到了有效果的黑卡
+                    if (crtModel.CardType == 2 && !BlackCardEffectExecute)//
+                    {
+                        var ownRole = BattleManager.instance.OwnPlayerData[0];
+                        switch (crtModel.EffectType)//血量变化
+                        {
+                            case 3:
+                                if (crtModel.Effect < 0)
+                                {
+                                    var effect = ownRole.bloodNow + Convert.ToInt32(crtModel.Effect);
+                                    if (effect < 0)
+                                    {
+                                        ownRole.bloodNow = 0;
+                                        //玩家死亡
+                                        gameView.PlayerDie();
+                                    }
+                                    else
+                                    {
+                                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 0);
+                                        ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                    }
+                                }
+                                else
+                                {
+                                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 1);
+                                    ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                    if (ownRole.bloodNow > ownRole.bloodMax)
+                                    {
+                                        ownRole.bloodNow = ownRole.bloodMax;
+                                    }
+                                }
+                                gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                                AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
+                                break;
+                            case 4:
+                                if (crtModel.Effect < 0)//扣能量
+                                {
+                                    var effect = ownRole.Energy + Convert.ToInt32(crtModel.Effect);
+                                    if (effect < 0)
+                                    {
+                                        Common.EnergyImgChange(ownRole.Energy, ownRole.Energy, 0, ownRole.EnergyMax);
+                                        ownRole.Energy = 0;
+                                    }
+                                    else
+                                    {
+                                        Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect * -1), 0, ownRole.EnergyMax);
+                                        ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                    }
+                                }
+                                else
+                                {
+                                    Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect), 1, ownRole.EnergyMax);
+                                    ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                    if (ownRole.Energy > ownRole.EnergyMax)
+                                    {
+                                        ownRole.Energy = ownRole.EnergyMax;
+                                    }
+                                }
+                                AnimationManager.instance.DoAnimation("Anim_EnergyRestore", null);
+                                break;
+                        }
+                        BlackCardEffectExecute = true;
+                    }
+                    #endregion
                     if (cardRotaionNum == 18)
                     {
                         gameView.txt_Left_Count.text = gameView.txt_Left_Count.text == "0" ? "0" : (Convert.ToInt32(gameView.txt_Left_Count.text) - 1).ToString();
@@ -382,14 +579,18 @@ public class Battle_DrawCard : State
                         cardRotaionNum = 0;
                         deltaTime = 0;
                         DealCardDuration = 0;
+                        BlackCardEffectExecute = false;
                         cardRecycleBeforeNum--;
                     }
                 }
             }
             if (CardNum == gameView.ATKBarCardList.Count)
             {
-                CardNum = 0;
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                if (DealCardDuration == 0)
+                {
+                    CardNum = 0;
+                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                }
             }
             #endregion 
         }
@@ -439,6 +640,7 @@ public class Battle_BeforeCardUse : State
     float AnimDuration = 0;
     GameView gameView = UIManager.instance.GetView("GameView") as GameView;
     int result;
+    bool RemoveOldCard = false;//清除手牌
     public Battle_BeforeCardUse()
     {
         ID = BattleStateID.BeforeCardUse;
@@ -471,21 +673,22 @@ public class Battle_BeforeCardUse : State
                 break;
         }
         string EffectOn = "";
-        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model, PlayerOrAI, ref EffectOn);
+        float AnimEffect = 0;
+        result = CardUseEffectManager.instance.CardUseBeforeTriggerEvent(model, PlayerOrAI, ref EffectOn, ref AnimEffect);
         switch (result)
         {
             case 1:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
             case 2:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", null);
                 break;
             case 3:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 break;
             case 4:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 break;
             case 5:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
@@ -497,22 +700,73 @@ public class Battle_BeforeCardUse : State
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
                 break;
             case 8:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 break;
             case 9:
                 //摧毁防御动画
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
                 break;
+            case 24://移除所有手牌
+                RemoveOldCard = true;
+                break;
+            case 17://移除一张手牌
+                gameView.obj_RemoveCard.SetActive(true);
+                CardUseEffectManager.instance.UseCopyCard = true;
+                gameView.btn_CopyCard.onClick.RemoveAllListeners();
+                gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.RemoveCard(CardUseEffectManager.instance.CurrentCard, ref AnimDuration); });
+                break;
+            case 36://丢弃一张手牌
+                gameView.obj_RemoveCard.SetActive(true);
+                CardUseEffectManager.instance.UseCopyCard = true;
+                gameView.btn_CopyCard.onClick.RemoveAllListeners();
+                gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.DiscardOneCard(CardUseEffectManager.instance.CurrentCard, ref AnimDuration); });
+                break;
         }
     }
     public override void Execute()
     {
-        deltaTime += Time.deltaTime;
-        if (deltaTime > AnimDuration)
+        if (!CardUseEffectManager.instance.UseCopyCard)
         {
-            deltaTime = 0;
-            AnimDuration = 0;
-            BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+            deltaTime += Time.deltaTime;
+            if (RemoveOldCard)
+            {
+                if (deltaTime > AnimDuration)
+                {
+                    AnimDuration = 0;
+                    deltaTime = 0;
+                }
+                if (gameView.ATKBarCardList?.Count > 0)
+                {
+                    if (AnimDuration == 0)
+                    {
+                        int index = gameView.ATKBarCardList.Count - 1;
+                        gameView.UsedCardList.Add(gameView.ATKBarCardList[index]);
+                        GameObject obj = gameView.obj_CardPools.transform.Find("imgCard_" + gameView.ATKBarCardList[index].SingleID).gameObject;
+                        gameView.DeleteGameObj(obj);
+                        gameView.ATKBarCardList.Remove(gameView.ATKBarCardList[index]);
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+                        Common.SaveTxtFile(gameView.UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
+                        gameView.txt_Right_Count.text = gameView.UsedCardList.Count.ToString();
+                    }
+                }
+                else
+                {
+                    if (AnimDuration == 0)
+                    {
+                        RemoveOldCard = false;
+                        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+                    }
+                }
+            }
+            else
+            {
+                if (deltaTime > AnimDuration)
+                {
+                    deltaTime = 0;
+                    AnimDuration = 0;
+                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.EffectSettlement);
+                }
+            }
         }
     }
     public override void Exit()
@@ -542,13 +796,21 @@ public class Battle_PlayEffect : State
         bool hasEffect = true;
         bool playerUseCard = false;
         int playAnim = 0;
+        float AnimEffect = 0;
         PlayerData nowPlayer = BattleManager.instance.GetCurrentPlayerData();
         CurrentCardPoolModel model = null;
         switch (nowPlayer.playerType)
         {
             case PlayerType.OwnHuman:
-                CardUseEffectManager.instance.CardUseEffect(ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
-                model = CardUseEffectManager.instance.CurrentCardModel;
+                if (CardUseEffectManager.instance.CrtCardChange)
+                {
+                    model = CardUseEffectManager.instance.PrevoiousCardModel;
+                }
+                else
+                {
+                    model = CardUseEffectManager.instance.CurrentCardModel;
+                }
+                CardUseEffectManager.instance.CardUseEffect(model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim, ref AnimEffect);
                 playerUseCard = true;
                 break;
             case PlayerType.NormalRobot:
@@ -556,7 +818,7 @@ public class Battle_PlayEffect : State
                 if (gameView.AiATKCardList?.Count > 0)
                 {
                     model = gameView.AiATKCardList[0];
-                    AIManager.instance.AIDo(1, model, ref hasUseCard, ref EffectOn, ref hasEffect);
+                    AIManager.instance.AIDo(1, model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
                 }
                 else
                 {
@@ -593,7 +855,7 @@ public class Battle_PlayEffect : State
                     case 31:
                     case 32:
                         AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 连续攻击
@@ -608,23 +870,24 @@ public class Battle_PlayEffect : State
                             CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
                         }
                         AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 防御
                     case 2:
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                    case 27:
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, model.Effect });
                         break;
                     #endregion
                     #region 血量变化
                     case 3:
                         if (model.Effect > 0)
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, model.Effect });
                         }
                         else
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                         }
                         break;
                     #endregion
@@ -639,6 +902,7 @@ public class Battle_PlayEffect : State
                     #region 复制卡
                     case 12:
                         CardUseEffectManager.instance.UseCopyCard = true;
+                        gameView.btn_CopyCard.onClick.RemoveAllListeners();
                         gameView.btn_CopyCard.onClick.AddListener(delegate { gameView.CopyCard(CardUseEffectManager.instance.CurrentCard); });
                         break;
                     #endregion
@@ -651,7 +915,7 @@ public class Battle_PlayEffect : State
                     case 28:
                         if (playAnim == 1)
                         {
-                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, model.Effect });
                         }
                         else
                         {
@@ -659,11 +923,38 @@ public class Battle_PlayEffect : State
                         }
                         break;
                     #endregion
+                    #region 耗血攻击
+                    case 35:
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", model.Consume });
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
+                        break;
+                    #endregion
                     default:
                         BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.AfterCardUse);
                         break;
                 }
                 #endregion 
+            }
+            else
+            {
+                if (playAnim == 4)//扣血
+                {
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
+                }
+                else if (playAnim == 5)//回血
+                {
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
+                }
+                else if (playAnim == 3)//闪避动画
+                {
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_Elude", new object[] { EffectOn });
+                }
+                else
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                }
             }
         }
         #endregion
@@ -690,20 +981,21 @@ public class Battle_PlayEffect : State
                 else
                 {
                     string EffectOn = "";
+                    CurrentCardPoolModel model;
                     if (nowPlayer.playerType == PlayerType.OwnHuman)
                     {
-                        var model = CardUseEffectManager.instance.CurrentCardModel;
+                        model = CardUseEffectManager.instance.CurrentCardModel;
                         CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
                         EffectOn = "0";
                     }
                     else
                     {
-                        var model = gameView.CrtAIATKModel;
+                        model = gameView.CrtAIATKModel;
                         CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
                         EffectOn = "1";
                     }
                     AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
                     comboATKNum--;
                 }
             }
@@ -723,8 +1015,16 @@ public class Battle_AfterCardUse : State
     GameView gameView = UIManager.instance.GetView("GameView") as GameView;
     float deltaTime = 0;
     float AnimDuration = 0;
+    float DealCardDuration = 0;
+    float rotationTime = 0;
+    float ShuffleDuration = 0;
+    int cardRotaionNum = 0;
     int result;
+    bool hasCardRecycle = false;
+    bool AgainDealCard = false;//抽卡
     int AnimNum;
+    int CardNum = 0;
+    bool BlackCardEffectExecute = false;
     List<CurrentCardPoolModel> DrawACard;
     public Battle_AfterCardUse()
     {
@@ -757,92 +1057,296 @@ public class Battle_AfterCardUse : State
                 break;
         }
         string EffectOn = "";
-        result = CardUseEffectManager.instance.CardUseAfterTriggerEvent(model, ref EffectOn, ref DrawACard);
+        float AnimEffect = 0;
+        result = CardUseEffectManager.instance.CardUseAfterTriggerEvent(model, ref EffectOn, ref DrawACard, ref AnimEffect);
         switch (result)
         {
+            #region 卡牌回收
             case 1:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 攻击和卡牌回收
             case 2:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 防御和卡牌回收
             case 3:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region HP恢复和卡牌回收
             case 4:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 能量恢复和卡牌回收
             case 5:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_EnergyRestore", new object[] { EffectOn });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 移除卡牌
             case 6:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_RemoveCard", null);
                 break;
+            #endregion
+            #region 抽卡
             case 7:
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
                 break;
+            #endregion
+            #region 攻击
             case 8:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
                 break;
+            #endregion
+            #region 防御
             case 9:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_Armor", new object[] { EffectOn, AnimEffect });
                 break;
+            #endregion
+            #region 扣血和卡牌回收
             case 10:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 血量恢复
             case 11:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffect });
                 break;
+            #endregion
+            #region 血量扣减
             case 12:
-                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn });
+                AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, AnimEffect });
                 break;
+            #endregion
+            #region 销毁防御
             case 13:
                 //销毁防御
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
                 break;
+            #endregion
+            #region 销毁防御和卡牌回收
             case 14:
                 //销毁防御和卡牌回收
                 AnimDuration = AnimationManager.instance.DoAnimation("Anim_ArmorMelting", new object[] { EffectOn });
                 AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
                 break;
+            #endregion
+            #region 抽同等手牌数量
+            case 25://抽同等手牌数量
+                #region 攻击栏卡牌装填
+                hasCardRecycle = true;
+                if (CardUseEffectManager.instance.BeRemoveCardNum > 0)
+                {
+                    AgainDealCard = true;
+                    //重新洗牌
+                    if (gameView.UnusedCardList?.Count > 0)
+                    {
+                        var newUseCard = gameView.UsedCardList.FindAll(a => a.SingleID != CardUseEffectManager.instance.CurrentCardModel.SingleID);
+                        foreach (var item in newUseCard)
+                        {
+                            gameView.UnusedCardList.Add(item);
+                        }
+                        gameView.UsedCardList = new List<CurrentCardPoolModel>()
+                    {
+                        CardUseEffectManager.instance.CurrentCardModel
+                    };
+                        gameView.UnusedCardList.ListRandom();
+                    }
+                    else
+                    {
+                        gameView.UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName).ListRandom();
+                        gameView.UsedCardList = new List<CurrentCardPoolModel>();
+                        gameView.UsedCardList.Add(CardUseEffectManager.instance.CurrentCardModel);
+                        gameView.UnusedCardList.Remove(gameView.UnusedCardList.Find(a => a.SingleID == CardUseEffectManager.instance.CurrentCardModel.SingleID));
+                    }
+                    if (gameView.UnusedCardList.Count >= CardUseEffectManager.instance.BeRemoveCardNum)
+                    {
+                        for (int i = 0; i < CardUseEffectManager.instance.BeRemoveCardNum; i++)
+                        {
+                            gameView.CreateAtkBarCard(gameView.UnusedCardList[0]);
+                            gameView.ATKBarCardList.Add(gameView.UnusedCardList[0]);
+                            gameView.UnusedCardList.Remove(gameView.UnusedCardList[0]);
+                        }
+                    }
+                    Common.SaveTxtFile(gameView.ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+                    Common.SaveTxtFile(gameView.UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                    Common.SaveTxtFile(gameView.UsedCardList.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
+                }
+                else
+                {
+                    gameView.DeleteGameObj(CardUseEffectManager.instance.CurrentCard);
+                    //放入已使用牌堆
+                    var useCards = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName) ?? new List<CurrentCardPoolModel>();
+                    useCards.Add(CardUseEffectManager.instance.CurrentCardModel);
+                    Common.SaveTxtFile(useCards.ListToJson(), GlobalAttr.CurrentUsedCardPoolsFileName);
+                    gameView.txt_Right_Count.text = useCards == null ? "0" : useCards.Count.ToString();
+                    //移除当前手牌
+                    var removeModel = gameView.ATKBarCardList.Find(a => a.SingleID == CardUseEffectManager.instance.CurrentCardModel.SingleID);
+                    gameView.ATKBarCardList.Remove(removeModel);
+                    Common.SaveTxtFile(gameView.ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
+                }
+                #endregion
+                break;
+                #endregion
         }
 
     }
     public override void Execute()
     {
         deltaTime += Time.deltaTime;
-        if (deltaTime > AnimDuration)
+        if (AgainDealCard)
         {
-            deltaTime = 0;
-            AnimDuration = 0;
-            if (result == 7)
+            #region 装填攻击栏
+            if (ShuffleDuration == 0 && hasCardRecycle)
             {
-                if (AnimNum < DrawACard.Count)
+                ShuffleDuration = AnimationManager.instance.DoAnimation("Anim_Shuffle", null);
+                deltaTime = 0;
+                gameView.txt_Right_Count.text = gameView.UsedCardList.Count.ToString();
+            }
+            if (ShuffleDuration > 0 && deltaTime > ShuffleDuration)
+            {
+                hasCardRecycle = false;
+                ShuffleDuration = 0;
+                gameView.txt_Left_Count.text = (gameView.UnusedCardList.Count + gameView.ATKBarCardList.Count).ToString();
+            }
+            if (ShuffleDuration == 0 && DealCardDuration == 0 && CardNum < gameView.ATKBarCardList.Count)
+            {
+                DealCardDuration = AnimationManager.instance.DoAnimation("Anim_DealCard", null);
+            }
+            if (ShuffleDuration == 0 && deltaTime > DealCardDuration && CardNum < gameView.ATKBarCardList.Count)
+            {
+                rotationTime += Time.deltaTime;
+                var crtModel = gameView.ATKBarCardList[CardNum];
+                gameView.CardRotating(gameView.obj_CardPools.transform.Find("imgCard_" + crtModel.SingleID).gameObject, ref rotationTime, ref cardRotaionNum);
+                #region 抽到了有效果的黑卡
+                if (crtModel.CardType == 2 && !BlackCardEffectExecute)//
                 {
-                    gameView.txt_Left_Count.text = (Convert.ToInt32(gameView.txt_Left_Count.text) + 1).ToString();
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_DrawACard", new object[] { DrawACard[AnimNum] });
-                    AnimNum++;
+                    var ownRole = BattleManager.instance.OwnPlayerData[0];
+                    switch (crtModel.EffectType)//血量变化
+                    {
+                        case 3:
+                            if (crtModel.Effect < 0)
+                            {
+                                var effect = ownRole.bloodNow + Convert.ToInt32(crtModel.Effect);
+                                if (effect < 0)
+                                {
+                                    ownRole.bloodNow = 0;
+                                    //玩家死亡
+                                    gameView.PlayerDie();
+                                }
+                                else
+                                {
+                                    Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 0);
+                                    ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                }
+                            }
+                            else
+                            {
+                                Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, crtModel.Effect, 1);
+                                ownRole.bloodNow += Convert.ToInt32(crtModel.Effect);
+                                if (ownRole.bloodNow > ownRole.bloodMax)
+                                {
+                                    ownRole.bloodNow = ownRole.bloodMax;
+                                }
+                            }
+                            gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                            AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "1", crtModel.Effect });
+                            break;
+                        case 4:
+                            if (crtModel.Effect < 0)//扣能量
+                            {
+                                var effect = ownRole.Energy + Convert.ToInt32(crtModel.Effect);
+                                if (effect < 0)
+                                {
+                                    Common.EnergyImgChange(ownRole.Energy, ownRole.Energy, 0, ownRole.EnergyMax);
+                                    ownRole.Energy = 0;
+                                }
+                                else
+                                {
+                                    Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect * -1), 0, ownRole.EnergyMax);
+                                    ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                }
+                            }
+                            else
+                            {
+                                Common.EnergyImgChange(ownRole.Energy, Convert.ToInt32(crtModel.Effect), 1, ownRole.EnergyMax);
+                                ownRole.Energy += Convert.ToInt32(crtModel.Effect);
+                                if (ownRole.Energy > ownRole.EnergyMax)
+                                {
+                                    ownRole.Energy = ownRole.EnergyMax;
+                                }
+                            }
+                            AnimationManager.instance.DoAnimation("Anim_EnergyRestore", null);
+                            break;
+                    }
+                    BlackCardEffectExecute = true;
                 }
-                if (AnimNum == DrawACard.Count && AnimDuration == 0)
+                #endregion
+                if (cardRotaionNum == 18)
                 {
+                    gameView.txt_Left_Count.text = gameView.txt_Left_Count.text == "0" ? "0" : (Convert.ToInt32(gameView.txt_Left_Count.text) - 1).ToString();
+                    CardNum++;
+                    if (CardNum < gameView.ATKBarCardList.Count)
+                    {
+                        AnimationManager.instance.DoAnimation("Anim_DealCard", null);
+                    }
+                    BlackCardEffectExecute = false;
+                    cardRotaionNum = 0;
+                    deltaTime = 0;
+                    DealCardDuration = 0;
+                }
+            }
+            if (CardNum == gameView.ATKBarCardList.Count)
+            {
+                if (DealCardDuration == 0)
+                {
+                    CardNum = 0;
+                    AgainDealCard = false;
                     BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
                 }
             }
-            else
+            #endregion 
+        }
+        else
+        {
+            if (deltaTime > AnimDuration)
             {
-                BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                deltaTime = 0;
+                AnimDuration = 0;
+                if (result == 7)
+                {
+                    if (AnimNum < DrawACard.Count)
+                    {
+                        gameView.txt_Left_Count.text = (Convert.ToInt32(gameView.txt_Left_Count.text) + 1).ToString();
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_DrawACard", new object[] { DrawACard[AnimNum] });
+                        AnimNum++;
+                    }
+                    if (AnimNum == DrawACard.Count && AnimDuration == 0)
+                    {
+                        BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                    }
+                }
+                else
+                {
+                    BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
+                }
             }
         }
     }
     public override void Exit()
     {
+        CardUseEffectManager.instance.BeRemoveCardNum = 0;//恢复初始值
         gameView.AnimObj.SetActive(false);
     }
 }
@@ -867,72 +1371,9 @@ public class Battle_TurnEnd : State
         switch (nowPlayer.playerType)
         {
             case PlayerType.OwnHuman:
-                #region Player
-                gameView.ATKBarCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentATKBarCardPoolsFileName);
-                gameView.UsedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUsedCardPoolsFileName) ?? new List<CurrentCardPoolModel>();
-                gameView.UnusedCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
-                #region PlayerBUFF变化
-                if (BattleManager.instance.OwnPlayerData[0].buffList != null)
-                {
-                    foreach (var item in BattleManager.instance.OwnPlayerData[0].buffList)
-                    {
-                        //除了暴击、吸血BUFF都-1
-                        if (item.EffectType != 10 && item.EffectType != 33)
-                        {
-                            item.Num -= 1;
-                        }
-                    }
-                    //如果BUFF愤怒或虚弱。相对于的数值进行保存
-                    #region 数值保存
-                    if (BattleManager.instance.OwnPlayerData[0].buffList.Exists(a => a.Num > 0 && a.EffectType == 8) ||
-                            BattleManager.instance.OwnPlayerData[0].buffList.Exists(a => a.Num > 0 && a.EffectType == 11))
-                    {
-                        BattleManager.instance.OwnPlayerData[0].handCardList?.ForEach(item =>
-                        {
-                            var atkTemp = gameView.ATKBarCardList.Find(a => a.SingleID == item.SingleID);
-                            if (atkTemp != null)
-                            {
-                                gameView.ATKBarCardList.Remove(atkTemp);
-                                gameView.ATKBarCardList.Add(item);
-                            }
-                            var useTemp = gameView.UsedCardList.Find(a => a.SingleID == item.SingleID);
-                            if (useTemp != null)
-                            {
-                                gameView.UsedCardList.Remove(useTemp);
-                                gameView.UsedCardList.Add(item);
-                            }
-                            var unUseTemp = gameView.UnusedCardList.Find(a => a.SingleID == item.SingleID);
-                            if (unUseTemp != null)
-                            {
-                                gameView.UnusedCardList.Remove(unUseTemp);
-                                gameView.UnusedCardList.Add(item);
-                            }
-                        });
-                    }
-                    #endregion
-                    gameView.BUFFUIChange(BattleManager.instance.OwnPlayerData[0].buffList, ref BattleManager.instance.OwnPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel);
-
-                }
-                #endregion
-                #endregion
                 break;
             case PlayerType.NormalRobot:
             case PlayerType.AiRobot:
-
-                #region AI BUFF次数-1
-                if (BattleManager.instance.EnemyPlayerData[0].buffList != null)
-                {
-                    foreach (var item in BattleManager.instance.EnemyPlayerData[0].buffList)
-                    {
-                        //除了暴击、吸血BUFF都-1
-                        if (item.EffectType != 10 || item.EffectType != 33)
-                        {
-                            item.Num -= 1;
-                        }
-                    }
-                    gameView.BUFFUIChange(BattleManager.instance.EnemyPlayerData[0].buffList, ref BattleManager.instance.EnemyPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel, 1);
-                }
-                #endregion
 
                 #region AiAtkBar
                 gameView.AiATKCardList = new List<CurrentCardPoolModel>();
@@ -944,7 +1385,6 @@ public class Battle_TurnEnd : State
                 Common.SaveTxtFile(gameView.AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
                 gameView.AIATKCardPoolsBind();
                 #endregion
-
                 //Player攻击
                 BattleManager.instance.controlIndex = 0;
                 //装填攻击栏/洗牌
@@ -1017,6 +1457,7 @@ public class Battle_GameEnd : State
         gameView.AnimObj.SetActive(true);
         if (gameView.hasPlayerOrAIDie == "0")//AI死亡
         {
+            BattleManager.instance.ResetBattle();
             UIManager.instance.OpenView("AiDieView");
             UIManager.instance.CloseView("GameView");
         }

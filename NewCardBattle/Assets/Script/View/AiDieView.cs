@@ -375,8 +375,7 @@ public class AiDieView : BaseUI
             tempImg.name = "img_Detail";
             tempImg.transform.localPosition = new Vector2(0, 205);
 
-            GameObject temp = tempImg.transform.Find("Text").gameObject;
-            temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
+            Common.CardDetailDataBind(tempImg, model);
 
             GameObject btn_Confirm = ResourcesManager.instance.Load("btn_Confirm") as GameObject;
             btn_Confirm = Common.AddChild(Card_img.transform, btn_Confirm);

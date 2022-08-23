@@ -18,11 +18,13 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
         {"btn_Confirm","Prefabs/btn_Confirm" },
         {"ShoppingView","View/ShoppingView" },
         {"UpgradeView","View/UpgradeView" },
+        {"BUFFDetailsView","View/BUFFDetailsView" },
         {"img_CardShop","Prefabs/img_CardShop" },
         {"btn_ShopConfirm","Prefabs/btn_ShopConfirm" },
         {"img_EnergyBG","Prefabs/img_EnergyBG" },
         {"img_Energy","Prefabs/img_Energy" },
         {"img_Buff","Prefabs/img_Buff" },
+        {"BUFF_Detail","Prefabs/BUFF_Detail" },
         {"BGM_1","AudioClip/BGM_1" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },

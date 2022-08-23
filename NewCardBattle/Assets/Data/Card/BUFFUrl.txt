@@ -1,0 +1,15 @@
+{
+    "愤怒":"Images/CardIcon/FenNu",
+    "虚弱":"Images/CardIcon/XuRuo",
+    "免疫":"Images/CardIcon/LenJing",
+    "暴击":"Images/CardIcon/MiaoZhun",
+    "束缚":"Images/CardIcon/ShuFu",
+    "缠绕":"Images/CardIcon/ChanRao",
+    "重伤":"Images/CardIcon/ChuXue",
+    "致盲":"Images/CardIcon/ZhiMang",
+    "闪避":"Images/CardIcon/MengDie",
+    "混乱":"Images/CardIcon/ZhuoJiu",
+    "狂暴":"Images/CardIcon/KuangBao",
+    "蓄力":"Images/CardIcon/XuLi",
+    "朝夕不保":"Images/CardIcon/ZhaoXiBuBao"
+}

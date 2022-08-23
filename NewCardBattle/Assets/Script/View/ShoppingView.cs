@@ -274,8 +274,7 @@ public class ShoppingView : BaseUI
             tempImg.name = "img_Detail" + i;
             tempImg.transform.position = new Vector2(Card_img.transform.position.x, Card_img.transform.position.y + Screen.height / 4);
 
-            GameObject temp = tempImg.transform.Find("Text").gameObject;
-            temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
+            Common.CardDetailDataBind(tempImg, model);
 
             if (PlayerRole.Wealth >= model.CardPrice)
             {

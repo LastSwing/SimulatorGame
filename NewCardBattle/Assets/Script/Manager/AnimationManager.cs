@@ -27,6 +27,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
         { "Anim_RemoveCard",0.89f},//移除卡牌50
         { "Anim_DrawACard",1.10f},//抽一张卡60
         { "Anim_ArmorMelting",0.90f},//摧毁防御50
+        { "Anim_Elude",0.65f},//摧毁防御35
     };
 
     /// <summary>
@@ -38,6 +39,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
     public float DoAnimation(string name, object[] arg)
     {
         GameView gameView = UIManager.instance.GetView("GameView") as GameView;
+        Text txt_Effect;
         if (animationDic.ContainsKey(name))
         {
             switch (name)
@@ -94,6 +96,8 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_HPDeduction.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_HPDeduction.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_HPDeduction.Play("Anim_HPDeduction");
                     break;
                 #endregion
@@ -107,6 +111,8 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_HPRestore.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_HPRestore.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_HPRestore.Play("Anim_HPRestore");
                     break;
                 #endregion
@@ -120,18 +126,23 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                     {
                         gameView.Anim_Armor.transform.position = gameView.img_Player.transform.position;
                     }
+                    txt_Effect = gameView.Anim_Armor.transform.Find("Text").GetComponent<Text>();
+                    txt_Effect.text = arg?[1].ToString();
                     gameView.Anim_Armor.Play("Anim_Armor");
                     break;
                 #endregion
                 #region 能量恢复
                 case "Anim_EnergyRestore":
-                    if (arg[0].ToString() == "0")//AI能量恢复
-                    {
-                        gameView.Anim_EnergyRestore.transform.position = gameView.img_Enemy.transform.position;
-                    }
-                    else//角色能量恢复
+                    if (arg == null)
                     {
                         gameView.Anim_EnergyRestore.transform.position = gameView.img_Player.transform.position;
+                    }
+                    else
+                    {
+                        if (arg[0].ToString() == "1")
+                        {
+                            gameView.Anim_EnergyRestore.transform.position = gameView.img_Player.transform.position;
+                        }
                     }
                     gameView.Anim_EnergyRestore.Play("Anim_EnergyRestore");
                     break;
@@ -168,6 +179,19 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
                         gameView.Anim_ArmorMelting.transform.position = gameView.img_Player.transform.position;
                     }
                     gameView.Anim_ArmorMelting.Play("Anim_ArmorMelting");
+                    break;
+                #endregion
+                #region 闪避
+                case "Anim_Elude":
+                    if (arg[0].ToString() == "0")//攻击AI
+                    {
+                        gameView.Anim_Elude.transform.position = gameView.img_Enemy.transform.position;
+                    }
+                    else//攻击角色
+                    {
+                        gameView.Anim_Elude.transform.position = gameView.img_Player.transform.position;
+                    }
+                    gameView.Anim_Elude.Play("Anim_Elude");
                     break;
                     #endregion
             }

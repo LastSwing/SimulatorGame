@@ -1,1 +1,1 @@
-{"Row":1,"Column":1,"CurrentImgUrl":"Images/Map_Atk1","MapType":1,"HasKillBoss":0}
+{"Row":1,"Column":2,"CurrentImgUrl":"Images/Map_Atk3","MapType":1,"HasKillBoss":0}

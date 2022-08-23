@@ -104,6 +104,16 @@ namespace Assets.Script.Tools
 
         #region Card
         /// <summary>
+        /// buff效果
+        /// </summary>
+        public static string BUFFEffectFileName = "BUFFEffect";
+
+        /// <summary>
+        /// buff图片路径
+        /// </summary>
+        public static string BUFFUrlFileName = "BUFFUrl";
+
+        /// <summary>
         /// 卡效果类型
         /// </summary>
         public static string EffectTypeFileName = "EffectType";

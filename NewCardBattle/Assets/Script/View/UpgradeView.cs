@@ -253,8 +253,7 @@ public class UpgradeView : BaseUI
             tempImg.name = "img_Detail" + i;
             tempImg.transform.localPosition = new Vector2(0, 80);
 
-            GameObject temp = tempImg.transform.Find("Text").gameObject;
-            temp.GetComponent<Text>().text = $"{model.CardName}\n{model.CardDetail}";
+            Common.CardDetailDataBind(tempImg, model);
 
             GameObject tempImgUp = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
             tempImgUp = Common.AddChild(Card_img.transform, tempImgUp);
