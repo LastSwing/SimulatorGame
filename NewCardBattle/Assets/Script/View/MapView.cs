@@ -41,6 +41,7 @@ public class MapView : BaseUI
     private bool IsNeedMove, HasMouseDown, HasMouseUp = false;//是否需要移动 
     #endregion
     float bottomY, topY, lineSpacing;//地图底部Y,地图顶部Y,每个战斗点间距
+    public int AILevel;
     #region OnInit
     public override void OnInit()
     {
@@ -182,7 +183,7 @@ public class MapView : BaseUI
     /// </summary>
     private void InitSetting()
     {
-        //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
+        SoundManager.instance.PlayOnlyOneSound("MapBGM", (int)TrackType.BGM, true);
     }
 
     /// <summary>
@@ -203,9 +204,14 @@ public class MapView : BaseUI
         topY = Screen.height * -1.5f;
         lineSpacing = bottomY / 9;
         var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        CurrentAiModel = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
         #region 数据初始化
-        var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom();//ailevel==boss等级
-        CurrentAiModel = listAi[0];
+        if (CurrentAiModel == null)
+        {
+            var listAi = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 99).ListRandom();//ailevel==boss等级
+            CurrentAiModel = listAi[0];
+            Common.SaveTxtFile(CurrentAiModel.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        }
         GlobalRole = Common.GetTxtFileToModel<GlobalPlayerModel>(GlobalAttr.GlobalRoleFileName);
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
         if (PlayerRole == null)
@@ -257,18 +263,19 @@ public class MapView : BaseUI
         #region 加载TopBar预制件
 
         //加载TopBar预制件
-        if (tempBar == null)
+        if (tempBar != null)
         {
-            GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
-            topBar = Common.AddChild(UI_Obj.transform, topBar);
-            topBar.name = "TopBar";
+            DestroyImmediate(tempBar);
         }
-        #endregion
+        GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+        topBar = Common.AddChild(UI_Obj.transform, topBar);
+        topBar.name = "TopBar";
         btn_Setting = transform.Find("UI/TopBar/Setting")?.GetComponent<Button>();
         if (btn_Setting != null)
         {
             btn_Setting.onClick.AddListener(SettingClick);
         }
+        #endregion
         MapInit();
     }
     #endregion
@@ -388,7 +395,7 @@ public class MapView : BaseUI
                 }
                 EventTrigger.Entry entry2 = new EventTrigger.Entry();
                 int currentRow = item.Key;
-                entry2.callback.AddListener(delegate { MapAtkImgClick(column.Type, 0, Atkimg, column.Row, column.Url); });
+                entry2.callback.AddListener(delegate { MapAtkImgClick(column.Type, 99, Atkimg, column.Row, column.Url); });
                 trigger2.triggers.Add(entry2);
                 #endregion
             }
@@ -1069,7 +1076,7 @@ public class MapView : BaseUI
             }
             EventTrigger.Entry entry2 = new EventTrigger.Entry();
             int currentRow = MapRow;
-            entry2.callback.AddListener(delegate { MapAtkImgClick(3, 0, Atkimg, currentRow, "Images/Map_AtkBoss"); });
+            entry2.callback.AddListener(delegate { MapAtkImgClick(3, 99, Atkimg, currentRow, "Images/Map_AtkBoss"); });
             trigger2.triggers.Add(entry2);
             #endregion
 
@@ -1651,6 +1658,7 @@ public class MapView : BaseUI
     /// <param name="CurrentRow">当前行</param>
     public void MapAtkImgClick(int type, int level, GameObject thisObj, int CurrentRow, string currentImgUrl)
     {
+        AILevel = level + 1;
         HideTitle();
         //点击后展示title
         var title = thisObj.transform.Find("Map_Title_img")?.GetComponent<Image>();
@@ -1737,56 +1745,49 @@ public class MapView : BaseUI
         OneUnitCount = 0;
         string imgColumnName = "";
         string SceneName = "";
-        switch (mapLocation.MapType)
+        switch (type)
         {
             case 2:
-                imgColumnName = $"Atk_imgShop{mapLocation.Column}";
+                imgColumnName = $"Atk_imgShop{currentColumn}";
                 SceneName = "ShoppingView";
                 break;
             //case 3:
             //    imgColumnName = "Atk_imgBoss";
             //    break;
             case 4:
-                imgColumnName = $"Adventure_img{mapLocation.Column}";
+                imgColumnName = $"Adventure_img{currentColumn}";
                 SceneName = "AdventureView";
                 break;
             default:
-                imgColumnName = $"Atk_img{mapLocation.Column}";
+                imgColumnName = $"Atk_img{currentColumn}";
                 SceneName = "GameView";
                 break;
         }
-        string imgRowName = "";
-        if (currentRow == 13)
+        var objUrl = $"BG/Map_Row{currentRow}/{imgColumnName}";
+        if (currentRow != 13)
         {
-            imgRowName = $"Map_RowShop";
+            objUrl = $"BG/Map_Row{currentRow}/{imgColumnName}";
+            var currentImg = GameObject.Find(objUrl)?.GetComponent<Image>();
+            Common.ImageBind(mapLocation.CurrentImgUrl, currentImg);
+
+            var thisImg = obj.GetComponent<Image>();
+            Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
         }
         else
         {
-            imgRowName = $"Map_Row{mapLocation.Row}";
+            //GameObject tempObj = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
+            //tempObj = Common.AddChild(thisImg.transform, tempObj);
+            //tempObj.name = "img_Player_Head";
+            //tempObj.transform.localPosition = new Vector3(-100, -30);
+            //var tempImg = thisImg.transform.Find($"img_Player_Head").GetComponent<Image>();
+            //Common.ImageBind(PlayerRole.HeadPortraitUrl, tempImg);
         }
-        var aa = $"BG/Map_Row{mapLocation.Row}/{imgColumnName}";
-        var currentImg = GameObject.Find($"BG/{imgRowName}/{imgColumnName}")?.GetComponent<Image>();
-        Common.ImageBind(mapLocation.CurrentImgUrl, currentImg);
 
         mapLocation.Column = currentColumn;
         mapLocation.Row = currentRow;
         mapLocation.CurrentImgUrl = currentImgUrl;
         mapLocation.MapType = type;
         Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName, "Map");
-        var thisImg = obj.GetComponent<Image>();
-        if (currentRow == 13)
-        {
-            GameObject tempObj = ResourcesManager.instance.Load("Map_Atk_img") as GameObject;
-            tempObj = Common.AddChild(thisImg.transform, tempObj);
-            tempObj.name = "img_Player_Head";
-            tempObj.transform.localPosition = new Vector3(-100, -30);
-            var tempImg = thisImg.transform.Find($"img_Player_Head").GetComponent<Image>();
-            Common.ImageBind(PlayerRole.HeadPortraitUrl, tempImg);
-        }
-        else
-        {
-            Common.ImageBind(PlayerRole.HeadPortraitUrl, thisImg);
-        }
         //进入游戏
         UIManager.instance.OpenView(SceneName);
         UIManager.instance.CloseView("MapView");

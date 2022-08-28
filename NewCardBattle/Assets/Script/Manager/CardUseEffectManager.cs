@@ -46,72 +46,78 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         //能量不足无法使用卡牌
         if (model.EffectType != 35)
         {
-            if (ownRole.Energy < model.Consume)
+            if (PlayerOrAI == 0)
             {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                return 0;
+                if (ownRole.Energy < model.Consume)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                    return 0;
+                }
             }
         }
-        #region 判断卡牌拖动位置
-        switch (model.EffectType)
+        if (PlayerOrAI == 0)
         {
-            #region 可以拖到任意位置
-            case 3:
-            case 4:
-            case 12:
-            case 30:
-            case 27:
-            case 0:
-                //任意位置
-                break;
-            #endregion
-            #region 只能拖动角色身上
-            case 2:
-            case 13:
-            case 26:
-            case 33:
-            case 28://防御只能在角色身上
-                if (ownRole.playerID != CardToRoleID)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                    return 0;
-                }
-                break;
-            #endregion
-            #region 只能拖到AI身上
-            case 1:
-            case 14:
-            case 5:
-            case 7:
-            case 32:
-            case 31:
-            case 35:
-            case 6:
-                if (AiRole.playerID != CardToRoleID)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                    return 0;
-                }
-                break;
-            #endregion
-            #region 只能拖到AI或角色身上
-            case 8:
-            case 11:
-            case 10:
-            case 20:
-            case 21:
-            case 9:
-            case 29:
-            case 22:
-                if (CardToRoleID == 0)
-                {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
-                    return 0;
-                }
-                break;
+            #region 判断卡牌拖动位置
+            switch (model.EffectType)
+            {
+                #region 可以拖到任意位置
+                case 3:
+                case 4:
+                case 12:
+                case 30:
+                case 27:
+                case 0:
+                    //任意位置
+                    break;
                 #endregion
+                #region 只能拖动角色身上
+                case 2:
+                case 13:
+                case 26:
+                case 33:
+                case 28://防御只能在角色身上
+                    if (ownRole.playerID != CardToRoleID)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                        return 0;
+                    }
+                    break;
+                #endregion
+                #region 只能拖到AI身上
+                case 1:
+                case 14:
+                case 5:
+                case 7:
+                case 32:
+                case 31:
+                case 35:
+                case 6:
+                    if (AiRole.playerID != CardToRoleID)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                        return 0;
+                    }
+                    break;
+                #endregion
+                #region 只能拖到AI或角色身上
+                case 8:
+                case 11:
+                case 10:
+                case 20:
+                case 21:
+                case 9:
+                case 29:
+                case 22:
+                    if (CardToRoleID == 0)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
+                        return 0;
+                    }
+                    break;
+                    #endregion
+            }
+            #endregion 
         }
-        #endregion
         if (CurrentCard != null)
         {
             CurrentCard.transform.localScale = Vector3.zero;
@@ -415,7 +421,16 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                 }
                 else
                 {
-                    hasExecuteCardEffect = false;
+                    switch (item.TriggerState)
+                    {
+                        case 17:
+                        case 36:
+                        case 24:
+                            hasExecuteCardEffect = false;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
@@ -461,7 +476,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     hasUseCard = true;
                     hasEffect = false;
                     PlayAnim = 3;
-                    EffectOn = "1";
+                    EffectOn = "0";
                     LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
                     return;
                 }
@@ -569,14 +584,17 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
             #region 复制卡
             else if (CardData.EffectType == 12)//复制卡
             {
-                hasUseCard = true;
-                Destroy(CurrentCard);
-                if (CardData.Consume > 0)
+                if (gameView.ATKBarCardList?.Count > 1)
                 {
-                    Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
-                    ownRole.Energy -= CardData.Consume;
+                    hasUseCard = true;
+                    Destroy(CurrentCard);
+                    if (CardData.Consume > 0)
+                    {
+                        Common.EnergyImgChange(ownRole.Energy, CardData.Consume, 0, ownRole.EnergyMax);
+                        ownRole.Energy -= CardData.Consume;
+                    }
+                    gameView.obj_RemoveCard.SetActive(true);
                 }
-                gameView.obj_RemoveCard.SetActive(true);
             }
             #endregion
             #region 混乱杀机
@@ -607,7 +625,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                 }
             }
             #endregion
-            #region 混乱杀机
+            #region 护甲翻倍
             else if (CardData.EffectType == 27)//当前护甲翻倍
             {
                 hasUseCard = true;
@@ -1166,7 +1184,6 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         bool hasPutInUseCards = true;//是否放入已使用的牌堆
         var list = model.TriggerAfterUsingList;
         bool hasExecuteOperation = true;//是否执行操作
-        var unUseCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentUnUsedCardPoolsFileName);
         var PlayerCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
         var PlayerHandCardList = BattleManager.instance.OwnPlayerData[0].handCardList;
 
@@ -1534,11 +1551,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             for (int i = 0; i < item.TriggerValue; i++)
                             {
                                 PlayerCardList[i].SingleID = 100001 + PlayerHandCardList.Count;
-                                unUseCardList.Add(PlayerCardList[i]);
+                                gameView.UnusedCardList.Add(PlayerCardList[i]);
                                 PlayerHandCardList.Add(PlayerCardList[i]);
                                 DrawACard.Add(PlayerCardList[i]);
                             }
-                            Common.SaveTxtFile(unUseCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                            Common.SaveTxtFile(gameView.UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
                             result = 7;
                         }
                         #endregion
@@ -1549,11 +1566,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             for (int i = 0; i < item.TriggerValue; i++)
                             {
                                 aktCardList[i].SingleID = 100001 + PlayerHandCardList.Count;
-                                unUseCardList.Add(aktCardList[i]);
+                                gameView.UnusedCardList.Add(aktCardList[i]);
                                 PlayerHandCardList.Add(aktCardList[i]);
                                 DrawACard.Add(aktCardList[i]);
                             }
-                            Common.SaveTxtFile(unUseCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                            Common.SaveTxtFile(gameView.UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
                             result = 7;
                         }
                         #endregion
@@ -1564,11 +1581,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             for (int i = 0; i < item.TriggerValue; i++)
                             {
                                 CardList[i].SingleID = 100001 + PlayerHandCardList.Count;
-                                unUseCardList.Add(CardList[i]);
+                                gameView.UnusedCardList.Add(CardList[i]);
                                 PlayerHandCardList.Add(CardList[i]);
                                 DrawACard.Add(CardList[i]);
                             }
-                            Common.SaveTxtFile(unUseCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+                            Common.SaveTxtFile(gameView.UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
                             result = 7;
                         }
                         #endregion
@@ -1578,7 +1595,14 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             result = 6;
                             //当局手牌变化
                             hasPutInUseCards = false;
-                            PlayerHandCardList.Remove(CurrentCardModel);
+                            if (PrevoiousCardModel != null)
+                            {
+                                PlayerHandCardList.Remove(PrevoiousCardModel);
+                            }
+                            else
+                            {
+                                PlayerHandCardList.Remove(CurrentCardModel);
+                            }
                         }
                         #endregion
                         #region 斩杀
@@ -1652,6 +1676,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     }
                     //移除当前手牌
                     gameView.ATKBarCardList.Remove(gameView.ATKBarCardList.Find(a => a.SingleID == PrevoiousCardModel.SingleID));
+                    PrevoiousCardModel = null;
                 }
             }
             else
@@ -1688,11 +1713,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         #endregion
 
         #region 存储AI数据
-        CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
-        aiData.Armor = AiRole.Armor;
-        aiData.HP = AiRole.bloodNow;
-        aiData.MaxHP = AiRole.bloodMax;
-        Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        //CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+        //aiData.Armor = AiRole.Armor;
+        //aiData.HP = AiRole.bloodNow;
+        //aiData.MaxHP = AiRole.bloodMax;
+        //Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         #endregion
         LayoutRebuilder.ForceRebuildLayoutImmediate(gameView.thisParent);
         return result;
@@ -1706,7 +1731,10 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
     /// <param name="AiRole">AI数据</param>
     /// <param name="crtCard">当前被使用的卡</param>
     /// <param name="PlayerOrAI">谁发起的攻击。0玩家，1AI</param>
-    public void ComboATK(CurrentCardPoolModel model, PlayerData ownRole, PlayerData AiRole, int PlayerOrAI = 0)
+    /// <param name="hasEffect">是否有效果</param>
+    /// <param name="PlayAnim">播放什么动画0无、1防御、2摧毁防御、3闪避动画、4扣血、5回血</param>
+    /// <param name="AnimEffect">动画数值</param>
+    public void ComboATK(CurrentCardPoolModel model, PlayerData ownRole, PlayerData AiRole, ref bool hasEffect, ref int PlayAnim, ref int AnimEffect, int PlayerOrAI = 0)
     {
         if (PlayerOrAI == 0)
         {
@@ -1719,6 +1747,40 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     return;
                 }
             }
+
+            #region BUFF限制卡牌使用
+            var buffResult = BUFFManager.instance.BUFFApply(ref ownRole.buffList, AiRole.buffList, ref model, ref ownRole.handCardList); ;
+            if (buffResult?.Count > 0)
+            {
+                if (buffResult.Exists(a => a.EffectType == 2 && a.HasValid == false))//卡无效果,已被使用
+                {
+                    hasEffect = false;
+                    PlayAnim = 3;
+                    return;
+                }
+                else if (buffResult.Exists(a => a.HPChange > 0))//狂暴回血
+                {
+                    var buff = buffResult.Find(a => a.HPChange != 0);
+                    if (ownRole.bloodNow != ownRole.bloodMax)
+                    {
+                        var changeHP = buff.HPChange;
+                        if (ownRole.bloodNow + buff.HPChange > ownRole.bloodMax)
+                        {
+                            changeHP = ownRole.bloodMax - ownRole.bloodNow;
+                            ownRole.bloodNow = ownRole.bloodMax;
+                        }
+                        else
+                        {
+                            ownRole.bloodNow += Convert.ToInt32(changeHP);
+                        }
+                        Common.HPImageChange(gameView.Pimg_HP, ownRole.bloodMax, changeHP, 1);
+                    }
+                    AnimEffect = buff.HPChange;
+                    PlayAnim = 5;
+                    gameView.txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
+                }
+            }
+            #endregion
             #region 卡牌效果
             int DeductionHp = Convert.ToInt32(model.Effect);
             if (AiRole.Armor > 0)
@@ -1805,11 +1867,11 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
         #endregion
 
         #region 存储AI数据
-        CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
-        aiData.Armor = AiRole.Armor;
-        aiData.HP = AiRole.bloodNow;
-        aiData.MaxHP = AiRole.bloodMax;
-        Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        //CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+        //aiData.Armor = AiRole.Armor;
+        //aiData.HP = AiRole.bloodNow;
+        //aiData.MaxHP = AiRole.bloodMax;
+        //Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         #endregion
     }
 
@@ -1983,7 +2045,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     tempBuff = Common.AddChild(gameView.E_buffObj.transform, tempBuff);
                     tempBuff.name = "img_Buff_" + buffEffectType;
                     var img = tempBuff.GetComponent<Image>();
-                    Common.ImageBind(buffCardData.CardUrl, img);
+                    Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                     var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                     txt_buffNum.text = (Convert.ToUInt32(txt_buffNum.text) + buffNum).ToString();
                     //UI操作
@@ -2010,7 +2072,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                     tempBuff = Common.AddChild(gameView.E_buffObj.transform, tempBuff);
                     tempBuff.name = "img_Buff_" + buffEffectType;
                     var img = tempBuff.GetComponent<Image>();
-                    Common.ImageBind(buffCardData.CardUrl, img);
+                    Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                     var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                     txt_buffNum.text = (Convert.ToUInt32(txt_buffNum.text) + buffNum).ToString();
                     bool dataChange = false;
@@ -2051,7 +2113,7 @@ public class CardUseEffectManager : SingletonMonoBehaviour<CardUseEffectManager>
                             tempBuff = Common.AddChild(gameView.E_buffObj.transform, tempBuff);
                             tempBuff.name = "img_Buff_" + buffEffectType;
                             var img = tempBuff.GetComponent<Image>();
-                            Common.ImageBind(buffCardData.CardUrl, img);
+                            Common.ImageBind(GetBUFFUrl(dic[buffEffectType.ToString()]), img);
                             var txt_buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
                             txt_buffNum.text = (Convert.ToUInt32(txt_buffNum.text) + buffNum).ToString();
                             //UI操作

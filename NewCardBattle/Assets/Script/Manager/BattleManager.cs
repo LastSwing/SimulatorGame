@@ -1,4 +1,5 @@
 ﻿using Assets.Script.Models;
+using Assets.Script.Models.Map;
 using Assets.Script.Tools;
 using System;
 using System.Collections;
@@ -207,7 +208,7 @@ public class Battle_TurnStart : State
                     }
                 }
                 #endregion
-                #region PlayerBUFF变化
+                #region PlayerBUFF变化-1
                 if (BattleManager.instance.OwnPlayerData[0].buffList != null)
                 {
                     foreach (var item in BattleManager.instance.OwnPlayerData[0].buffList)
@@ -216,6 +217,10 @@ public class Battle_TurnStart : State
                         if (item.EffectType != 10 && item.EffectType != 33)
                         {
                             item.Num -= 1;
+                            if (item.Num == 0)
+                            {
+                                CardUseEffectManager.instance.HasNumberValueChange = true;
+                            }
                         }
                     }
                     gameView.BUFFUIChange(BattleManager.instance.OwnPlayerData[0].buffList, ref BattleManager.instance.OwnPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel);
@@ -240,22 +245,6 @@ public class Battle_TurnStart : State
                         CardUseEffectManager.instance.HPChange(item.HPChange, 1);
                         AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { "0", item.HPChange });
                     }
-                }
-                #endregion
-                #region AI BUFF次数-1
-                if (BattleManager.instance.EnemyPlayerData[0].buffList != null)
-                {
-                    foreach (var item in BattleManager.instance.EnemyPlayerData[0].buffList)
-                    {
-                        //除了暴击、吸血BUFF都-1
-                        if (item.EffectType != 10 || item.EffectType != 33)
-                        {
-                            item.Num -= 1;
-                        }
-                    }
-                    gameView.BUFFUIChange(BattleManager.instance.EnemyPlayerData[0].buffList, ref BattleManager.instance.EnemyPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel, 1);
-                    //存储上一回合数据
-                    Common.SaveTxtFile(gameView.AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
                 }
                 #endregion
 
@@ -781,6 +770,7 @@ public class Battle_BeforeCardUse : State
 public class Battle_PlayEffect : State
 {
     GameView gameView = UIManager.instance.GetView("GameView") as GameView;
+    MapView mapView = UIManager.instance.GetView("MapView") as MapView;
     float deltaTime = 0;
     float AnimDuration = 0;
     int comboATKNum = 1;
@@ -818,7 +808,7 @@ public class Battle_PlayEffect : State
                 if (gameView.AiATKCardList?.Count > 0)
                 {
                     model = gameView.AiATKCardList[0];
-                    AIManager.instance.AIDo(1, model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
+                    AIManager.instance.AIDo(mapView?.AILevel ?? 0, model, ref hasUseCard, ref EffectOn, ref hasEffect, ref playAnim);
                 }
                 else
                 {
@@ -861,16 +851,30 @@ public class Battle_PlayEffect : State
                     #region 连续攻击
                     case 5://连续攻击
                         comboATKNum = model.AtkNumber;
+                        bool cardEffect = true;
+                        int InAdditionAnim = 0;
+                        int AnimEffectV = 0;
                         if (nowPlayer.playerType == PlayerType.OwnHuman)
                         {
-                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
+                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], ref cardEffect, ref InAdditionAnim, ref AnimEffectV);
                         }
                         else
                         {
-                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
+                            CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], ref cardEffect, ref InAdditionAnim, ref AnimEffectV, 1);
                         }
-                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
+                        if (cardEffect)
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                            AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect }); 
+                        }
+                        if (InAdditionAnim == 5)//回血
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffectV });
+                        }
+                        else if (InAdditionAnim == 3)//闪避动画
+                        {
+                            AnimDuration = AnimationManager.instance.DoAnimation("Anim_Elude", new object[] { EffectOn });
+                        }
                         break;
                     #endregion
                     #region 防御
@@ -956,6 +960,21 @@ public class Battle_PlayEffect : State
                     BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.Control);
                 }
             }
+            #region 存储卡熟练度
+            if (playerUseCard)
+            {
+                Debug.Log($"{model.CardName}卡已被使用；SingleID={model.SingleID}");
+                var PlayerHandCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+                PlayerHandCardList.ForEach(item =>
+                {
+                    if (item.SingleID == model.SingleID)
+                    {
+                        item.Proficiency += 1;
+                    }
+                });
+                Common.SaveTxtFile(PlayerHandCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+            }
+            #endregion
         }
         #endregion
         else
@@ -982,20 +1001,34 @@ public class Battle_PlayEffect : State
                 {
                     string EffectOn = "";
                     CurrentCardPoolModel model;
+                    bool cardEffect = true;
+                    int InAdditionAnim = 0;
+                    int AnimEffectV = 0;
                     if (nowPlayer.playerType == PlayerType.OwnHuman)
                     {
                         model = CardUseEffectManager.instance.CurrentCardModel;
-                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0]);
+                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], ref cardEffect, ref InAdditionAnim, ref AnimEffectV);
                         EffectOn = "0";
                     }
                     else
                     {
                         model = gameView.CrtAIATKModel;
-                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], 1);
+                        CardUseEffectManager.instance.ComboATK(model, BattleManager.instance.OwnPlayerData[0], BattleManager.instance.EnemyPlayerData[0], ref cardEffect, ref InAdditionAnim, ref AnimEffectV, 1);
                         EffectOn = "1";
                     }
-                    AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
-                    AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
+                    if (cardEffect)
+                    {
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_ATK", new object[] { EffectOn });
+                        AnimationManager.instance.DoAnimation("Anim_HPDeduction", new object[] { EffectOn, model.Effect });
+                    }
+                    if (InAdditionAnim == 5)//回血
+                    {
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_HPRestore", new object[] { EffectOn, AnimEffectV });
+                    }
+                    else if (InAdditionAnim == 3)//闪避动画
+                    {
+                        AnimDuration = AnimationManager.instance.DoAnimation("Anim_Elude", new object[] { EffectOn });
+                    }
                     comboATKNum--;
                 }
             }
@@ -1003,6 +1036,7 @@ public class Battle_PlayEffect : State
     }
     public override void Exit()
     {
+        CardUseEffectManager.instance.hasExecuteCardEffect = true;
         gameView.AnimObj.SetActive(false);
     }
 }
@@ -1375,7 +1409,7 @@ public class Battle_TurnEnd : State
             case PlayerType.NormalRobot:
             case PlayerType.AiRobot:
 
-                #region AiAtkBar
+                #region 装填AiAtkBar
                 gameView.AiATKCardList = new List<CurrentCardPoolModel>();
                 gameView.AiCardList.ListRandom();
                 for (int i = 0; i < gameView.AIAtkNum; i++)
@@ -1384,6 +1418,27 @@ public class Battle_TurnEnd : State
                 }
                 Common.SaveTxtFile(gameView.AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
                 gameView.AIATKCardPoolsBind();
+                #endregion
+
+                #region AI BUFF次数-1
+                if (BattleManager.instance.EnemyPlayerData[0].buffList != null)
+                {
+                    foreach (var item in BattleManager.instance.EnemyPlayerData[0].buffList)
+                    {
+                        //除了暴击、吸血BUFF都-1
+                        if (item.EffectType != 10 || item.EffectType != 33)
+                        {
+                            item.Num -= 1;
+                            if (item.Num == 0)
+                            {
+                                CardUseEffectManager.instance.HasNumberValueChange = true;
+                            }
+                        }
+                    }
+                    gameView.BUFFUIChange(BattleManager.instance.EnemyPlayerData[0].buffList, ref BattleManager.instance.EnemyPlayerData[0].handCardList, ref CardUseEffectManager.instance.CurrentCardModel, 1);
+                    //存储上一回合数据
+                    Common.SaveTxtFile(gameView.AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
+                }
                 #endregion
                 //Player攻击
                 BattleManager.instance.controlIndex = 0;
@@ -1413,7 +1468,7 @@ public class Battle_TurnEnd : State
                 {
                     int index = gameView.ATKBarCardList.Count - 1;
                     gameView.UsedCardList.Add(gameView.ATKBarCardList[index]);
-                    GameObject obj = gameView.obj_CardPools.transform.Find("imgCard_" + gameView.ATKBarCardList[index].SingleID).gameObject;
+                    GameObject obj = gameView.obj_CardPools.transform.Find("imgCard_" + gameView.ATKBarCardList[index].SingleID)?.gameObject;
                     gameView.DeleteGameObj(obj);
                     gameView.ATKBarCardList.Remove(gameView.ATKBarCardList[index]);
                     AnimDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
@@ -1446,6 +1501,7 @@ public class Battle_TurnEnd : State
 public class Battle_GameEnd : State
 {
     GameView gameView = UIManager.instance.GetView("GameView") as GameView;
+    MapView mapView = UIManager.instance.GetView("MapView") as MapView;
     float deltaTime = 0;
     float AnimDuration = 0;
     public Battle_GameEnd()
@@ -1455,11 +1511,28 @@ public class Battle_GameEnd : State
     public override void Enter()
     {
         gameView.AnimObj.SetActive(true);
+        var mapLocation = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
         if (gameView.hasPlayerOrAIDie == "0")//AI死亡
         {
-            BattleManager.instance.ResetBattle();
-            UIManager.instance.OpenView("AiDieView");
-            UIManager.instance.CloseView("GameView");
+            if (mapLocation.Row == 13)//boss关卡
+            {
+                mapLocation.HasKillBoss = 1;
+                Common.SaveTxtFile(mapLocation.ObjectToJson(), GlobalAttr.CurrentMapLocationFileName, "Map");
+                BattleManager.instance.ResetBattle();
+                UIManager.instance.OpenView("PlayerDieView");
+                UIManager.instance.CloseView("GameView");
+            }
+            else
+            {
+                BattleManager.instance.ResetBattle();
+                UIManager.instance.OpenView("AiDieView");
+                UIManager.instance.CloseView("GameView");
+            }
+            #region 击杀累计值用于计算解锁卡牌
+            var globalPlayerModel = Common.GetTxtFileToModel<GlobalPlayerModel>(GlobalAttr.GlobalRoleFileName);
+            globalPlayerModel.AccumulateValue += 4 * mapView.AILevel;
+            Common.SaveTxtFile(globalPlayerModel.ObjectToJson(), GlobalAttr.GlobalRoleFileName);
+            #endregion
         }
         else
         {
@@ -1475,6 +1548,7 @@ public class Battle_GameEnd : State
             {
                 deltaTime = 0;
                 AnimDuration = 0;
+                BattleManager.instance.ResetBattle();
                 UIManager.instance.OpenView("PlayerDieView");
                 UIManager.instance.CloseView("GameView");
             }

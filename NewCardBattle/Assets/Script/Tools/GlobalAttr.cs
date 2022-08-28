@@ -66,7 +66,7 @@ namespace Assets.Script.Tools
         /// <summary>
         /// 当局游戏内Ai角色文件名称
         /// </summary>
-        public static string CurrentAIRoleFileName = "CurrentAiRole";
+        public static string CurrentAIRoleFileName = "CurrentAiBoosRole";
 
         /// <summary>
         /// 当前AI牌池

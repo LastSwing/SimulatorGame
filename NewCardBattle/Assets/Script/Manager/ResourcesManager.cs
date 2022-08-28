@@ -25,7 +25,9 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
         {"img_Energy","Prefabs/img_Energy" },
         {"img_Buff","Prefabs/img_Buff" },
         {"BUFF_Detail","Prefabs/BUFF_Detail" },
-        {"BGM_1","AudioClip/BGM_1" }
+        {"MainBGM","AudioClip/MainBGM" },
+        {"MapBGM","AudioClip/MapBGM" },
+        {"GameBGM","AudioClip/GameBGM" }
         //{ "MainView","View/MainView" },
         //{"SettingView","View/SettingView" },
         //{"CardPoolsView","View/CardPoolsView" },

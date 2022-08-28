@@ -1,4 +1,5 @@
 ﻿using Assets.Script.Models;
+using Assets.Script.Models.Map;
 using Assets.Script.Tools;
 using DG.Tweening;
 using System;
@@ -24,6 +25,7 @@ public class GameView : BaseUI
     public int chpterID, AIAtkNum;//关卡ID,AI攻击次数
     private CurrentRoleModel PlayerRole;    //玩家角色
     private CurrentRoleModel AiRole;        //Ai角色
+    private List<CurrentRoleModel> AIPools;//AI池
 
     /// <summary>
     /// 玩家手牌
@@ -62,7 +64,6 @@ public class GameView : BaseUI
     #endregion
     public string hasPlayerOrAIDie;//0AI，1角色
     public CurrentCardPoolModel CrtAIATKModel;//当前AI攻击卡
-
     #region OnInit
     public override void OnInit()
     {
@@ -254,7 +255,7 @@ public class GameView : BaseUI
             newModel.SingleID = BattleManager.instance.OwnPlayerData[0].handCardList.Max(a => a.SingleID) + 1;
             ATKBarCardList.Add(newModel);
             BattleManager.instance.OwnPlayerData[0].handCardList.Add(newModel);
-            Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
+            //Common.SaveTxtFile(ATKBarCardList.ListToJson(), GlobalAttr.CurrentATKBarCardPoolsFileName);
             CreateAtkBarCard(newModel, true);
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(thisParent);
@@ -301,7 +302,7 @@ public class GameView : BaseUI
             var discard = ATKBarCardList.Find(a => a.SingleID == model.SingleID);
             ATKBarCardList.Remove(discard);
             UsedCardList.Add(discard);
-            
+
             DeleteGameObj(thisObj);
             animDuration = AnimationManager.instance.DoAnimation("Anim_RecycleCard", null);
             LayoutRebuilder.ForceRebuildLayoutImmediate(thisParent);
@@ -312,6 +313,7 @@ public class GameView : BaseUI
         }
     }
     #endregion
+
     #region OnOpen
     public override void OnOpen()
     {
@@ -343,8 +345,57 @@ public class GameView : BaseUI
         UsedCardList = new List<CurrentCardPoolModel>();
         Common.SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
         PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
-        AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == 1004);//由等级随机一个AI
-        Common.SaveTxtFile(AiRole.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        AIPools = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName);
+        #region 按AI等级生成AI
+        //MapView mapView = UIManager.instance.GetView("MapView") as MapView;
+        //if (mapView.AILevel == 100)
+        //{
+        //    AiRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+        //}
+        //else
+        //{
+        //    AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == mapView.AILevel).ListRandom()[0];//由等级随机一个AI
+        //    //AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).Find(a => a.RoleID == 1016);//指定AI
+        //} 
+        #endregion
+        #region 按当前地图生成AI
+        CurrentMapLocation mapLocation = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
+        switch (mapLocation.Row)
+        {
+            case 1:
+            case 2:
+            case 3:
+                AiRole = AIPools.FindAll(a => a.AILevel == 1).ListRandom()[0];//由等级随机一个AI
+                break;
+            case 4:
+            case 5:
+            case 6:
+                int randomLevel = UnityEngine.Random.Range(1, 3);
+                AiRole = AIPools.FindAll(a => a.AILevel == randomLevel).ListRandom()[0];//由等级随机一个AI
+                break;
+            case 7:
+            case 8:
+            case 9:
+                randomLevel = UnityEngine.Random.Range(1, 4);
+                AiRole = AIPools.FindAll(a => a.AILevel == randomLevel).ListRandom()[0];//由等级随机一个AI
+                break;
+            case 10:
+            case 11:
+            case 12:
+                randomLevel = UnityEngine.Random.Range(1, 5);
+                AiRole = AIPools.FindAll(a => a.AILevel == randomLevel).ListRandom()[0];//由等级随机一个AI
+                break;
+            case 13:
+                AiRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+                break;
+            default:
+                break;
+        }
+        if (mapLocation.Row < 4)
+        {
+            AiRole = Common.GetTxtFileToList<CurrentRoleModel>(GlobalAttr.GlobalAIRolePoolFileName).FindAll(a => a.AILevel == 1).ListRandom()[0];//由等级随机一个AI
+        }
+        #endregion
         var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName) ?? new List<CurrentCardPoolModel>();//全局卡池
         PlayerHandCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         UnusedCardList = PlayerHandCardList.ListRandom();
@@ -352,8 +403,9 @@ public class GameView : BaseUI
         Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
 
         //AI攻击栏最大五张牌
-        AIAtkNum = AiRole.AILevel + 1;
+        AIAtkNum = AiRole.AILevel;
         if (AIAtkNum > 5) AIAtkNum = 5;
+        if (AIAtkNum < 2) AIAtkNum = 2;
         if (GlobalCardPools != null && GlobalCardPools?.Count > 0)
         {
             #region AI牌池
@@ -383,12 +435,12 @@ public class GameView : BaseUI
                 #endregion
             }
             #endregion
-            Common.SaveTxtFile(AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
-            AiATKCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAIATKCardPoolsFileName);//进行深拷贝，防止对象的引用路径未改变。在赋唯一ID值时会出问题
+            //AiATKCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentAIATKCardPoolsFileName);//进行深拷贝，防止对象的引用路径未改变。在赋唯一ID值时会出问题
             BattleManager.instance.InitCardPools(GetCardPoolsID(CardPoolType.OwnCards), GetCardPoolsID(CardPoolType.EnemyCards), GetCardPoolsID(CardPoolType.OwnHandCards), GetCardPoolsID(CardPoolType.EnemHandCards));
             Common.SaveTxtFile(AiCardList.ListToJson(), GlobalAttr.CurrentAiCardPoolsFileName);
             Common.SaveTxtFile(AiATKCardList.ListToJson(), GlobalAttr.CurrentAIATKCardPoolsFileName);
             Common.SaveTxtFile(UnusedCardList.ListToJson(), GlobalAttr.CurrentUnUsedCardPoolsFileName);
+            Common.SaveTxtFile(PlayerHandCardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
         }
         #endregion
         #region 数据初始化
@@ -414,14 +466,30 @@ public class GameView : BaseUI
         eRect.sizeDelta = new Vector2(400, 45);
         Eimg_HP.transform.localPosition = new Vector3(0, Pimg_HP.transform.localPosition.y);
         #endregion
-        txt_Right_Count.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
-        txt_P_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
-        Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0);
-        txt_E_HP.text = $"{AiRole.MaxHP}/{AiRole.HP}";
-        Common.ImageBind(PlayerRole.RoleImgUrl, img_Player);
-        Common.ImageBind(AiRole.RoleImgUrl, img_Enemy);
-        CreateEnergyImage(PlayerRole.Energy);
-        AIATKCardPoolsBind();
+        #region 护甲初始化
+        txt_P_Armor.text = "0";
+        Pimg_Armor.transform.localScale = Vector3.zero;
+        txt_E_Armor.text = "0";
+        Eimg_Armor.transform.localScale = Vector3.zero;
+        #endregion
+        #region 清空状态栏
+        if (P_buffObj != null)
+        {
+            int childCount = P_buffObj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(P_buffObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
+        if (E_buffObj != null)
+        {
+            int childCount = E_buffObj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(E_buffObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
+        #endregion
         #region 清空攻击栏的对象
         if (obj_CardPools != null)
         {
@@ -430,8 +498,26 @@ public class GameView : BaseUI
             {
                 DestroyImmediate(obj_CardPools.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
             }
-        } 
+        }
         #endregion
+        #region 清空详情栏对象
+        if (CardDetailObj != null)
+        {
+            int childCount = CardDetailObj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(CardDetailObj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
+        #endregion
+        txt_Right_Count.text = UsedCardList == null ? "0" : UsedCardList.Count.ToString();
+        txt_P_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";
+        Common.HPImageChange(Pimg_HP, PlayerRole.MaxHP, PlayerRole.MaxHP - PlayerRole.HP, 0);
+        txt_E_HP.text = $"{AiRole.MaxHP}/{AiRole.HP}";
+        Common.ImageBind(PlayerRole.RoleImgUrl, img_Player);
+        Common.ImageBind(AiRole.RoleImgUrl, img_Enemy);
+        CreateEnergyImage(PlayerRole.Energy);
+        AIATKCardPoolsBind();
     }
 
     private void InitBUFF()
@@ -448,7 +534,7 @@ public class GameView : BaseUI
     /// </summary>
     private void InitSetting()
     {
-        //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
+        SoundManager.instance.PlayOnlyOneSound("GameBGM", (int)TrackType.BGM, true);
     }
 
     /// <summary>
@@ -480,14 +566,22 @@ public class GameView : BaseUI
         {
             foreach (var item in list)
             {
-                result.Add(BattleManager.instance.OwnPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID));
+                var temp = BattleManager.instance.OwnPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID);
+                if (temp != null)
+                {
+                    result.Add(temp);
+                }
             }
         }
         else
         {
             foreach (var item in list)
             {
-                result.Add(BattleManager.instance.EnemyPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID));
+                var temp = BattleManager.instance.EnemyPlayerData[0].handCardList.Find(a => a.SingleID == item.SingleID);
+                if (temp != null)
+                {
+                    result.Add(temp);
+                }
             }
         }
         return result;
@@ -524,6 +618,7 @@ public class GameView : BaseUI
                 data.handCardList = list;
                 data.Energy = PlayerRole.Energy;
                 data.EnergyMax = PlayerRole.MaxEnergy;
+                data.Armor = 0;
                 result.Add(data);
                 break;
             case PlayerType.OwnHuman:
@@ -545,6 +640,7 @@ public class GameView : BaseUI
                 data.Energy = PlayerRole.Energy;
                 data.EnergyMax = PlayerRole.MaxEnergy;
                 data.Wealth = PlayerRole.Wealth;
+                data.Armor = 0;
                 result.Add(data);
                 break;
             case PlayerType.OtherHuman:
@@ -568,24 +664,17 @@ public class GameView : BaseUI
             case CardPoolType.OwnHandCards:
                 foreach (var item in PlayerHandCardList)
                 {
-                    if (item.SingleID > 0)
+                    var id = PlayerHandCardList.Max(a => a.SingleID);
+                    if (id < 1)
                     {
-                        list.Add(item.SingleID);
+                        id = 10000;
                     }
                     else
                     {
-                        var id = PlayerHandCardList.Max(a => a.SingleID);
-                        if (id < 1)
-                        {
-                            id = 10000;
-                        }
-                        else
-                        {
-                            id += 1;
-                            list.Add(id);
-                        }
-                        item.SingleID = id;
+                        id += 1;
+                        list.Add(id);
                     }
+                    item.SingleID = id;
                 }
                 break;
             case CardPoolType.EnemyCards:
@@ -701,6 +790,7 @@ public class GameView : BaseUI
             txt_P_HP.text = $"{ownRole.bloodMax}/{ownRole.bloodNow}";
             hasUseCard = true;
             EffectOn = "1";
+            BUFFUIChange(enemyRole.buffList, ref enemyRole.handCardList, ref AIAtk, 1);
         }
         #endregion
         #region 防御
@@ -799,64 +889,7 @@ public class GameView : BaseUI
         #region 愤怒
         else if (AIAtk.EffectType == 8)//愤怒
         {
-            #region BUff添加
-            if (enemyRole.buffList == null)
-            {
-                var buffDatas = new List<BuffData>();
-                buffDatas.Add(new BuffData
-                {
-                    Name = dic[AIAtk.EffectType.ToString()],
-                    Num = AIAtk.Effect,
-                    EffectType = AIAtk.EffectType,
-                    BUFFType = 0
-                });
-                enemyRole.buffList = buffDatas;
-                GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                tempBuff = Common.AddChild(E_buffObj.transform, tempBuff);
-                tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                var img = tempBuff.GetComponent<Image>();
-                Common.ImageBind(AIAtk.CardUrl, img);
-                var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-            }
-            else
-            {
-                if (!enemyRole.buffList.Exists(a => a.EffectType == 9))//免疫状态下所有buff卡不可使用
-                {
-                    var aa = enemyRole.buffList.Find(a => a.Name == dic[AIAtk.EffectType.ToString()]);//是否以存在此buff
-                    if (aa != null)
-                    {
-                        aa.Num += AIAtk.Effect;
-                    }
-                    else
-                    {
-                        var buffs = enemyRole.buffList.FindAll(a => a.BUFFType == 0);
-                        if (buffs != null && buffs?.Count > 0)
-                        {
-                            foreach (var item in buffs)
-                            {
-                                enemyRole.buffList.Remove(item);
-                            }
-                        }
-                        //一种类型只能存在一条。比如虚弱和愤怒不能共存
-                        enemyRole.buffList.Add(new BuffData
-                        {
-                            Name = dic[AIAtk.EffectType.ToString()],
-                            Num = AIAtk.Effect,
-                            EffectType = AIAtk.EffectType,
-                            BUFFType = 0
-                        });
-                        GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                        tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                        tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                        var img = tempBuff.GetComponent<Image>();
-                        Common.ImageBind(AIAtk.CardUrl, img);
-                        var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                        buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-                    }
-                }
-            }
-            #endregion
+            CardUseEffectManager.instance.AddBUFF(1, 1, AIAtk.EffectType, Convert.ToInt32(AIAtk.Effect), ref AIAtk);
             hasUseCard = true;
             EffectOn = "0";
         }
@@ -864,64 +897,7 @@ public class GameView : BaseUI
         #region 虚弱
         else if (AIAtk.EffectType == 11)//虚弱
         {
-            #region BUff添加
-            if (ownRole.buffList == null)
-            {
-                var buffDatas = new List<BuffData>();
-                buffDatas.Add(new BuffData
-                {
-                    Name = dic[AIAtk.EffectType.ToString()],
-                    Num = AIAtk.Effect,
-                    EffectType = AIAtk.EffectType,
-                    BUFFType = 0
-                });
-                ownRole.buffList = buffDatas;
-                GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                var img = tempBuff.GetComponent<Image>();
-                Common.ImageBind(AIAtk.CardUrl, img);
-                var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-            }
-            else
-            {
-                if (!ownRole.buffList.Exists(a => a.EffectType == 9))//免疫状态下所有buff卡不可使用
-                {
-                    var aa = ownRole.buffList.Find(a => a.Name == dic[AIAtk.EffectType.ToString()]);//是否以存在此buff
-                    if (aa != null)
-                    {
-                        aa.Num += AIAtk.Effect;
-                    }
-                    else
-                    {
-                        var buffs = ownRole.buffList.FindAll(a => a.BUFFType == 0);
-                        if (buffs != null && buffs?.Count > 0)
-                        {
-                            foreach (var item in buffs)
-                            {
-                                ownRole.buffList.Remove(item);
-                            }
-                        }
-                        //一种类型只能存在一条。比如虚弱和愤怒不能共存
-                        ownRole.buffList.Add(new BuffData
-                        {
-                            Name = dic[AIAtk.EffectType.ToString()],
-                            Num = AIAtk.Effect,
-                            EffectType = AIAtk.EffectType,
-                            BUFFType = 0
-                        });
-                        GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                        tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                        tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                        var img = tempBuff.GetComponent<Image>();
-                        Common.ImageBind(AIAtk.CardUrl, img);
-                        var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                        buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-                    }
-                }
-            }
-            #endregion
+            CardUseEffectManager.instance.AddBUFF(0, 1, AIAtk.EffectType, Convert.ToInt32(AIAtk.Effect), ref AIAtk);
             hasUseCard = true;
             EffectOn = "1";
         }
@@ -929,64 +905,7 @@ public class GameView : BaseUI
         #region 暴击等作用在攻击的Buff
         else if (AIAtk.EffectType == 10)//暴击
         {
-            #region BUff添加
-            if (enemyRole.buffList == null)
-            {
-                var buffDatas = new List<BuffData>();
-                buffDatas.Add(new BuffData
-                {
-                    Name = dic[AIAtk.EffectType.ToString()],
-                    Num = AIAtk.Effect,
-                    EffectType = AIAtk.EffectType,
-                    BUFFType = 0
-                });
-                enemyRole.buffList = buffDatas;
-                GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                var img = tempBuff.GetComponent<Image>();
-                Common.ImageBind(AIAtk.CardUrl, img);
-                var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-            }
-            else
-            {
-                if (!enemyRole.buffList.Exists(a => a.EffectType == 9))//免疫状态下所有buff卡不可使用
-                {
-                    var aa = enemyRole.buffList.Find(a => a.Name == dic[AIAtk.EffectType.ToString()]);//是否以存在此buff
-                    if (aa != null)
-                    {
-                        aa.Num += AIAtk.Effect;
-                    }
-                    else
-                    {
-                        var buffs = enemyRole.buffList.FindAll(a => a.BUFFType == 0);
-                        if (buffs != null && buffs?.Count > 0)
-                        {
-                            foreach (var item in buffs)
-                            {
-                                enemyRole.buffList.Remove(item);
-                            }
-                        }
-                        //一种类型只能存在一条。比如虚弱和愤怒不能共存
-                        enemyRole.buffList.Add(new BuffData
-                        {
-                            Name = dic[AIAtk.EffectType.ToString()],
-                            Num = AIAtk.Effect,
-                            EffectType = AIAtk.EffectType,
-                            BUFFType = 0
-                        });
-                        GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                        tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                        tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                        var img = tempBuff.GetComponent<Image>();
-                        Common.ImageBind(AIAtk.CardUrl, img);
-                        var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                        buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-                    }
-                }
-            }
-            #endregion
+            CardUseEffectManager.instance.AddBUFF(1, 4, AIAtk.EffectType, Convert.ToInt32(AIAtk.Effect), ref AIAtk);
             hasUseCard = true;
             EffectOn = "0";
         }
@@ -994,31 +913,7 @@ public class GameView : BaseUI
         #region 免疫
         else if (AIAtk.EffectType == 9)//免疫
         {
-            var aa = enemyRole.buffList.Find(a => a.Name == dic[AIAtk.EffectType.ToString()]);//是否以存在此buff
-            if (aa != null)
-            {
-                aa.Num += AIAtk.Effect;
-            }
-            else
-            {
-                //除了免疫BUFF其他都删掉
-                var buffDatas = new List<BuffData>();
-                buffDatas.Add(new BuffData
-                {
-                    Name = dic[AIAtk.EffectType.ToString()],
-                    Num = AIAtk.Effect,
-                    EffectType = AIAtk.EffectType,
-                    BUFFType = 3
-                });
-                enemyRole.buffList = buffDatas;
-                GameObject tempBuff = ResourcesManager.instance.Load("img_Buff") as GameObject;
-                tempBuff = Common.AddChild(P_buffObj.transform, tempBuff);
-                tempBuff.name = "img_Buff_" + AIAtk.EffectType;
-                var img = tempBuff.GetComponent<Image>();
-                Common.ImageBind(AIAtk.CardUrl, img);
-                var buffNum = tempBuff.transform.Find("Text").GetComponent<Text>();
-                buffNum.text = (Convert.ToUInt32(buffNum.text) + AIAtk.Effect).ToString();
-            }
+            CardUseEffectManager.instance.AddBUFF(1, 3, AIAtk.EffectType, Convert.ToInt32(AIAtk.Effect), ref AIAtk);
             hasUseCard = true;
             EffectOn = "0";
         }
@@ -1037,11 +932,11 @@ public class GameView : BaseUI
         #endregion
 
         #region 存储AI数据
-        CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
-        aiData.Armor = enemyRole.Armor;
-        aiData.HP = enemyRole.bloodNow;
-        aiData.MaxHP = enemyRole.bloodMax;
-        Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
+        //CurrentRoleModel aiData = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentAIRoleFileName);
+        //aiData.Armor = enemyRole.Armor;
+        //aiData.HP = enemyRole.bloodNow;
+        //aiData.MaxHP = enemyRole.bloodMax;
+        //Common.SaveTxtFile(aiData.ObjectToJson(), GlobalAttr.CurrentAIRoleFileName);
         #endregion
 
     }
@@ -1280,8 +1175,12 @@ public class GameView : BaseUI
                 AiATKCardList = SyncGameData(AiATKCardList, 1);
                 foreach (var item in AiATKCardList)
                 {
-                    var tempObj = AiATKBar_obj.transform.Find("AiAtkimg_" + item.SingleID + "(Clone)").gameObject;
-                    Common.AICardDataBind(tempObj, item, BattleManager.instance.EnemyPlayerData[0].buffList);
+                    Debug.Log("AiAtkimg_" + item.SingleID + "(Clone)");
+                    var tempObj = AiATKBar_obj.transform.Find("AiAtkimg_" + item.SingleID + "(Clone)")?.gameObject;
+                    if (tempObj != null)
+                    {
+                        Common.AICardDataBind(tempObj, item, BattleManager.instance.EnemyPlayerData[0].buffList);
+                    }
                 }
             }
         }

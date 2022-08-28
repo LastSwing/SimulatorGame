@@ -105,7 +105,7 @@ public class MainView : BaseUI
     /// </summary>
     private void InitSetting()
     {
-        //SoundManager.instance.PlayOnlyOneSound("BGM_1", (int)TrackType.BGM, true);
+        SoundManager.instance.PlayOnlyOneSound("MainBGM", (int)TrackType.BGM, true);
     }
 
     /// <summary>

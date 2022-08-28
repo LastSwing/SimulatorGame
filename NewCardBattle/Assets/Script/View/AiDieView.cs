@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class AiDieView : BaseUI
 {
     Image img_Background;//背景图片
-    GameObject obj_Award, obj_AwardSilver;
+    GameObject obj_Award, obj_AwardSilver, UI_Obj;
     Button btn_ResetAward, btn_CardPools, btn_Setting;
     Text txt_AwardSilver, txt_Silver, txt_CardPoolsCount, txt_ResetSilver;
     Text txt_ReturnView, txt_CardType, txt_SettingHasBtn, txt_ReturnView1, txt_HasClickSetting;
@@ -31,16 +31,15 @@ public class AiDieView : BaseUI
     /// </summary>
     private void InitComponent()
     {
+        UI_Obj = transform.Find("UI").gameObject;
         img_Background = transform.Find("BG").GetComponent<Image>();
         obj_Award = transform.Find("UI/Award").gameObject;
         obj_AwardSilver = transform.Find("UI/AwardSilver").gameObject;
         btn_ResetAward = transform.Find("UI/ResetAward").GetComponent<Button>();
         btn_CardPools = transform.Find("UI/CardPools_Obj").GetComponent<Button>();
-        btn_Setting = transform.Find("UI/TopBar/Setting").GetComponent<Button>();
         txt_AwardSilver = transform.Find("UI/AwardSilver/Text").GetComponent<Text>();
         txt_CardPoolsCount = transform.Find("UI/CardPools_Obj/Image/Text").GetComponent<Text>();
         txt_ResetSilver = transform.Find("UI/ResetAward/Image/Text").GetComponent<Text>();
-        txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
 
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
@@ -68,7 +67,7 @@ public class AiDieView : BaseUI
         #endregion
         btn_ResetAward.onClick.AddListener(ResetAward);
         btn_CardPools.onClick.AddListener(CardPoolsClick);
-        btn_Setting.onClick.AddListener(SettingClick);
+        //btn_Setting.onClick.AddListener(SettingClick);
     }
 
     #region 点击事件
@@ -188,7 +187,6 @@ public class AiDieView : BaseUI
     /// </summary>
     private void InitUIState()
     {
-
     }
 
     /// <summary>
@@ -198,6 +196,23 @@ public class AiDieView : BaseUI
     {
         if (txt_HasClickSetting.text == "0")
         {
+            #region TOPBar
+            var tempBar = transform.Find("UI/TopBar")?.gameObject;
+            if (tempBar != null)
+            {
+                DestroyImmediate(tempBar);
+            }
+            GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+            topBar = Common.AddChild(UI_Obj.transform, topBar);
+            topBar.name = "TopBar";
+            btn_Setting = transform.Find("UI/TopBar/Setting")?.GetComponent<Button>();
+            if (btn_Setting != null)
+            {
+                btn_Setting.onClick.RemoveAllListeners();
+                btn_Setting.onClick.AddListener(SettingClick);
+            }
+            txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
+            #endregion
             #region 数据初始化
             PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
 
@@ -218,6 +233,17 @@ public class AiDieView : BaseUI
 
             if (string.IsNullOrEmpty(PlayerRole.AdventureIds))
             {
+
+                #region 清空奖励栏的对象
+                if (obj_Award != null)
+                {
+                    int childCount = obj_Award.transform.childCount;
+                    for (int x = 0; x < childCount; x++)
+                    {
+                        DestroyImmediate(obj_Award.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+                    }
+                }
+                #endregion
                 for (int i = 0; i < AwardCount; i++)
                 {
                     CreateAwardCrad(list[i], i);
@@ -273,6 +299,17 @@ public class AiDieView : BaseUI
                             rewardList.Add(rewardList[i]);
                         }
                     }
+
+                    #region 清空奖励栏的对象
+                    if (obj_Award != null)
+                    {
+                        int childCount = obj_Award.transform.childCount;
+                        for (int x = 0; x < childCount; x++)
+                        {
+                            DestroyImmediate(obj_Award.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+                        }
+                    }
+                    #endregion
                     for (int i = 0; i < rewardList.Count; i++)
                     {
                         CreateAwardCrad(rewardList[i], i);

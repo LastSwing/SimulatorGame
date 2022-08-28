@@ -79,6 +79,7 @@ namespace Assets.Script.Models
 
         /// <summary>
         /// AI按等级出现
+        /// 有1-4个等级的AI，99等于boss
         /// </summary>
         public int AILevel { get; set; }
 
