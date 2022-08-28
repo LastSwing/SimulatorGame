@@ -60,19 +60,22 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                         case 9://免疫
                             return new List<BUFFEffect>();
                         case 10://暴击
-                            if (model.CardType == 0)
+                            if (model?.CardType == 0)
                             {
                                 if (model.EffectType == 1 || model.EffectType == 5 || model.EffectType == 7 || model.EffectType == 14 || model.EffectType == 31 || model.EffectType == 32)
                                 {
-                                    CardUseEffectManager.instance.HasNumberValueChange = true;
                                     model.Effect *= 2;
                                     item.Num -= 1;
+                                    if (item.Num == 0)
+                                    {
+                                        CardUseEffectManager.instance.HasNumberValueChange = true;
+                                    }
                                     CardUseEffectManager.instance.HasCrit = true;
                                 }
                             }
                             break;
                         case 20://束缚
-                            if (model.CardType == 0)
+                            if (model?.CardType == 0)
                             {
                                 bEffect.ID = list.Count + 1;
                                 bEffect.HasValid = false;
@@ -83,7 +86,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                             }
                             break;
                         case 21://缠绕
-                            if (model.CardType == 1)
+                            if (model?.CardType == 1)
                             {
                                 bEffect.ID = list.Count + 1;
                                 bEffect.HasValid = false;
@@ -101,7 +104,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                             list.Add(bEffect);
                             break;
                         case 23://致盲
-                            if (model.CardType == 0)
+                            if (model?.CardType == 0)
                             {
                                 int random = UnityEngine.Random.Range(0, 2);
                                 if (random == 0)
@@ -116,23 +119,58 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                             }
                             break;
                         case 29://混乱 50%暴击，50混乱
-                            if (model.CardType == 0)
+                            if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.EffectSettlement)//在效果结算状态下
                             {
-                                int random = UnityEngine.Random.Range(0, 2);
-                                if (random == 0)
+                                if (model?.CardType == 0)
                                 {
-                                    bEffect.ID = list.Count + 1;
-                                    bEffect.HasValid = false;
-                                    bEffect.UnableUse = 0;
-                                    bEffect.Sort = list.Count;
-                                    bEffect.EffectType = 2;
-                                    list.Add(bEffect);
+                                    int random = UnityEngine.Random.Range(0, 2);
+                                    if (random == 0)
+                                    {
+                                        bEffect.ID = list.Count + 1;
+                                        bEffect.HasValid = false;
+                                        bEffect.UnableUse = 0;
+                                        bEffect.Sort = list.Count;
+                                        bEffect.EffectType = 2;
+                                        list.Add(bEffect);
+                                    }
+                                    else
+                                    {
+                                        CardUseEffectManager.instance.HasNumberValueChange = true;
+                                        model.Effect *= 2;
+                                        CardUseEffectManager.instance.HasCrit = true;
+                                    }
                                 }
-                                else
+                            }
+                            else if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.AfterCardUse && model.TriggerAfterUsingList?.Count > 0)//在卡牌使用后状态下要是攻击状态
+                            {
+                                var afterAtkList = model.TriggerAfterUsingList;
+                                foreach (var info in afterAtkList)
                                 {
-                                    CardUseEffectManager.instance.HasNumberValueChange = true;
-                                    model.Effect *= 2;
-                                    CardUseEffectManager.instance.HasCrit = true;
+                                    switch (info.TriggerState)
+                                    {
+                                        case 2:
+                                        case 7:
+                                            if (model?.CardType == 0)
+                                            {
+                                                int random = UnityEngine.Random.Range(0, 2);
+                                                if (random == 0)
+                                                {
+                                                    bEffect.ID = list.Count + 1;
+                                                    bEffect.HasValid = false;
+                                                    bEffect.UnableUse = 0;
+                                                    bEffect.Sort = list.Count;
+                                                    bEffect.EffectType = 2;
+                                                    list.Add(bEffect);
+                                                }
+                                                else
+                                                {
+                                                    CardUseEffectManager.instance.HasNumberValueChange = true;
+                                                    model.Effect *= 2;
+                                                    CardUseEffectManager.instance.HasCrit = true;
+                                                }
+                                            }
+                                            break;
+                                    }
                                 }
                             }
                             break;
@@ -140,7 +178,7 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
                                 //每次使用攻击卡都直接扣减狂暴次数
                             if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.EffectSettlement)
                             {
-                                if (model.CardType == 0)
+                                if (model?.CardType == 0)
                                 {
                                     int changeHp = Convert.ToInt32(model.Effect);
                                     if (model.EffectType == 31)
@@ -252,12 +290,35 @@ public class BUFFManager : SingletonMonoBehaviour<BUFFManager>
             //敌人存在此标记，攻击照成暴击
             if (RivalBuff.Exists(a => a.EffectType == 34))
             {
-                if (model.CardType == 0)
+                if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.EffectSettlement)//在效果结算状态下
                 {
-                    CardUseEffectManager.instance.HasNumberValueChange = true;
-                    model.Effect *= 2;
-                    CardUseEffectManager.instance.HasCrit = true;
+                    if (model.CardType == 0)
+                    {
+                        CardUseEffectManager.instance.HasNumberValueChange = true;
+                        model.Effect *= 2;
+                        CardUseEffectManager.instance.HasCrit = true;
+                    }
                 }
+                else if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.AfterCardUse && model.TriggerAfterUsingList?.Count > 0)//在卡牌使用后状态下要是攻击状态
+                {
+                    var afterAtkList = model.TriggerAfterUsingList;
+                    foreach (var item in afterAtkList)
+                    {
+                        switch (item.TriggerState)
+                        {
+                            case 2:
+                            case 7:
+                                if (model.CardType == 0)
+                                {
+                                    CardUseEffectManager.instance.HasNumberValueChange = true;
+                                    model.Effect *= 2;
+                                    CardUseEffectManager.instance.HasCrit = true;
+                                }
+                                break;
+                        }
+                    }
+                }
+                
             }
             #endregion
         }

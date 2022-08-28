@@ -27,7 +27,7 @@ public class AnimationManager : SingletonMonoBehaviour<AnimationManager>
         { "Anim_RemoveCard",0.89f},//移除卡牌50
         { "Anim_DrawACard",1.10f},//抽一张卡60
         { "Anim_ArmorMelting",0.90f},//摧毁防御50
-        { "Anim_Elude",0.65f},//摧毁防御35
+        { "Anim_Elude",0.65f},//躲避攻击35
     };
 
     /// <summary>

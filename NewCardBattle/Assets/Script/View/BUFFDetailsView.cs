@@ -84,6 +84,16 @@ public class BUFFDetailsView : BaseUI
     /// </summary>
     private void InitUIState()
     {
+        #region 清空BUFF栏
+        if (Content_Obj != null)
+        {
+            int childCount = Content_Obj.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(Content_Obj.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
+        }
+        #endregion
         if (txt_ClickPlayerOrAI.text == "0")
         {
             if (BattleManager.instance.OwnPlayerData?[0].buffList?.Count > 0)

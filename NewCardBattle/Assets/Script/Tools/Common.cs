@@ -883,6 +883,7 @@ namespace Assets.Script.Tools
             SaveTxtFile(null, GlobalAttr.CurrentATKBarCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentUnUsedCardPoolsFileName);
+            SaveTxtFile(null, GlobalAttr.CurrentAIRoleFileName);
             GameObject.Find("MainCanvas/txt_HasClickSetting").GetComponent<Text>().text = "0";
         }
 
@@ -897,28 +898,112 @@ namespace Assets.Script.Tools
                 //第一次升级修改数值，第二次还是改数值。或消除一些负面效果。第三次升级改消耗。第四次还是改消耗，如果消耗无了就继续改数值
                 if (model.UpgradeCount == 0)
                 {
-                    if (model.EffectType == 0 || model.EffectType == 1 || model.EffectType == 3)
+                    switch (model.EffectType)
                     {
-                        int ReinforceNum = model.CardLevel + 3;
-                        model.Effect += ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
-                    }
-                    else if (model.EffectType == 2 || model.EffectType == 4)
-                    {
-                        int ReinforceNum = model.CardLevel + 1;
-                        model.Effect -= ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect + ReinforceNum).ToString(), model.Effect.ToString());
-                    }
-                    else
-                    {
-                        int ReinforceNum = model.CardLevel + 1;
-                        model.Effect += ReinforceNum;
-                        model.CardDetail = model.CardDetail.Replace((model.Effect - ReinforceNum).ToString(), model.Effect.ToString());
+                        #region 普通变化
+                        case 1://普通卡牌数值变化
+                        case 2:
+                        case 3:
+                        case 5:
+                        case 7:
+                        case 14:
+                        case 28:
+                        case 31:
+                        case 35:
+                            int ReinforceNum = model.CardLevel + 3;
+                            if (ReinforceNum > 5)
+                            {
+                                ReinforceNum = 5;
+                            }
+                            model.Effect += ReinforceNum;
+                            model.InitEffect += ReinforceNum;
+                            break;
+                        #endregion
+                        #region 去除移除
+                        case 4:
+                            int changeEnergy = Convert.ToInt32(model.Effect) + 1;
+                            bool hasChange = false;
+                            if (changeEnergy > 2)
+                            {
+                                if (model.UsingBeforeTriggerList?.Count > 0)
+                                {
+                                    if (model.UsingBeforeTriggerList.Exists(a => a.TriggerState == 17))
+                                    {
+                                        model.UsingBeforeTriggerList.ForEach(item =>
+                                        {
+                                            if (item.TriggerState == 17)//移除换成丢弃
+                                            {
+                                                item.TriggerState = 36;
+                                                hasChange = true;
+                                            }
+                                        });
+                                        model.CardDetail = model.CardDetail.Replace("移除", "丢弃");
+                                    }
+                                }
+                                if (!hasChange)
+                                {
+                                    if (model.TriggerAfterUsingList?.Count > 0)
+                                    {
+                                        if (model.TriggerAfterUsingList.Exists(a => a.TriggerState == 16))
+                                        {
+                                            model.TriggerAfterUsingList.Remove(model.TriggerAfterUsingList.Find(a => a.TriggerState == 16));
+                                            model.CardDetail = model.CardDetail.Replace("移除。", "");
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                model.Effect = changeEnergy;
+                                model.InitEffect = changeEnergy;
+                            }
+                            break;
+                        #endregion
+                        #region 能量变化
+                        case 0:
+                        case 6://摧毁防御
+                        case 12:
+                        case 27:
+                        case 30:
+                            model.Consume -= 1;
+                            if (model.Consume < 0)
+                            {
+                                model.Consume = 0;
+                            }
+                            break;
+                        #endregion
+                        #region BUFF数值变化
+                        case 8://buff数值变化
+                        case 9:
+                        case 10:
+                        case 11:
+                        case 13:
+                        case 20:
+                        case 21:
+                        case 22:
+                        case 23:
+                        case 26:
+                        case 29:
+                        case 33:
+                        case 34:
+                            ReinforceNum = model.CardLevel;
+                            if (ReinforceNum < 1)
+                            {
+                                ReinforceNum = 1;
+                            }
+                            model.Effect += ReinforceNum;
+                            model.InitEffect += ReinforceNum;
+                            break;
+                        #endregion
+                        default:
+                            model.Effect += 3;
+                            model.InitEffect += 3;
+                            break;
                     }
                 }
                 else if (model.UpgradeCount == 1)
                 {
-
+                    //暂时只允许升级一次
                 }
                 else if (model.UpgradeCount == 2)
                 {

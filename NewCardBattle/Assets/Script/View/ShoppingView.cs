@@ -10,12 +10,13 @@ using UnityEngine.UI;
 public class ShoppingView : BaseUI
 {
     Button btn_Setting, btn_AllSkills, btn_CardPools, btn_CardUpgrade, btn_Return;
-    GameObject LeftGoods, RightGoods, CardDetails, Confirms;
+    GameObject LeftGoods, RightGoods, CardDetails, Confirms, tempBar, UI_Obj;
     Text txt_Silver;
     Text txt_CardPoolsCount, txt_ReturnView, txt_CardType, txt_SettingHasBtn, txt_ReturnView1, txt_HasClickSetting;
 
     List<CurrentCardPoolModel> GlobalPlayerCardPools = new List<CurrentCardPoolModel>();//角色全局卡池
     List<CurrentCardPoolModel> RightCarPools = new List<CurrentCardPoolModel>();//右边卡池
+    List<CurrentCardPoolModel> LeftCarPools = new List<CurrentCardPoolModel>();//左边卡池
     List<CurrentCardPoolModel> CurrentCardList = new List<CurrentCardPoolModel>();
 
     CurrentRoleModel PlayerRole;
@@ -34,7 +35,7 @@ public class ShoppingView : BaseUI
     /// </summary>
     private void InitComponent()
     {
-        btn_Setting = transform.Find("UI/TopBar/Setting").GetComponent<Button>();
+        UI_Obj = transform.Find("UI").gameObject;
         btn_AllSkills = transform.Find("UI/btn_CardList").GetComponent<Button>();
         btn_CardPools = transform.Find("UI/CardPools_Obj").GetComponent<Button>();
         btn_CardUpgrade = transform.Find("UI/btn_CardUpgrade").GetComponent<Button>();
@@ -43,7 +44,6 @@ public class ShoppingView : BaseUI
         RightGoods = transform.Find("UI/RightGoods").gameObject;
         CardDetails = transform.Find("UI/CardDetails").gameObject;
         Confirms = transform.Find("UI/Confirms").gameObject;
-        txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
         txt_CardPoolsCount = transform.Find("UI/CardPools_Obj/Image/Text").GetComponent<Text>();
 
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
@@ -70,7 +70,6 @@ public class ShoppingView : BaseUI
         trigger.triggers.Add(entry);
         #endregion
         btn_AllSkills.onClick.AddListener(AllSkillsClick);
-        btn_Setting.onClick.AddListener(SettingClick);
         btn_CardPools.onClick.AddListener(CardPoolsClick);
         btn_CardUpgrade.onClick.AddListener(CardUpgradeClick);
         btn_Return.onClick.AddListener(ReturnClick);
@@ -81,7 +80,7 @@ public class ShoppingView : BaseUI
     public void ReturnClick()
     {
         //txt_HasClickSetting.text = "1";
-        UIManager.instance.OpenView(txt_ReturnView.text);
+        UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("ShoppingView");
     }
 
@@ -119,6 +118,7 @@ public class ShoppingView : BaseUI
     {
         HideCardDetail();
         txt_ReturnView.text = "ShoppingView";
+        txt_HasClickSetting.text = "1";
         UIManager.instance.OpenView("UpgradeView");
         UIManager.instance.CloseView("ShoppingView");
     }
@@ -142,11 +142,11 @@ public class ShoppingView : BaseUI
         if (txt_HasClickSetting.text == "0")
         {
             GlobalPlayerCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
-            GlobalPlayerCardPools = GlobalPlayerCardPools.FindAll(a => a.HasShoppingShow == 1).ListRandom();
-            RightCarPools = GlobalPlayerCardPools.FindAll(a => a.HasShoppingShow == 1).ListRandom();
-            PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
+            LeftCarPools = GlobalPlayerCardPools.FindAll(a => a.HasShoppingShow == 1 && a.CardLevel != 3).ListRandom();
+            RightCarPools = GlobalPlayerCardPools.FindAll(a => a.HasShoppingShow == 1 && a.CardLevel == 3).ListRandom();
             CurrentCardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
         }
+        PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
     }
 
     /// <summary>
@@ -159,11 +159,46 @@ public class ShoppingView : BaseUI
             AddLeftGoods();
             AddRightGoods();
             txt_CardPoolsCount.text = CurrentCardList.Count.ToString();
+            #region 清空卡牌详情
+            if (CardDetails != null)
+            {
+                int childCount = CardDetails.transform.childCount;
+                for (int x = 0; x < childCount; x++)
+                {
+                    DestroyImmediate(CardDetails.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+                }
+            }
+            if (Confirms != null)
+            {
+                int childCount = Confirms.transform.childCount;
+                for (int x = 0; x < childCount; x++)
+                {
+                    DestroyImmediate(Confirms.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+                }
+            }
+            #endregion
         }
         else
         {
             txt_HasClickSetting.text = "0";
         }
+        #region TOPBar
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        if (tempBar != null)
+        {
+            DestroyImmediate(tempBar);
+        }
+        GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+        topBar = Common.AddChild(UI_Obj.transform, topBar);
+        topBar.name = "TopBar";
+        btn_Setting = transform.Find("UI/TopBar/Setting")?.GetComponent<Button>();
+        if (btn_Setting != null)
+        {
+            btn_Setting.onClick.RemoveAllListeners();
+            btn_Setting.onClick.AddListener(SettingClick);
+        }
+        txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
+        #endregion
     }
 
     /// <summary>
@@ -186,7 +221,7 @@ public class ShoppingView : BaseUI
         }
         for (int i = 0; i < 3; i++)
         {
-            CreateAwardCrad(GlobalPlayerCardPools[i], i, "LeftGoods");
+            CreateAwardCrad(LeftCarPools[i], i, "LeftGoods");
         }
     }
     private void AddRightGoods()
@@ -313,6 +348,12 @@ public class ShoppingView : BaseUI
         }
     }
 
+    /// <summary>
+    /// 确认购买
+    /// </summary>
+    /// <param name="model"></param>
+    /// <param name="i"></param>
+    /// <param name="type"></param>
     public void ConfirmPurchase(CurrentCardPoolModel model, int i, string type)
     {
         PlayerRole.Wealth -= model.CardPrice;

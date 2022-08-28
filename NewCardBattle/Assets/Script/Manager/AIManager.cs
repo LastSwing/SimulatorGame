@@ -13,6 +13,7 @@ public class AIManager : SingletonMonoBehaviour<AIManager>
     {
         switch (aiLevel)
         {
+            case 0:
             case 1:
             case 2:
             case 3:

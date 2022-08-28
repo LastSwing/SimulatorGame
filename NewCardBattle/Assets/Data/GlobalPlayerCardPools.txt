@@ -374,7 +374,7 @@
         "CardUrl":"Images/CardIcon/XuRuo",
         "CardDetail":"施加@effect层虚弱。",
         "Consume":0,
-        "Effect":1,
+        "Effect":2,
         "PlayerOrAI":0,
         "CardLevel":1,
         "CardPrice":25,
@@ -572,7 +572,7 @@
         "Effect":1,
         "PlayerOrAI":0,
         "CardLevel":3,
-        "CardPrice":80,
+        "CardPrice":180,
         "HasShoppingShow":1,
         "TriggerAfterUsingList":[
             {
@@ -600,7 +600,7 @@
         "Effect":1,
         "PlayerOrAI":0,
         "CardLevel":3,
-        "CardPrice":80,
+        "CardPrice":180,
         "HasShoppingShow":1,
         "TriggerAfterUsingList":[
             {
@@ -1202,7 +1202,7 @@
     {
         "ID":1052,
         "ParentID":0,
-        "CardType":0,
+        "CardType":1,
         "EffectType":2,
         "AtkNumber":1,
         "CardName":"破损的护栏",

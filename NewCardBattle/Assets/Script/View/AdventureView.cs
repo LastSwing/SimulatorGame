@@ -12,7 +12,7 @@ public class AdventureView : BaseUI
     Image img_Background;//背景图片
     Image img_MainBG, img_HP;
     Text txt_EventDetail, txt_HP, txt_Wealth;
-    GameObject obj_EventBtn, obj_CardsReward;
+    GameObject obj_EventBtn, obj_CardsReward, UI_Obj;
     Button btn_Setting;
     Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1, txt_HasClickSetting;//是否点击了设置，0否，1是
 
@@ -34,16 +34,17 @@ public class AdventureView : BaseUI
     /// </summary>
     private void InitComponent()
     {
+        UI_Obj = transform.Find("UI").gameObject;
         img_Background = transform.Find("BG").GetComponent<Image>();
         img_MainBG = transform.Find("UI/img_MainBG").GetComponent<Image>();
         txt_EventDetail = transform.Find("UI/txt_EventDetail").GetComponent<Text>();
         obj_EventBtn = transform.Find("UI/obj_EventBtn").gameObject;
         obj_CardsReward = transform.Find("UI/obj_CardsReward").gameObject;
-        img_HP = transform.Find("UI/TopBar/HP/img_HP").GetComponent<Image>();
-        txt_HP = transform.Find("UI/TopBar/HP/Text").GetComponent<Text>();
-        txt_Wealth = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
+        //img_HP = transform.Find("UI/TopBar/HP/img_HP").GetComponent<Image>();
+        //txt_HP = transform.Find("UI/TopBar/HP/Text").GetComponent<Text>();
+        //txt_Wealth = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
 
-        btn_Setting = transform.Find("UI/TopBar/Setting").GetComponent<Button>();
+        //btn_Setting = transform.Find("UI/TopBar/Setting").GetComponent<Button>();
 
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
@@ -67,7 +68,7 @@ public class AdventureView : BaseUI
         entry.callback.AddListener(delegate { HideEventUnderBtn(); });
         trigger.triggers.Add(entry);
         #endregion
-        btn_Setting.onClick.AddListener(SettingClick);
+        //btn_Setting.onClick.AddListener(SettingClick);
     }
 
     #region 初始化触发事件
@@ -122,6 +123,25 @@ public class AdventureView : BaseUI
     /// </summary>
     private void InitUIState()
     {
+        #region TOPBar
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        if (tempBar != null)
+        {
+            DestroyImmediate(tempBar);
+        }
+        GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+        topBar = Common.AddChild(UI_Obj.transform, topBar);
+        topBar.name = "TopBar";
+        btn_Setting = transform.Find("UI/TopBar/Setting")?.GetComponent<Button>();
+        if (btn_Setting != null)
+        {
+            btn_Setting.onClick.RemoveAllListeners();
+            btn_Setting.onClick.AddListener(SettingClick);
+        }
+        img_HP = transform.Find("UI/TopBar/HP/img_HP").GetComponent<Image>();
+        txt_HP = transform.Find("UI/TopBar/HP/Text").GetComponent<Text>();
+        txt_Wealth = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
+        #endregion
         DataBind();
     }
 
@@ -149,7 +169,7 @@ public class AdventureView : BaseUI
 
             if (CurrentAdt != null && CurrentAdt?.Count > 0)
             {
-                var groupCAdt = CurrentAdt.OrderBy(a => a.EventLayerLevelSort)
+                var groupCAdt = CurrentAdt.OrderByDescending(a => a.EventLayerLevelSort)
                     .GroupBy(a => a.EventLayerLevel).ToList();
                 CurrentLayer = groupCAdt[0].ToList();//第一层级
             }
@@ -159,7 +179,7 @@ public class AdventureView : BaseUI
         {
             txt_HasClickSetting.text = "0";
         }
-    } 
+    }
     #endregion
 
     #region 冒险UI初始化
@@ -171,8 +191,9 @@ public class AdventureView : BaseUI
         {
             DestroyImmediate(obj_EventBtn.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
         }
-        if (CurrentLayer != null)
+        if (CurrentLayer?.Count > 0)
         {
+            CurrentLayer = CurrentLayer.OrderByDescending(a => a.EventLayerLevelSort).ToList();
             Common.ImageBind(CurrentLayer[0].MainBGIUrl, img_MainBG);
             txt_EventDetail.text = CurrentLayer[0].EventDetail;
             for (int i = 0; i < CurrentLayer.Count; i++)
@@ -253,7 +274,7 @@ public class AdventureView : BaseUI
                             CurrentLayer.Add(entity);
                         }
                     }
-                    CurrentLayer.OrderBy(a => a.EventLayerLevelSort);
+                    CurrentLayer.OrderByDescending(a => a.EventLayerLevelSort);
                     //修改文件角色/要即时刷新
                     if (PlayerRole != null)
                     {
@@ -409,33 +430,17 @@ public class AdventureView : BaseUI
                 case 7:
                     break;
                 case 8:
+                case 10:
                     //点击后展示卡牌奖励
                     obj_EventBtn.SetActive(false);
-                    GlobalCardList.ListRandom();
+                    var blackCards = GlobalCardList.FindAll(a => a.CardType == 2).ListRandom();
                     for (int i = 0; i < model.EventEffectValue; i++)
                     {
-                        RewardList.Add(GlobalCardList[i]);
+                        RewardList.Add(blackCards[i]);
                     }
                     CardsReward(RewardList);
                     break;
                 case 9:
-                    obj_EventBtn.SetActive(false);
-                    GlobalCardList.ListRandom();
-                    for (int i = 0; i < model.EventEffectValue; i++)
-                    {
-                        RewardList.Add(GlobalCardList[i]);
-                    }
-                    CardsReward(RewardList);
-                    break;
-                case 10:
-                    obj_EventBtn.SetActive(false);
-                    GlobalCardList.ListRandom();
-                    for (int i = 0; i < model.EventEffectValue; i++)
-                    {
-                        RewardList.Add(GlobalCardList[i]);
-                    }
-                    CardsReward(RewardList);
-                    break;
                 case 11:
                     obj_EventBtn.SetActive(false);
                     GlobalCardList.ListRandom();

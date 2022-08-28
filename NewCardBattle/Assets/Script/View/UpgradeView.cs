@@ -3,15 +3,17 @@ using Assets.Script.Tools;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class UpgradeView : BaseUI
 {
-    List<CurrentCardPoolModel> CardList = new List<CurrentCardPoolModel>();
+    List<CurrentCardPoolModel> CardList = new List<CurrentCardPoolModel>();//当前展示的卡池
+    List<CurrentCardPoolModel> AllHandCard = new List<CurrentCardPoolModel>();//所有手牌
     List<CurrentCardPoolModel> UpgradeCardList = new List<CurrentCardPoolModel>();//升级后得卡池
-    GameObject Content_Obj;
+    GameObject Content_Obj, UI_Obj, CardDetails;
     Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1, txt_HasClickSetting;
     Text txt_UpgradePrice, txt_SelectedCardID, txt_Silver;
     RectTransform Content_Rect;
@@ -31,15 +33,15 @@ public class UpgradeView : BaseUI
     /// </summary>
     private void InitComponent()
     {
+        UI_Obj = transform.Find("UI").gameObject;
         img_Background = transform.Find("BG").GetComponent<Image>();
         Content_Obj = transform.Find("UI/CardPoolsArea/CardPools/Content").gameObject;
+        CardDetails = transform.Find("UI/CardDetails").gameObject;
         Content_Rect = transform.Find("UI/CardPoolsArea/CardPools/Content").GetComponent<RectTransform>();
         btn_Return = transform.Find("UI/btn_Return").GetComponent<Button>();
         btn_Upgrade = transform.Find("UI/btn_Upgrade").GetComponent<Button>();
-        btn_Setting = transform.Find("UI/TopBar/Setting").GetComponent<Button>();
         txt_UpgradePrice = transform.Find("UI/btn_Upgrade/Text").GetComponent<Text>();
         txt_SelectedCardID = transform.Find("UI/txt_SelectedCardID").GetComponent<Text>();
-        txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
 
         txt_ReturnView = GameObject.Find("MainCanvas/txt_ReturnView").GetComponent<Text>();
         txt_ReturnView1 = GameObject.Find("MainCanvas/txt_ReturnView1").GetComponent<Text>();
@@ -65,12 +67,11 @@ public class UpgradeView : BaseUI
         #endregion
         btn_Return.onClick.AddListener(ReturnClick);
         btn_Upgrade.onClick.AddListener(UpgradeClick);
-        btn_Setting.onClick.AddListener(SettingClick);
+        //btn_Setting.onClick.AddListener(SettingClick);
     }
 
     public void ReturnClick()
     {
-        txt_HasClickSetting.text = "1";
         UIManager.instance.OpenView(txt_ReturnView.text);
         UIManager.instance.CloseView("UpgradeView");
     }
@@ -87,19 +88,21 @@ public class UpgradeView : BaseUI
 
     public void UpgradeClick()
     {
-        CurrentCardPoolModel model = CardList.Find(a => a.ID == Convert.ToInt32(txt_SelectedCardID.text));
-        var UpModel = UpgradeCardList.Find(a => a.ID == Convert.ToInt32(txt_SelectedCardID.text));
+        CurrentCardPoolModel model = AllHandCard.Find(a => a.SingleID == Convert.ToInt32(txt_SelectedCardID.text));
+        var UpModel = UpgradeCardList.Find(a => a.SingleID == Convert.ToInt32(txt_SelectedCardID.text));
         int price = Convert.ToInt32(txt_UpgradePrice.text);
         if (PlayerRole.Wealth >= price)
         {
             PlayerRole.Wealth -= price;
             UpModel.Proficiency = 0;
-            CardList.Remove(model);
-            CardList.Add(UpModel);
+            AllHandCard.Remove(model);
+            AllHandCard.Add(UpModel);
             txt_Silver.text = PlayerRole.Wealth.ToString();
             InitUIState();
-            Common.SaveTxtFile(CardList.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+            Common.SaveTxtFile(AllHandCard.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
             Common.SaveTxtFile(PlayerRole.ObjectToJson(), GlobalAttr.CurrentPlayerRoleFileName);
+            CreateCardPools();
+            OnOpen();
         }
     }
 
@@ -119,28 +122,65 @@ public class UpgradeView : BaseUI
     /// </summary>
     private void InitUIData()
     {
-        if (txt_HasClickSetting.text == "0")
-        {
-            CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName).FindAll(a => a.UpgradeCount == 0);
-            UpgradeCardList = Common.CardUpgrade();
-            PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
-        }
+        AllHandCard = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName);
+        GetCardPoolsID();
+        Common.SaveTxtFile(AllHandCard.ListToJson(), GlobalAttr.CurrentCardPoolsFileName);
+        CardList = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.CurrentCardPoolsFileName).FindAll(a => a.UpgradeCount == 0);
+        UpgradeCardList = Common.CardUpgrade();
+        PlayerRole = Common.GetTxtFileToModel<CurrentRoleModel>(GlobalAttr.CurrentPlayerRoleFileName);
     }
 
+    private void GetCardPoolsID()
+    {
+        foreach (var item in AllHandCard)
+        {
+            var id = AllHandCard.Max(a => a.SingleID);
+            if (id < 1)
+            {
+                id = 10000;
+            }
+            else
+            {
+                id += 1;
+            }
+            item.SingleID = id;
+        }
+    }
     /// <summary>
     /// 更新UI状态
     /// </summary>
     private void InitUIState()
     {
-        if (txt_HasClickSetting.text == "0")
+        btn_Upgrade.transform.localScale = Vector3.zero;
+        CreateCardPools();
+
+        #region 清空卡牌详情
+        if (CardDetails != null)
         {
-            btn_Upgrade.transform.localScale = Vector3.zero;
-            CreateCardPools();
+            int childCount = CardDetails.transform.childCount;
+            for (int x = 0; x < childCount; x++)
+            {
+                DestroyImmediate(CardDetails.transform.GetChild(0).gameObject);//如不是删除后马上要使用则用Destroy方法
+            }
         }
-        else
+        #endregion
+        #region TOPBar
+        var tempBar = transform.Find("UI/TopBar")?.gameObject;
+        if (tempBar != null)
         {
-            txt_HasClickSetting.text = "0";
+            DestroyImmediate(tempBar);
         }
+        GameObject topBar = ResourcesManager.instance.Load("TopBar") as GameObject;
+        topBar = Common.AddChild(UI_Obj.transform, topBar);
+        topBar.name = "TopBar";
+        btn_Setting = transform.Find("UI/TopBar/Setting")?.GetComponent<Button>();
+        if (btn_Setting != null)
+        {
+            btn_Setting.onClick.RemoveAllListeners();
+            btn_Setting.onClick.AddListener(SettingClick);
+        }
+        txt_Silver = transform.Find("UI/TopBar/img_Silver/txt_Silver").GetComponent<Text>();
+        #endregion
     }
 
     /// <summary>
@@ -207,12 +247,12 @@ public class UpgradeView : BaseUI
         btn_Upgrade.transform.localScale = Vector3.zero;
         for (int i = 0; i < CardList.Count; i++)
         {
-            var Card_img = GameObject.Find($"CardDetails/img_Detail{i}")?.GetComponent<Image>();
+            var Card_img = CardDetails.transform.Find($"img_Detail{i}")?.GetComponent<Image>();
             if (Card_img != null)
             {
                 Card_img.transform.localScale = Vector3.zero;
             }
-            var Card_imgUp = GameObject.Find($"CardDetails/img_Detail_Up{i}")?.GetComponent<Image>();
+            var Card_imgUp = CardDetails.transform.Find($"img_Detail_Up{i}")?.GetComponent<Image>();
             if (Card_imgUp != null)
             {
                 Card_imgUp.transform.localScale = Vector3.zero;
@@ -228,7 +268,7 @@ public class UpgradeView : BaseUI
     public void ShowDetail(CurrentCardPoolModel model, int i)
     {
         HideCardDetail();
-        txt_SelectedCardID.text = model.ID.ToString();
+        txt_SelectedCardID.text = model.SingleID.ToString();
         btn_Upgrade.transform.localScale = Vector3.one;
         txt_UpgradePrice.text = (100 - model.Proficiency).ToString();
         if (PlayerRole.Wealth < Convert.ToInt32(txt_UpgradePrice.text))
@@ -247,22 +287,22 @@ public class UpgradeView : BaseUI
         }
         else
         {
-            var Card_img = GameObject.Find($"CardDetails");
             GameObject tempImg = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
-            tempImg = Common.AddChild(Card_img.transform, tempImg);
+            tempImg = Common.AddChild(CardDetails.transform, tempImg);
             tempImg.name = "img_Detail" + i;
             tempImg.transform.localPosition = new Vector2(0, 80);
 
             Common.CardDetailDataBind(tempImg, model);
 
             GameObject tempImgUp = ResourcesManager.instance.Load("img_CardDetail") as GameObject;
-            tempImgUp = Common.AddChild(Card_img.transform, tempImgUp);
+            tempImgUp = Common.AddChild(CardDetails.transform, tempImgUp);
             tempImgUp.name = "img_Detail_Up" + i;
             tempImgUp.transform.localPosition = new Vector2(0, -80);
 
             Text tempUp = tempImgUp.transform.Find("Text").GetComponent<Text>();
             var upModel = UpgradeCardList.Find(a => a.ID == model.ID);
-            tempUp.text = $"{upModel.CardName}\n{upModel.CardDetail}";
+
+            Common.CardDetailDataBind(tempImgUp, upModel);
             if (upModel.UpgradeCount == 0)
             {
                 tempUp.color = Color.black;

@@ -18,7 +18,6 @@ public class PlayerDieView : BaseUI
     GameObject UI_Obj;
     float totalTime;
     int AccumulateCount, InitValue, MaxValue = 0;
-    bool DataReset;
     #region OnInit
     public override void OnInit()
     {
@@ -67,12 +66,12 @@ public class PlayerDieView : BaseUI
     #region 按钮事件
     public void ContinueClick()
     {
-        UIManager.instance.OpenView("MapView");
+        UIManager.instance.OpenView("MainView");
         UIManager.instance.CloseView("PlayerDieView");
     }
     public void AginClick()
     {
-        UIManager.instance.OpenView("MainView");
+        UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("PlayerDieView");
     }
     public void SettingClick()
@@ -195,10 +194,10 @@ public class PlayerDieView : BaseUI
         var GlobalCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalCardPoolFileName);
         var GlobalPlayerCardPools = Common.GetTxtFileToList<CurrentCardPoolModel>(GlobalAttr.GlobalPlayerCardPoolFileName);
         //找出玩家没拥有的卡池
-        var surplusList = GlobalCardPools.Where(a => !GlobalPlayerCardPools.Exists(t => a.ID.Equals(t.ID))).ToList().ListRandom();
+        var surplusList = GlobalCardPools.Where(a => !GlobalPlayerCardPools.Exists(t => a.ID.Equals(t.ID))).ToList();
         if (surplusList?.Count > 0)
         {
-            var model = surplusList[0];
+            var model = surplusList.ListRandom()[0];
             GameObject img_Card = ResourcesManager.instance.Load("img_Card240") as GameObject;
             img_Card = Common.AddChild(obj.transform, img_Card);
             img_Card.name = "img_AwardCard" + i;
@@ -257,17 +256,10 @@ public class PlayerDieView : BaseUI
     }
     #endregion
 
-    private void Update()
-    {
-        if (!DataReset)
-        {
-            Common.GameOverDataReset();
-            DataReset = true;
-        }
-    }
 
     public override void OnClose()
     {
-
+        Debug.Log("数据初始化");
+        Common.GameOverDataReset();
     }
 }
