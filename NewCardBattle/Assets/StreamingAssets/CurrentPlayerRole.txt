@@ -1,0 +1,1 @@
+{"RoleID":1001,"RoleType":0,"Name":"玩家1","RoleImgUrl":"Images/Player","HP":55,"MaxHP":55,"Wealth":150,"Energy":3,"MaxEnergy":3,"Armor":0,"CurrentState":0,"CardListStr":"1001|木盾;1001|木盾;1002|冲拳;1002|冲拳;1003|飞腿;1004|金光手;1005|琉光掌;1006|土菇花;1007|土梨果;1007|土梨果;","HeadPortraitUrl":"Images/Player_Head","AILevel":0,"ExtraReward":0,"AdventureIds":""}

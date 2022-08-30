@@ -311,8 +311,6 @@ public class MapView : BaseUI
                     Common.ImageBind(PlayerRole.HeadPortraitUrl, child);
                 }
             }
-            //地图初始位置
-            img_map.transform.position = new Vector3(InitPos.x, InitPos.y - (mapLocation.Row) * 240, 0);
         }
         else
         {
@@ -352,6 +350,8 @@ public class MapView : BaseUI
             MapRow = 1;
             ListPreviousRow = new List<int>() { 1 };
         }
+        //地图初始位置
+        img_map.transform.position = new Vector3(InitPos.x, bottomY - mapLocation.Row * lineSpacing, 0);
     }
 
     #region 地图读取

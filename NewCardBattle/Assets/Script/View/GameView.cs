@@ -713,6 +713,8 @@ public class GameView : BaseUI
     {
         if (BattleManager.instance.BattleStateMachine.CurrentState.ID == BattleStateID.Control)
         {
+            HideCardDetail();
+            HideMagnifyCard();
             BattleManager.instance.BattleStateMachine.ChangeState(BattleStateID.TurnEnd);
         }
     }

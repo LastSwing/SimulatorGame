@@ -1,0 +1,1 @@
+{"RoleID":1003,"RoleType":1,"Name":"Boos1","RoleImgUrl":"Images/AiImg/Enemy1","HP":75,"MaxHP":75,"Wealth":0,"Energy":3,"MaxEnergy":3,"Armor":0,"CurrentState":0,"CardListStr":"1024|����;1055|���µ�ƻ��;1039|������;1045|������;1038|����ն;1042|��������;1043|�����;1009|�侲;1011|����;1020|��ͭ��;","HeadPortraitUrl":"Images/AiImg/Enemy1_Head","AILevel":99,"ExtraReward":0,"AdventureIds":""}

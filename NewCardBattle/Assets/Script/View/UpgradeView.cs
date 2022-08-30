@@ -153,7 +153,7 @@ public class UpgradeView : BaseUI
     {
         btn_Upgrade.transform.localScale = Vector3.zero;
         CreateCardPools();
-
+        txt_UpgradePrice.color = Color.white;
         #region 清空卡牌详情
         if (CardDetails != null)
         {
