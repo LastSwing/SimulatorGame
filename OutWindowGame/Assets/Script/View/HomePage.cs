@@ -46,7 +46,7 @@ public class HomePage : BaseUI
             GameObjectPool.GetObject(levelObject, ScrollView.transform);
         }
         if (levels.Count>2)
-            ScrollView.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(Screen.width + (levels.Count-2)*600, 500);
+            ScrollView.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(Screen.width + (levels.Count-2)*700, 500);
         List<GameObject> list = BaseHelper.GetAllSceneObjects(ScrollView.transform, true,false,"Level");
         for (int i = 0; i < list.Count; i++)
         {
@@ -111,7 +111,7 @@ public class HomePage : BaseUI
         {
             ScrollView.transform.localPosition = new Vector2(ScrollView.transform.localPosition.x + ScrollView.transform.localPosition.x * -1 * 0.01f, ScrollView.transform.localPosition.y);
         }
-        else if (!Mdwon && ScrollView.transform.localPosition.x < 0 && ScrollView.transform.localPosition.x < 575* levels.Count/2*-1)
+        else if (!Mdwon && ScrollView.transform.localPosition.x < 0 && ScrollView.transform.localPosition.x < 420* levels.Count/2*-1)
         {
             ScrollView.transform.localPosition = new Vector2(ScrollView.transform.localPosition.x + ScrollView.transform.localPosition.x * -1 * 0.01f, ScrollView.transform.localPosition.y);
         }

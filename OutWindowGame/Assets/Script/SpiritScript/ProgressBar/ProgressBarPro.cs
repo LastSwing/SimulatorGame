@@ -2,6 +2,7 @@
 using System.Collections;
 using PlayfulSystems.ProgressBar;
 using System;
+using System.Collections.Generic;
 
 [ExecuteInEditMode]
 public class ProgressBarPro : MonoBehaviour {
@@ -24,8 +25,8 @@ public class ProgressBarPro : MonoBehaviour {
     private Coroutine sizeAnim;
     //判断Value值+-
     private bool Shown = false;
-    //判断是否启动Value值变化
-    private bool Update = true;
+    //判断是否启动Value值变化 不启动变成1后停止
+    public bool Update = true;
 
     public void Start() {
         if (views == null || views.Length == 0)
@@ -36,21 +37,25 @@ public class ProgressBarPro : MonoBehaviour {
 
     void FixedUpdate()
     {
-        if (Update)
-            Move();
+        Move();
     }
     void OnEnable() {
         SetDisplayValue(m_value, true);
     }
+    //循环变大小
     void Move()
     {
-        if (Math.Round(m_value, 2) == 1.00F)
+        if (Math.Round(m_value, 2) >= 1.00F)
+        {
             Shown = true;
+        }
         else if (m_value < 0f)
+        {
             Shown = false;
-        if (Shown)
+        }
+        if (Shown && Update)
             m_value -= 0.01F;
-        else
+        else if (!Shown)
             m_value += 0.01F;
         SetDisplayValue(m_value, true);
     }
@@ -63,7 +68,6 @@ public class ProgressBarPro : MonoBehaviour {
         set {
             if (value == m_value)
                 return;
-
             SetValue(value);
         }
     }

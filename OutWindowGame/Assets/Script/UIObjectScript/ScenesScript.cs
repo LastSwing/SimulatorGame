@@ -18,7 +18,7 @@ public class ScenesScript : MonoBehaviour
     void BtnClick()
     {
         Image.SetActive(true);
-        transform.parent.parent.parent.GetComponent<EditView>().SceneID = ScenesID;
+        transform.parent.parent.parent.GetComponent<EditMainScript>().SceneID = ScenesID;
         List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent,false,false,"");
         foreach (GameObject obj in list)
         {

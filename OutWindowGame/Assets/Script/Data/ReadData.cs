@@ -10,21 +10,43 @@ using UnityEngine;
 public static class ReadData
 {
     /// <summary>
+    /// 根据运行平台不同返回路径
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string ReturnPath(string path)
+    {
+        string to_path;
+        if (Application.platform == RuntimePlatform.Android)//安卓先将文件从apk中取出，存到持久化数据存储目录中，再通过C#IO读取
+        {
+            string url = Application.streamingAssetsPath + path;
+            to_path = Application.persistentDataPath + "/" + path;
+            WWW www = new WWW(url);
+            while (!www.isDone) 
+            { 
+            
+            }//等待异步读取
+            if (www.error == null)
+            {
+                File.WriteAllBytes(to_path, www.bytes);
+            }
+        }
+        else
+            to_path = Application.streamingAssetsPath + "/" + path;
+        return to_path;
+    }
+    /// <summary>
     /// 返回关卡列表
     /// </summary>
     /// <returns></returns>
     public static List<Level> GetLevels()
     {
         List<Level> levels = new List<Level>();
-        string path = Application.dataPath + "/Data/Level.txt";
-        DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-        //if (!myDirectoryInfo.Exists)
-        //{
-        //    Directory.CreateDirectory(path);
-        //}
-        if (File.Exists(path))
+        string file_name = "/Level.txt";
+        string to_path = ReturnPath(file_name);
+        if (File.Exists(to_path))
         {
-            using (StreamReader tmpReader = File.OpenText(path))
+            using (StreamReader tmpReader = File.OpenText(to_path))
             {
                 string result = tmpReader.ReadToEnd();
                 JsonData json = JsonMapper.ToObject(result);
@@ -51,7 +73,7 @@ public static class ReadData
     public static List<LevelDetail> GetLevelDetail(int LevelID)
     {
         List<LevelDetail> detail = new List<LevelDetail>();
-        string path = string.Format(Application.dataPath + "/Data/LevelDetail{0}.txt", LevelID);
+        string path = ReturnPath(string.Format("/LevelDetail{0}.txt", LevelID));
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         //if (!myDirectoryInfo.Exists)
         //{
@@ -96,7 +118,7 @@ public static class ReadData
     {
         List<Scene> scenes = new List<Scene>();
         List<Level> levels = new List<Level>();
-        string path = Application.dataPath + "/Data/Scene.txt";
+        string path = Application.dataPath + "/StreamingAssets/Scene.txt";
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         //if (!myDirectoryInfo.Exists)
         //{
@@ -130,7 +152,7 @@ public static class ReadData
     public static Process GetProcess()
     {
         Process process = new Process();
-        string path = Application.dataPath + "/Data/Process.txt";
+        string path = Application.dataPath + "/StreamingAssets/Process.txt";
         DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
         if (File.Exists(path))
         {
@@ -155,7 +177,7 @@ public static class ReadData
     /// <param name="LevelNum">关卡数</param>
     public static void SaveLevelDetail(List<LevelDetail> levelDetails,int LevelNum)
     {
-        string path = Application.dataPath + @"\Data\";
+        string path = Application.dataPath + @"\StreamingAssets\";
         string Name = "LevelDetail" + LevelNum;
         JsonData jd = new JsonData();
         for (int i = 0; i < levelDetails.Count; i++)
@@ -191,7 +213,7 @@ public static class ReadData
     /// <param name="levels">关卡</param>
     public static void SaveLevel(List<Level> levels)
     {
-        string path = Application.dataPath + "/Data/";
+        string path = Application.dataPath + "/StreamingAssets/";
         string Name = "Level";
         JsonData jd = new JsonData();
         for (int i = 0; i < levels.Count; i++)

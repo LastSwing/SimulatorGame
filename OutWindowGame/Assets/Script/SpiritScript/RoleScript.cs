@@ -29,11 +29,21 @@ public class RoleScript : MonoBehaviour
     //道具集类
     private LoadProp loadProp = new LoadProp();
     // 游戏开始
-    private bool _start = false;
+    public bool _start = true;
     // 使用道具
     public bool _Prop = false;
+    /// <summary>
+    /// 是否离开室内平台
+    /// </summary>
+    public bool leave = false;
+    /// <summary>
+    /// 是否可移动
+    /// </summary>
+    public bool _move = true;
     //模拟高度空气墙
     public GameObject Resist;
+    //Hp
+    int Hp = 100;
     #region 道具使用变量
     private float angle = 0;//初始角度
     private int IsAngle = 0;//角度节点 0向上1向下2调整
@@ -44,125 +54,144 @@ public class RoleScript : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        GameObjectPool = transform.parent.GetComponent<MainView>().GameObjectPool;
+        if (transform.parent.name == "MainView(Clone)")
+        {
+            GameObjectPool = transform.parent.GetComponent<MainView>().GameObjectPool;
+            Restart();
+        }
     }
 
     private void FixedUpdate()
     {
-        if (_start)
-        {
-            move(vector);
-        }
-        if (_Prop)
+        if (transform.parent.name == "MainView(Clone)")
         {
             Vector2 vector = Rockel.GetComponent<RockerScript>().SmallRectVector;
-            foreach (var name in propName)
+            if (vector != Vector2.zero && !_Prop && _move)
             {
-                switch (name)
+                rb.AddForce(new Vector2(vector.x * 20, 0));
+            }
+            if (_start)
+            {
+                if (!leave)
                 {
-                    case "PaperPlane":
-                        if (track)
-                        {
-                            if (angle >= 35)
-                                IsAngle = 2;
-                            else if (angle <= -40)
-                                IsAngle = 1;
-                            if (IsAngle == 0)//缓慢向上飞
+                    if (transform.localPosition.x > GameObject.Find("Indoor").transform.localPosition.x + 960)//离开室内平台超过半径
+                    {
+                        _move = false;
+                        leave = true;
+                        transform.parent.GetComponent<MainView>().IsDownUp = true;
+                    }
+                }
+            }
+            if (_Prop)
+            {
+                foreach (var name in propName)
+                {
+                    switch (name)
+                    {
+                        case "PaperPlane":
+                            if (track)
                             {
-                                angle += 0.6f;
-                                rb.AddForce(Vector3.right * 50);
-                                rb.AddForce(Vector2.up * 200);
-                            }
-                            else if (IsAngle == 2)//失力调整方向向下
-                            {
-                                rb.AddForce(Vector2.right * 50);
-                                angle -= 10f;
-                            }
-                            else if (IsAngle == 1)//向下
-                            {
-                                rb.AddForce(Vector2.right * 50);
-                                angle += 0.3f;
-                                if (angle >= 0)
+                                if (angle >= 35)
+                                    IsAngle = 2;
+                                else if (angle <= -40)
+                                    IsAngle = 1;
+                                if (IsAngle == 0)//缓慢向上飞
                                 {
-                                    track = false;
-                                    angle = 0;
+                                    angle += 0.6f;
+                                    rb.AddForce(Vector3.right * 50);
+                                    rb.AddForce(Vector2.up * 200);
                                 }
-                            }
-                            transform.rotation = Quaternion.Euler(0, 0, angle);
-                            PropObject[name].transform.localRotation = transform.localRotation;
-                        }
-                        else
-                            rb.AddForce(Vector2.right * 50);
-                        break;
-                    case "Property":
-                        rb.velocity = new Vector2(rb.velocity.x * 0.9f, rb.velocity.y * 0.9f);
-                        rb.AddForce(new Vector2(vector.x > 0 ? 20 : -20, 0));
-                        break;
-                    case "UAV":
-                        rb.AddForce(new Vector2(vector.x / 3, vector.y / 3));
-                        if (vector.x == 0)
-                            PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(0);
-                        else if (vector.x > 0)
-                            PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(2);
-                        else if(vector.x<0)
-                            PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(1);
-                        break;
-                    case "Reversal":
-                        float y = (transform.parent.localPosition.y * -1) + (Screen.height / 2) - 47;
-                        if (transform.localPosition.y < y)
-                            transform.Translate(Vector2.down);
-                        else
-                        {
-                            transform.localPosition = new Vector2(transform.localPosition.x, y);
-                            rb.velocity = new Vector2(rb.velocity.x, 0);
-                        }
-                        if (vector != new Vector2(0, 0))
-                            rb.AddForce(new Vector2(vector.x * 2, 0));
-                        break;
-                    case "BigRole":
-                        if ((DateTime.Now - date).TotalMilliseconds > 5000)
-                            DropProp();
-                        else
-                            PropObject[name].GetComponent<Rigidbody2D>().AddForce(Vector2.right * 50000);
-                        break;
-                    case "HookRope":
-                        rb.velocity = new Vector2(rb.velocity.x * 0.9f, rb.velocity.y * 0.9f);
-                        if (vector != new Vector2(0, 0))
-                        {
-                            float angle = Mathf.Asin(vector.y / (vector.x * vector.x + vector.y * vector.y)) * 100 * Mathf.PI * Mathf.Rad2Deg;
-                            if (vector.y >= 0 && vector.x > 0)
-                                angle = 90 - (angle / 2);
-                            else if (vector.y <= 0 && vector.x > 0)
-                                angle = 90 + (angle * -1 / 2);
-                            else if (vector.y <= 0 && vector.x < 0)
-                                angle = 180 + (angle * -1 / 2);
-                            else if (vector.y >= 0 && vector.x < 0)
-                                angle = 270 + (angle / 2);
-                            Debug.Log(PropObject[name].transform.localRotation.z);
-                            if (vector.y < 0)//处于上半部
-                            {
-
+                                else if (IsAngle == 2)//失力调整方向向下
+                                {
+                                    rb.AddForce(Vector2.right * 50);
+                                    angle -= 10f;
+                                }
+                                else if (IsAngle == 1)//向下
+                                {
+                                    rb.AddForce(Vector2.right * 50);
+                                    angle += 0.3f;
+                                    if (angle >= 0)
+                                    {
+                                        track = false;
+                                        angle = 0;
+                                    }
+                                }
+                                transform.rotation = Quaternion.Euler(0, 0, angle);
+                                PropObject[name].transform.localRotation = transform.localRotation;
                             }
                             else
-                            { 
-                                
-                            }
-                            if (angle >360- PropObject[name].transform.localRotation.z)
+                                rb.AddForce(Vector2.right * 50);
+                            break;
+                        case "Property":
+                            rb.velocity = new Vector2(rb.velocity.x * 0.9f, rb.velocity.y * 0.9f);
+                            rb.AddForce(new Vector2(vector.x > 0 ? 20 : -20, 0));
+                            break;
+                        case "UAV":
+                            rb.AddForce(new Vector2(vector.x / 3, vector.y / 3));
+                            if (vector.x == 0)
+                                PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(0);
+                            else if (vector.x > 0)
+                                PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(2);
+                            else if (vector.x < 0)
+                                PropObject[name].transform.Find("propeller").GetComponent<Propeller>().FlyAngle(1);
+                            break;
+                        case "Reversal":
+                            float y = (transform.parent.localPosition.y * -1) + (Screen.height / 2) - 47;
+                            if (transform.localPosition.y < y)
+                                transform.Translate(Vector2.down);
+                            else
                             {
-                                PropObject[name].transform.RotateAround(transform.position+ new Vector3(1,0,0), transform.forward,-1);
+                                transform.localPosition = new Vector2(transform.localPosition.x, y);
+                                rb.velocity = new Vector2(rb.velocity.x, 0);
                             }
-                            else if (angle < 360 - PropObject[name].transform.eulerAngles.z)
+                            if (vector != new Vector2(0, 0))
+                                rb.AddForce(new Vector2(vector.x * 2, 0));
+                            break;
+                        case "BigRole":
+                            if ((DateTime.Now - date).TotalMilliseconds > 5000)
+                                DropProp();
+                            else
+                                PropObject[name].GetComponent<Rigidbody2D>().AddForce(Vector2.right * 50000);
+                            break;
+                        case "HookRope":
+                            rb.velocity = new Vector2(rb.velocity.x * 0.9f, rb.velocity.y * 0.9f);
+                            if (vector != new Vector2(0, 0))
                             {
-                                PropObject[name].transform.RotateAround(transform.position + new Vector3(1, 0, 0), transform.forward, 1);
+                                float angle = Mathf.Asin(vector.y / (vector.x * vector.x + vector.y * vector.y)) * 100 * Mathf.PI * Mathf.Rad2Deg;
+                                if (vector.y >= 0 && vector.x > 0)
+                                    angle = 90 - (angle / 2);
+                                else if (vector.y <= 0 && vector.x > 0)
+                                    angle = 90 + (angle * -1 / 2);
+                                else if (vector.y <= 0 && vector.x < 0)
+                                    angle = 180 + (angle * -1 / 2);
+                                else if (vector.y >= 0 && vector.x < 0)
+                                    angle = 270 + (angle / 2);
+                                Debug.Log(PropObject[name].transform.localRotation.z);
+                                if (vector.y < 0)//处于上半部
+                                {
+
+                                }
+                                else
+                                {
+
+                                }
+                                if (angle > 360 - PropObject[name].transform.localRotation.z)
+                                {
+                                    PropObject[name].transform.RotateAround(transform.position + new Vector3(1, 0, 0), transform.forward, -1);
+                                }
+                                else if (angle < 360 - PropObject[name].transform.eulerAngles.z)
+                                {
+                                    PropObject[name].transform.RotateAround(transform.position + new Vector3(1, 0, 0), transform.forward, 1);
+                                }
                             }
-                        }
-                        break;
+                            break;
+                    }
+                    //if (loadProp.PropDict[name].IsMove)
+                    //{
+                    //    PropObject[name].transform.localPosition = (Vector2)transform.localPosition + loadProp.PropDict[name].Loadlocation;
+                    //    PropObject[name].transform.localRotation = transform.localRotation;
+                    //}
                 }
-                //if (loadProp.PropDict[name].IsMove)
-                //{
-                //    PropObject[name].transform.localPosition = (Vector2)transform.localPosition + loadProp.PropDict[name].Loadlocation;
-                //    PropObject[name].transform.localRotation = transform.localRotation;
-                //}
             }
         }
     }
@@ -175,7 +204,6 @@ public class RoleScript : MonoBehaviour
     {
         if (_Prop == false)
         {
-            _start = false;
             _Prop = true;
             CreateProp(PropName);
         }
@@ -203,7 +231,8 @@ public class RoleScript : MonoBehaviour
             }
             else
                 propName.Add(PropName);
-            GameObject propObject = GameObjectPool.GetObject(Resources.Load(string.Format("Prefabs/Prop/{0}", PropName)) as GameObject, transform.parent);
+            GameObject g = Resources.Load(string.Format(@"Prefabs\Prop\{0}", PropName)) as GameObject;
+            GameObject propObject = GameObjectPool.GetObject(g, transform.parent);
             propObject.SetActive(true);
             propObject.name = PropName;
             propObject.transform.localPosition = (Vector2)transform.localPosition + mainProp.Loadlocation;
@@ -256,7 +285,6 @@ public class RoleScript : MonoBehaviour
     /// </summary>
     public void DropProp()
     {
-        _start = false;
         if (_Prop == true)
         {
             if (propName.Count == 1)
@@ -280,8 +308,8 @@ public class RoleScript : MonoBehaviour
             foreach (var item in PropObject)
             {
                 GameObjectPool.IntoPool(item.Value);
-                if (loadProp.PropDict[item.Key].IsRocker)
-                    IsRockel(false);
+                //if (loadProp.PropDict[item.Key].IsRocker)
+                //    //IsRockel(false);
             }
             _Prop = false;
             transform.localRotation = Quaternion.Euler(0,0,0);
@@ -297,7 +325,7 @@ public class RoleScript : MonoBehaviour
     private void IsRockel(bool Putout)
     {
         if (Putout)
-            Rockel.transform.localPosition = new Vector3(-1200, -150, 0);
+            Rockel.transform.localPosition = new Vector3(-750, -150, 0);
         else
             Rockel.transform.localPosition = new Vector3(-5000, -250, 0);
     }
@@ -325,14 +353,21 @@ public class RoleScript : MonoBehaviour
     #region 碰撞事件
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (!_start) return;
         if (collision.gameObject.name == "Pillar")
         {
 
         }
         else if (collision.gameObject.name == "Ground")
         {
+            JudgmentDie(rb.velocity.y);
+            _move = true;
             DropProp();
-            UI.GetComponent<UIScript>().GameOver(false, 0);
+        }
+        else if (collision.gameObject.name == "MovingBar")
+        {
+            JudgmentDie(22.5f);
+            collision.gameObject.SetActive(false);
         }
         else if (collision.gameObject.name == "Teleport")
         {
@@ -340,26 +375,10 @@ public class RoleScript : MonoBehaviour
             transform.localPosition = new Vector2(-900, 488);
             rb.velocity = new Vector2(0, 0);
         }
-        else if (collision.gameObject.name == "Sea")
+        else if (collision.gameObject.name == "Bullet")
         {
-            DropProp();
-            UI.GetComponent<UIScript>().GameOver(true, 1);
-        }
-        else if (collision.gameObject.name == "Stone")
-        {
-            DropProp();
-            UI.GetComponent<UIScript>().GameOver(true, 2);
-        }
-        else if (collision.gameObject.name == "Island")
-        {
-            DropProp();
-            UI.GetComponent<UIScript>().GameOver(true, 3);
-        }
-    }
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.name == "Pillar")
-        {
+            JudgmentDie(22.5f);
+            collision.gameObject.GetComponent<Bullet>().B_Destroy();
         }
     }
     #endregion
@@ -383,7 +402,40 @@ public class RoleScript : MonoBehaviour
     {
         if (!_Prop)
             rb.AddForce(vector3);
-    } 
+    }
     #endregion
-    
+
+    /// <summary>
+    /// 与物体碰撞后是否掉血
+    /// </summary>
+    void JudgmentDie(float y)
+    {
+        if (y > 20)//开始掉血
+        {
+            Hp -= Convert.ToInt32((y - 20) * 4);
+            if (Hp <= 0)//致死
+            {
+                Hp = 0;
+            }
+            UI.GetComponent<UIScript>().Damage(Hp);
+            UI.GetComponent<UIScript>().OutBleed();
+            if (Hp == 0)
+            {
+                IsRockel(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 重置状态
+    /// </summary>
+    public void Restart()
+    {
+        IsRockel(true);
+        Hp = 100;
+        _move = true;
+        _start =true;
+        _Prop = false;
+        leave = false;
+    }
 }

@@ -1,1 +1,0 @@
-{"Level":1,"Revive":10,"Die":0,"InTime":1080,"CollLevel":"1|2|2|1"}

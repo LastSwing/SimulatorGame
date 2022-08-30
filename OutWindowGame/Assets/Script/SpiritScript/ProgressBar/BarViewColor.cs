@@ -10,7 +10,7 @@ namespace PlayfulSystems.ProgressBar {
 
 		[Header("Color Options")]
 		[Tooltip("The default color of the bar can be set by the ProgressBar.SetbarColor()")]
-		[SerializeField] bool canOverrideColor;
+		[SerializeField] public bool canOverrideColor;
 
 		[SerializeField] Color defaultColor = Color.white;
         [Tooltip("Change color of the bar automatically based on it's value.")]

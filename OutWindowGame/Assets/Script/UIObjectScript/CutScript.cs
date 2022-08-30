@@ -18,7 +18,10 @@ public class CutScript : MonoBehaviour
     GameObject BigG;//落点在中间的物体
     GameObject DisG;//消失的物体
     bool State = false;//是否开始动画
-    int cycle = 25;//循环周期
+    /// <summary>
+    /// 循环周期
+    /// </summary>
+    int cycle = 25;
     /// <summary>
     /// 0 全部移动 1 移动两个道具（道具使用）  2 只移动成为主道具的一个道具 3 移动两个道具（点击左右）
     /// </summary>
@@ -35,88 +38,130 @@ public class CutScript : MonoBehaviour
         rightBtn.onClick.AddListener(rightBtnClick);
         loadProp = new LoadProp();
         int i = 0;
-        //生成道具到道具条
-        foreach (var item in loadProp.PropDict)
+        string props = "";
+        if (transform.parent.parent.name == "EditMain")
         {
-            propName.Add(new LoadPropList(i, item.Key, item.Value));
-            GameObject go = new GameObject();
-            go.transform.localPosition = new Vector2(-9999, 9999);
-            go.name = item.Key;
-            go.AddComponent<Image>().sprite = BaseHelper.LoadFromImage(new Vector2(50, 50), Application.dataPath + @"\Resources\Image\PropImage\" + item.Value.Image);
-            go.GetComponent<Image>().preserveAspect = true;
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(50, 50);
-            go.transform.parent = transform;
-            go.transform.localScale = Vector3.one;
-            i++;
+            foreach (var item in loadProp.PropDict)
+                props+= item.Key +",";
         }
-        //显示道具
-        if (loadProp.PropDict.Count == 0)
-        {
-            return;
-        }
-        if (loadProp.PropDict.Count > 0)
-        {
-            GameObject game = transform.Find(propName[0].Name).gameObject;
-            game.transform.localPosition = new Vector2(-100, 0);
-            leftname = propName[0].Name;
-        }
-        if (loadProp.PropDict.Count > 1)
-        {
-            GameObject game = transform.Find(propName[1].Name).gameObject;
-            game.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 150);
-            game.transform.localPosition = new Vector2(0, 0);
-            bigname = propName[1].Name;
-        }
-        if (loadProp.PropDict.Count > 2)
-        {
-            GameObject game = transform.Find(propName[2].Name).gameObject;
-            game.transform.localPosition = new Vector2(100, 0);
-            rightname = propName[2].Name;
-        }
-        if (transform.parent.name == "UI")
-            transform.parent.GetComponent<UIScript>().m_PropName = bigname;
+        else if (transform.parent.parent.name == "MainView(Clone)")
+            props = transform.parent.parent.GetComponent<MainView>().level.Props;
+        if (props == "")
+            this.gameObject.SetActive(false);
         else
-            transform.parent.parent.GetComponent<EditView>().m_PropName = bigname;
+        {
+            //生成道具到道具条
+            foreach (var item in loadProp.PropDict)
+            {
+                if (props.Contains(item.Key))
+                {
+                    propName.Add(new LoadPropList(i, item.Key, item.Value));
+                    GameObject go = new GameObject();
+                    go.transform.localPosition = new Vector2(-9999, 9999);
+                    go.name = item.Key;
+                    go.AddComponent<Image>().sprite = BaseHelper.LoadFromImage(new Vector2(50, 50), Application.dataPath + @"\Resources\Image\PropImage\" + item.Value.Image);
+                    go.GetComponent<Image>().preserveAspect = true;
+                    go.GetComponent<RectTransform>().sizeDelta = new Vector2(50, 50);
+                    go.transform.parent = transform;
+                    go.transform.localScale = Vector3.one;
+                    i++;
+                }
+            }
+            //显示道具
+            if (propName.Count == 0)
+            {
+                return;
+            }
+            if (propName.Count > 0)
+            {
+                GameObject game = transform.Find(propName[0].Name).gameObject;
+                game.transform.localPosition = new Vector2(-100, 0);
+                leftname = propName[0].Name;
+            }
+            if (propName.Count > 1)
+            {
+                GameObject game = transform.Find(propName[1].Name).gameObject;
+                game.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 150);
+                game.transform.localPosition = new Vector2(0, 0);
+                bigname = propName[1].Name;
+            }
+            if (propName.Count > 2)
+            {
+                GameObject game = transform.Find(propName[2].Name).gameObject;
+                game.transform.localPosition = new Vector2(100, 0);
+                rightname = propName[2].Name;
+            }
+            if (transform.parent.name == "UI")
+                transform.parent.GetComponent<UIScript>().m_PropName = bigname;
+            else
+                transform.parent.parent.GetComponent<EditMainScript>().m_PropName = bigname;
+        }
     }
+    /// <summary>
+    /// 重置
+    /// </summary>
     public void Restart()
     {
         propName.Clear();
         int i = 0;
-        foreach (var item in loadProp.PropDict)
+        string props = "";
+        if (transform.parent.parent.name == "EditMain")
         {
-            propName.Add(new LoadPropList(i, item.Key, item.Value));
-            transform.Find(item.Key).localPosition = new Vector2(-9999, 9999);
-            transform.Find(item.Key).GetComponent<RectTransform>().sizeDelta = new Vector2(50, 50);
-            i++;
+            foreach (var item in loadProp.PropDict)
+                props += item.Key + ",";
         }
-        //显示道具
-        if (loadProp.PropDict.Count == 0)
-        {
-            return;
-        }
-        if (loadProp.PropDict.Count > 0)
-        {
-            GameObject game = transform.Find(propName[0].Name).gameObject;
-            game.transform.localPosition = new Vector2(-100, 0);
-            leftname = propName[0].Name;
-        }
-        if (loadProp.PropDict.Count > 1)
-        {
-            GameObject game = transform.Find(propName[1].Name).gameObject;
-            game.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 150);
-            game.transform.localPosition = new Vector2(0, 0);
-            bigname = propName[1].Name;
-        }
-        if (loadProp.PropDict.Count > 2)
-        {
-            GameObject game = transform.Find(propName[2].Name).gameObject;
-            game.transform.localPosition = new Vector2(100, 0);
-            rightname = propName[2].Name;
-        }
-        if (transform.parent.name == "UI")
-            transform.parent.GetComponent<UIScript>().m_PropName = bigname;
+        else if (transform.parent.parent.name == "MainView")
+            props = transform.parent.parent.GetComponent<MainView>().level.Props;
+        if (props == "")
+            this.gameObject.SetActive(false);
         else
-            transform.parent.parent.GetComponent<EditView>().m_PropName = bigname;
+        {
+            //生成道具到道具条
+            foreach (var item in loadProp.PropDict)
+            {
+                if (props.Contains(item.Key))
+                {
+                    propName.Add(new LoadPropList(i, item.Key, item.Value));
+                    GameObject go = new GameObject();
+                    go.transform.localPosition = new Vector2(-9999, 9999);
+                    go.name = item.Key;
+                    go.AddComponent<Image>().sprite = BaseHelper.LoadFromImage(new Vector2(50, 50), Application.dataPath + @"\Resources\Image\PropImage\" + item.Value.Image);
+                    go.GetComponent<Image>().preserveAspect = true;
+                    go.GetComponent<RectTransform>().sizeDelta = new Vector2(50, 50);
+                    go.transform.parent = transform;
+                    go.transform.localScale = Vector3.one;
+                    i++;
+                }
+            }
+            //显示道具
+            if (propName.Count == 0)
+            {
+                return;
+            }
+            if (propName.Count > 0)
+            {
+                GameObject game = transform.Find(propName[0].Name).gameObject;
+                game.transform.localPosition = new Vector2(-100, 0);
+                leftname = propName[0].Name;
+            }
+            if (propName.Count > 1)
+            {
+                GameObject game = transform.Find(propName[1].Name).gameObject;
+                game.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 150);
+                game.transform.localPosition = new Vector2(0, 0);
+                bigname = propName[1].Name;
+            }
+            if (propName.Count > 2)
+            {
+                GameObject game = transform.Find(propName[2].Name).gameObject;
+                game.transform.localPosition = new Vector2(100, 0);
+                rightname = propName[2].Name;
+            }
+            if (transform.parent.name == "UI")
+                transform.parent.GetComponent<UIScript>().m_PropName = bigname;
+            else
+                transform.parent.parent.GetComponent<EditMainScript>().m_PropName = bigname;
+        }
     }
     private void FixedUpdate()
     {
@@ -265,7 +310,7 @@ public class CutScript : MonoBehaviour
         if (transform.parent.name == "UI")
             transform.parent.GetComponent<UIScript>().m_PropName = bigname;
         else
-            transform.parent.parent.GetComponent<EditView>().m_PropName = bigname;
+            transform.parent.parent.GetComponent<EditMainScript>().m_PropName = bigname;
     }
     /// <summary>
     /// 右
@@ -351,14 +396,14 @@ public class CutScript : MonoBehaviour
         if (transform.parent.name == "UI")
             transform.parent.GetComponent<UIScript>().m_PropName = bigname;
         else
-            transform.parent.parent.GetComponent<EditView>().m_PropName = bigname;
+            transform.parent.parent.GetComponent<EditMainScript>().m_PropName = bigname;
     }
     /// <summary>
     /// 道具已使用 使用规则-从右到左
     /// </summary>
     public bool Consume()
     {
-        if (cycle != 25) return false;
+        if (cycle != 25 || !this.gameObject.activeSelf || propName.Count == 0) return false;
         else
         {
             LoadPropList loadPropList = new LoadPropList();

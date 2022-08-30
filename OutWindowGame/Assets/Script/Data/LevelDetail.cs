@@ -59,7 +59,7 @@ public class LevelDetail
     /// </summary>
     public string DetailName { get; set; }
     /// <summary>
-    /// 物体类型
+    /// 物体类型 0障碍物1地形
     /// </summary>
     public int DetailType { get; set; }
 }
