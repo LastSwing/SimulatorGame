@@ -76,6 +76,7 @@ public class ResourcesManager : SingletonMonoBehaviour<ResourcesManager>
     /// </summary>
     public void Init()
     {
+        Common.ReadStreamingAssetsToNewPath();
         #region 资源路径初始化
         //Common.SaveTxtFile(Common.DicToJson(urlDic), GlobalAttr.AllResourcesFileName, "Resources");
         Common.DicDataRead(ref urlDic, GlobalAttr.AllResourcesFileName, "Resources");

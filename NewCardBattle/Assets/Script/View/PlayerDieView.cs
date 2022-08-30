@@ -66,20 +66,20 @@ public class PlayerDieView : BaseUI
     #region 按钮事件
     public void ContinueClick()
     {
-        UIManager.instance.OpenView("MainView");
         UIManager.instance.CloseView("PlayerDieView");
+        UIManager.instance.OpenView("MainView");
     }
     public void AginClick()
     {
-        UIManager.instance.OpenView("MapView");
         UIManager.instance.CloseView("PlayerDieView");
+        UIManager.instance.OpenView("MapView");
     }
     public void SettingClick()
     {
         txt_ReturnView.text = "PlayerDieView";
         txt_ReturnView1.text = "PlayerDieView";
-        UIManager.instance.OpenView("SettingView");
         UIManager.instance.CloseView("PlayerDieView");
+        UIManager.instance.OpenView("SettingView");
     }
     #endregion
     #endregion
@@ -119,7 +119,11 @@ public class PlayerDieView : BaseUI
         var mapLo = Common.GetTxtFileToModel<CurrentMapLocation>(GlobalAttr.CurrentMapLocationFileName, "Map");
         if (mapLo != null)
         {
-            int goldValue = mapLo.Row * Random.Range(6, 13);
+            int goldValue = (mapLo.Row - 1) * Random.Range(6, 13);
+            if (goldValue <= 0)
+            {
+                goldValue = 0;
+            }
             if (mapLo.HasKillBoss == 1)
             {
                 goldValue = 130;
@@ -171,7 +175,7 @@ public class PlayerDieView : BaseUI
             topBar.name = "TopBar";
         }
         #endregion
-    } 
+    }
     #endregion
 
     #region 卡片奖励
@@ -259,7 +263,6 @@ public class PlayerDieView : BaseUI
 
     public override void OnClose()
     {
-        Debug.Log("数据初始化");
         Common.GameOverDataReset();
     }
 }

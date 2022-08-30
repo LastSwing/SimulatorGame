@@ -284,7 +284,7 @@ public class AdventureView : BaseUI
                                 PlayerRole.HP -= model.EventEffectValue;
                                 if (PlayerRole.HP <= 0)
                                 {
-                                    UIManager.instance.OpenView("PlayerDieScene");
+                                    UIManager.instance.OpenView("PlayerDieView");
                                     UIManager.instance.CloseView("AdventureView");
                                 }
                                 txt_HP.text = $"{PlayerRole.MaxHP}/{PlayerRole.HP}";

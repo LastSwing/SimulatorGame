@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -392,17 +393,20 @@ namespace Assets.Script.Tools
         /// <returns></returns>
         public static void DicDataRead(ref Dictionary<string, string> dict, string Name, string Folder = "")
         {
-            var path = Application.dataPath + "/Data/" + Folder + "/";
-            //Dictionary<string, string> dict = new Dictionary<string, string>();
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
+            string pathName = Application.persistentDataPath + "/";
+            if (!string.IsNullOrEmpty(Folder))
             {
-                Directory.CreateDirectory(path);
+                pathName += Folder + "/";
+                DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
+                if (!myDirectoryInfo.Exists)
+                {
+                    Directory.CreateDirectory(pathName);
+                }
             }
-            if (File.Exists(path + Name + ".txt"))
+            pathName += Name + ".txt";
+            if (File.Exists(pathName))
             {
-                StreamReader json = File.OpenText(path + Name + ".txt");
+                StreamReader json = File.OpenText(pathName);
                 //Debug.Log("读档" + json);
                 string input = json.ReadToEnd();
                 LitJson.JsonReader reader = new LitJson.JsonReader(input);
@@ -435,20 +439,24 @@ namespace Assets.Script.Tools
         /// <param name="json">字符串</param>
         /// <param name="path">文件名称</param>
         /// <param name="Folder">Data/文件夹</param>
-        public static void SaveTxtFile(string json, string pathName, string Folder = "")
+        public static void SaveTxtFile(string json, string Name, string Folder = "")
         {
 
             //json = GameHelper.DesEncrypt(json);//前期不加密
-            var path = Application.dataPath + "/Data/" + Folder + "/";
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
+            string pathName = Application.persistentDataPath + "/";
+            if (!string.IsNullOrEmpty(Folder))
             {
-                Directory.CreateDirectory(path);
+                pathName += Folder + "/";
+                DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
+                if (!myDirectoryInfo.Exists)
+                {
+                    Directory.CreateDirectory(pathName);
+                }
             }
-            if (File.Exists($"{path}/{pathName}.txt"))
-                File.Delete($"{path}/{pathName}.txt");
-            File.WriteAllText($"{path}/{pathName}.txt", json);
+            pathName += Name + ".txt";
+            if (File.Exists(pathName))
+                File.Delete(pathName);
+            File.WriteAllText(pathName, json);
         }
 
         /// <summary>
@@ -457,19 +465,24 @@ namespace Assets.Script.Tools
         /// <typeparam name="T"></typeparam>
         /// <param name="pathName"></param>
         /// <returns>单个实体</returns>
-        public static T GetTxtFileToModel<T>(string pathName, string Folder = "")
+        public static T GetTxtFileToModel<T>(string Name, string Folder = "")
         {
-            var path = Application.dataPath + "/Data/" + Folder + "/";
             T role = Activator.CreateInstance<T>();
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
+            //json = GameHelper.DesEncrypt(json);//前期不加密
+            string pathName = Application.persistentDataPath + "/";
+            if (!string.IsNullOrEmpty(Folder))
             {
-                Directory.CreateDirectory(path);
+                pathName += Folder + "/";
+                DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
+                if (!myDirectoryInfo.Exists)
+                {
+                    Directory.CreateDirectory(pathName);
+                }
             }
-            if (File.Exists(path + pathName + ".txt"))
+            pathName += Name + ".txt";
+            if (File.Exists(pathName))
             {
-                StreamReader json = File.OpenText(path + pathName + ".txt");
+                StreamReader json = File.OpenText(pathName);
                 //Debug.Log("读档" + json);
                 string input = json.ReadToEnd();
                 role = input.JsonToModel<T>();
@@ -489,19 +502,23 @@ namespace Assets.Script.Tools
         /// <typeparam name="T"></typeparam>
         /// <param name="pathName"></param>
         /// <returns>实体泛型</returns>
-        public static List<T> GetTxtFileToList<T>(string pathName, string Folder = "")
+        public static List<T> GetTxtFileToList<T>(string Name, string Folder = "")
         {
-            var path = Application.dataPath + "/Data/" + Folder + "/";
             List<T> role = Activator.CreateInstance<List<T>>();
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
+            string pathName = Application.persistentDataPath + "/";
+            if (!string.IsNullOrEmpty(Folder))
             {
-                Directory.CreateDirectory(path);
+                pathName += Folder + "/";
+                DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
+                if (!myDirectoryInfo.Exists)
+                {
+                    Directory.CreateDirectory(pathName);
+                }
             }
-            if (File.Exists(path + pathName + ".txt"))
+            pathName += Name + ".txt";
+            if (File.Exists(pathName))
             {
-                StreamReader json = File.OpenText(path + pathName + ".txt");
+                StreamReader json = File.OpenText(pathName);
                 //Debug.Log("读档" + json);
                 string input = json.ReadToEnd();
                 role = JsonConvert.DeserializeObject<List<T>>(input);
@@ -518,19 +535,28 @@ namespace Assets.Script.Tools
         /// 删除文本
         /// </summary>
         /// <param name="path">文件名称</param>
-        public static void DeleteTxtFile(string pathName)
+        public static void DeleteTxtFile(string Name, string Folder = "")
         {
 
             //json = GameHelper.DesEncrypt(json);//前期不加密
-            var path = Application.dataPath + "/Data/";
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
-            if (!myDirectoryInfo.Exists)
+            string pathName = Application.persistentDataPath + "/";
+            DirectoryInfo dataDir = new DirectoryInfo(pathName);
+            if (!dataDir.Exists)
             {
-                Directory.CreateDirectory(path);
+                Directory.CreateDirectory(pathName);
             }
-            if (File.Exists($"{path}/{pathName}.txt"))
-                File.Delete($"{path}/{pathName}.txt");
+            if (!string.IsNullOrEmpty(Folder))
+            {
+                pathName += Folder + "/";
+                DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
+                if (!myDirectoryInfo.Exists)
+                {
+                    Directory.CreateDirectory(pathName);
+                }
+            }
+            pathName += Name + ".txt";
+            if (File.Exists(pathName))
+                File.Delete(pathName);
         }
 
         #endregion
@@ -884,6 +910,8 @@ namespace Assets.Script.Tools
             SaveTxtFile(null, GlobalAttr.CurrentUsedCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentUnUsedCardPoolsFileName);
             SaveTxtFile(null, GlobalAttr.CurrentAIRoleFileName);
+            SaveTxtFile(null, GlobalAttr.CurrentAIATKCardPoolsFileName);
+            SaveTxtFile(null, GlobalAttr.CurrentAiCardPoolsFileName);
             GameObject.Find("MainCanvas/txt_HasClickSetting").GetComponent<Text>().text = "0";
         }
 
@@ -1470,17 +1498,18 @@ namespace Assets.Script.Tools
         /// <returns>实体泛型</returns>
         public static List<TableStruct> GetTableStructData()
         {
-            var path = Application.dataPath + "/Data/Tables/";
-            List<TableStruct> role = new List<TableStruct>();
-            //文件夹是否存在
-            DirectoryInfo myDirectoryInfo = new DirectoryInfo(path);
+            string pathName = Application.persistentDataPath + "/Tables/";
+            DirectoryInfo myDirectoryInfo = new DirectoryInfo(pathName);
             if (!myDirectoryInfo.Exists)
             {
-                Directory.CreateDirectory(path);
+                Directory.CreateDirectory(pathName);
             }
-            if (File.Exists(path + GlobalAttr.AllTablesAttrFlieName + ".txt"))
+            pathName += GlobalAttr.AllTablesAttrFlieName + ".txt";
+            //string pathName = ReturnPath(GlobalAttr.AllTablesAttrFlieName, "Tables");
+            List<TableStruct> role = new List<TableStruct>();
+            if (File.Exists(pathName))
             {
-                StreamReader json = File.OpenText(path + GlobalAttr.AllTablesAttrFlieName + ".txt");
+                StreamReader json = File.OpenText(pathName);
                 //Debug.Log("读档" + json);
                 string input = json.ReadToEnd();
                 role = JsonToListOnSingleLayer<TableStruct>(input);
@@ -1910,5 +1939,62 @@ namespace Assets.Script.Tools
             return list;
         }
         #endregion
+
+        /// <summary>
+        /// 从StreamingAssets文件夹中读取数据到新的地址
+        /// 因为 StreamingAssets 是只读的
+        /// </summary>
+        public static void ReadStreamingAssetsToNewPath()
+        {
+            ReturnPath(GlobalAttr.AllResourcesFileName, "Resources");
+            ReturnPath(GlobalAttr.GlobalPlayerCardPoolFileName, "");
+            ReturnPath(GlobalAttr.GlobalCardPoolFileName, "");
+            ReturnPath(GlobalAttr.GlobalPlayerRolePoolFileName, "");
+            ReturnPath(GlobalAttr.GlobalAIRolePoolFileName, "");
+            ReturnPath(GlobalAttr.GlobalRoleFileName, "");
+            ReturnPath(GlobalAttr.GlobalAdventureFileName, "Adventure");
+            ReturnPath(GlobalAttr.BUFFEffectFileName, "Card");
+            ReturnPath(GlobalAttr.BUFFUrlFileName, "Card");
+            ReturnPath(GlobalAttr.EffectTypeFileName, "Card");
+            ReturnPath(GlobalAttr.TriggerConditionFileName, "Card");
+            ReturnPath(GlobalAttr.TriggerStateFileName, "Card");
+            ReturnPath(GlobalAttr.AllTablesAttrFlieName, "Tables");
+        }
+
+        /// <summary>
+        /// 存储初始数据
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static void ReturnPath(string path, string Folder = "")
+        {
+            try
+            {
+                string to_path = Application.persistentDataPath + "/";
+                string url = Application.streamingAssetsPath + "/";
+                if (!string.IsNullOrEmpty(Folder))
+                {
+                    url += Folder + "/";
+                    to_path += Folder + "/";
+                    DirectoryInfo myDirectoryInfo = new DirectoryInfo(url);
+                    if (!myDirectoryInfo.Exists)
+                    {
+                        Directory.CreateDirectory(to_path);
+                    }
+                }
+                url += path + ".txt";
+                to_path += path + ".txt";
+                using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+                {
+                    webRequest.SendWebRequest();
+                    while (!webRequest.isDone) { }
+                    File.WriteAllText(to_path, webRequest.downloadHandler.text);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }
