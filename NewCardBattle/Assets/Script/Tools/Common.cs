@@ -1977,7 +1977,8 @@ namespace Assets.Script.Tools
                     url += Folder + "/";
                     to_path += Folder + "/";
                     DirectoryInfo myDirectoryInfo = new DirectoryInfo(url);
-                    if (!myDirectoryInfo.Exists)
+                    DirectoryInfo myDir = new DirectoryInfo(to_path);
+                    if (!myDirectoryInfo.Exists || !myDir.Exists)
                     {
                         Directory.CreateDirectory(to_path);
                     }

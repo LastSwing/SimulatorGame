@@ -52,4 +52,20 @@ public class SoundItem : MonoBehaviour
     {
         return audioSource.isPlaying;
     }
+
+    /// <summary>
+    /// 当前音量
+    /// </summary>
+    public float GetCurrentVolume()
+    {
+        return audioSource.volume;
+    }
+    /// <summary>
+    /// 音量变化
+    /// </summary>
+    /// <param name="volume"></param>
+    public void ChangeVolume(float volume)
+    {
+        audioSource.volume = volume;
+    }
 }
