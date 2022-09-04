@@ -51,7 +51,7 @@ public class HomePage : BaseUI
         for (int i = 0; i < list.Count; i++)
         {
             list[i].name = list[i].name.Replace("(Clone)", string.Empty);
-            list[i].transform.localPosition = new Vector2(-575 + i*LevelInterval, 0);
+            list[i].transform.localPosition = new Vector2(-700 + i*LevelInterval, 0);
         }
     }
     public override void OnOpen()

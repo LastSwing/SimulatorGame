@@ -44,6 +44,8 @@ public class RoleScript : MonoBehaviour
     public GameObject Resist;
     //Hp
     int Hp = 100;
+    //上次的移动速度
+    private float Speed = 0;
     #region 道具使用变量
     private float angle = 0;//初始角度
     private int IsAngle = 0;//角度节点 0向上1向下2调整
@@ -68,7 +70,14 @@ public class RoleScript : MonoBehaviour
             Vector2 vector = Rockel.GetComponent<RockerScript>().SmallRectVector;
             if (vector != Vector2.zero && !_Prop && _move)
             {
-                rb.AddForce(new Vector2(vector.x * 20, 0));
+                if((Speed <0 && vector.x>0) || (Speed > 0 && vector.x < 0))
+                    rb.velocity = Vector2.zero;
+                Speed = vector.x;
+                rb.AddForce(new Vector2(vector.x * 20 * Time.deltaTime, 0),ForceMode2D.Impulse);
+            }
+            else if (vector == Vector2.zero && !_Prop && _move)
+            {
+                rb.velocity = new Vector2(rb.velocity.x*0.8f, rb.velocity.y * 0.8f);
             }
             if (_start)
             {
@@ -79,6 +88,7 @@ public class RoleScript : MonoBehaviour
                         _move = false;
                         leave = true;
                         transform.parent.GetComponent<MainView>().IsDownUp = true;
+                        transform.parent.GetComponent<MainView>().IsMove = true;
                     }
                 }
             }
@@ -142,7 +152,7 @@ public class RoleScript : MonoBehaviour
                             else
                             {
                                 transform.localPosition = new Vector2(transform.localPosition.x, y);
-                                rb.velocity = new Vector2(rb.velocity.x, 0);
+                                rb.velocity = new Vector2(rb.velocity.x*10, 0);
                             }
                             if (vector != new Vector2(0, 0))
                                 rb.AddForce(new Vector2(vector.x * 2, 0));
@@ -324,10 +334,7 @@ public class RoleScript : MonoBehaviour
     /// <param name="Putout">放出收回</param>
     private void IsRockel(bool Putout)
     {
-        if (Putout)
-            Rockel.transform.localPosition = new Vector3(-750, -150, 0);
-        else
-            Rockel.transform.localPosition = new Vector3(-5000, -250, 0);
+        Rockel.SetActive(Putout);
     }
 
     /// <summary>

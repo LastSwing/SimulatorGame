@@ -18,6 +18,14 @@ public class MainView : BaseUI
     /// </summary>
     public bool IsMove = false;
     /// <summary>
+    /// 是否向左移动
+    /// </summary>
+    public bool IsLeft = true;
+    /// <summary>
+    /// 是否向右移动
+    /// </summary>
+    public bool IsRight = true;
+    /// <summary>
     /// 是否上下移动
     /// </summary>
     public bool IsDownUp = false;
@@ -74,6 +82,9 @@ public class MainView : BaseUI
             }
         }
         IsDownUp = false;
+        //IsMove = false;
+        IsLeft = true;
+        IsRight = true;
         transform.transform.localPosition = new Vector2(transform.Find("Indoor").localPosition.x * -1, transform.Find("Indoor").localPosition.y * -1);
         UIList.transform.localPosition = new Vector2(transform.Find("Indoor").localPosition.x, transform.Find("Indoor").localPosition.y);
     }
@@ -81,20 +92,27 @@ public class MainView : BaseUI
     {
         if (IsMove)
         {
-            if (Role.transform.localPosition.x > (transform.localPosition.x * -1))//角色处于右半部
+            if (Role.transform.localPosition.x > (transform.localPosition.x * -1) && IsRight)//角色处于右半部
             {
                 float move = transform.localPosition.x - (Role.transform.localPosition.x * -1);
                 transform.localPosition = new Vector2(transform.localPosition.x - move, transform.localPosition.y);
                 UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x + move, UIList.transform.localPosition.y);
+                IsLeft = true;
+            }
+            else if (Role.transform.localPosition.x < (transform.localPosition.x * -1) && IsLeft)//角色处于左半部
+            {
+                float move = transform.localPosition.x - (Role.transform.localPosition.x * -1);
+                transform.localPosition = new Vector2(transform.localPosition.x - move, transform.localPosition.y);
+                UIList.transform.localPosition = new Vector2(UIList.transform.localPosition.x + move, UIList.transform.localPosition.y);
+                IsRight = true;
             }
             if (transform.localPosition.x * -1 >= (GetComponent<RectTransform>().rect.width / 2 - screen.x / 2))//已经到右尽头
             {
-                IsMove = false;
-                //transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2 - screen.x / 2) * -1, transform.localPosition.y);
-                //UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2) * -1, UIList.transform.localPosition.y);
+                IsRight = false;
             }
             else if (transform.localPosition.x >= (GetComponent<RectTransform>().rect.width / 2 - screen.x / 2))//已经到左尽头
             {
+                IsLeft = false;
                 transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width / 2 - screen.x / 2), transform.localPosition.y);
                 UIList.transform.localPosition = new Vector2((GetComponent<RectTransform>().rect.width * -1 / 2) + screen.x - (UIList.GetComponent<RectTransform>().rect.width / 2), UIList.transform.localPosition.y);
             }
@@ -161,7 +179,6 @@ public class MainView : BaseUI
     private void InitUIevent()
     {
         GameObjectPool = new GameObjectPool();
-        
     }
 
     public override void OnOpen()

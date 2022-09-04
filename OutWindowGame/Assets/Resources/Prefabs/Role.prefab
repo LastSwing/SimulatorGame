@@ -101,7 +101,7 @@ Rigidbody2D:
   m_Mass: 10
   m_LinearDrag: 1
   m_AngularDrag: 0
-  m_GravityScale: 10
+  m_GravityScale: 15
   m_Material: {fileID: 6200000, guid: 45d50d012088c0f43b14a448c4c3890d, type: 2}
   m_Interpolate: 0
   m_SleepingMode: 1
@@ -122,7 +122,10 @@ MonoBehaviour:
   G: 10
   UI: {fileID: 0}
   Rockel: {fileID: 0}
+  _start: 1
   _Prop: 0
+  leave: 0
+  _move: 0
   Resist: {fileID: 0}
 --- !u!70 &220821774492742094
 CapsuleCollider2D:

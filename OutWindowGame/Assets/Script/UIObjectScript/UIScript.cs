@@ -10,6 +10,7 @@ public class UIScript : MonoBehaviour
 {
     public Button PropBtn;
     public Button ResetBtn;
+    public Button jumpBtn;
     public Transform ParentTransform;//MainView
     public GameObject Role;//角色
     public GameObject Cut;//道具条
@@ -41,9 +42,12 @@ public class UIScript : MonoBehaviour
         GameObjectPool = ParentTransform.GetComponent<MainView>().GameObjectPool;
         ResetBtn.onClick.AddListener(SettingBtnClick);
         PropBtn.onClick.AddListener(PropBtnClick);
+        jumpBtn.onClick.AddListener(JumpBtnClick);
         anew.onClick.AddListener(anewClick);
         next.onClick.AddListener(nextClick);
         Return.onClick.AddListener(ReturnClick);
+        transform.GetComponent<RectTransform>().sizeDelta = new Vector2(Screen.width, Screen.height);
+        Bleed.GetComponent<RectTransform>().sizeDelta = new Vector2(Screen.width, Screen.height);
     }
     //重玩本关
     private void anewClick()
@@ -189,6 +193,14 @@ public class UIScript : MonoBehaviour
         float G = gameObject.GetComponent<ProgressBarPro>().Value;
         GameObjectPool.IntoPool(gameObject);
         Role.GetComponent<RoleScript>().Sprint(G);
+    }
+
+    /// <summary>
+    /// 跳
+    /// </summary>
+    private void JumpBtnClick()
+    {
+        Role.GetComponent<Rigidbody2D>().AddForce(Vector2.up*2000,ForceMode2D.Impulse);
     }
     /// <summary>
     /// 使用
