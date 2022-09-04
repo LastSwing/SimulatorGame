@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class SettingView : BaseUI
 {
-
+    Scrollbar ScbBGM, ScbVoice;
     Image img_Background;//背景图片
     Button btn_GameOver, btn_CardList, btn_Return;
     Text txt_ReturnView, txt_SettingHasBtn, txt_ReturnView1;//返回按钮所跳页面；是否显示设置页面按钮0否，1是
@@ -30,6 +30,8 @@ public class SettingView : BaseUI
         btn_GameOver = transform.Find("UI/Content/btn_GameOver").GetComponent<Button>();
         btn_CardList = transform.Find("UI/Content/btn_CardList").GetComponent<Button>();
         btn_Return = transform.Find("UI/Content/btn_Return").GetComponent<Button>();
+        ScbBGM = transform.Find("UI/Content/BGM/ScbBGM").GetComponent<Scrollbar>();
+        ScbVoice = transform.Find("UI/Content/Voice/ScbVoice").GetComponent<Scrollbar>();
     }
 
     /// <summary>
@@ -40,6 +42,8 @@ public class SettingView : BaseUI
         btn_GameOver.onClick.AddListener(GameOverClick);
         btn_CardList.onClick.AddListener(CardListClick);
         btn_Return.onClick.AddListener(ReturnClick);
+        ScbBGM.onValueChanged.AddListener(delegate { BMGChange(); });
+        ScbVoice.onValueChanged.AddListener(delegate { VoiceChange(); });
     }
 
     #region 按钮点击事件
@@ -90,6 +94,8 @@ public class SettingView : BaseUI
         if (txt_SettingHasBtn.text == "0")
         {
             btn_GameOver.transform.localScale = Vector3.zero;
+            ScbBGM.value = SoundManager.instance.CurrentVolume((int)TrackType.BGM);
+            ScbVoice.value = SoundManager.instance.CurrentVolume((int)TrackType.Voice);
         }
         else
         {
@@ -103,8 +109,17 @@ public class SettingView : BaseUI
     private void InitUIData()
     {
 
-    } 
+    }
     #endregion
+
+    public void BMGChange()
+    {
+        SoundManager.instance.ChangeMusicVolume(ScbBGM.value, (int)TrackType.BGM);
+    }
+    public void VoiceChange()
+    {
+        SoundManager.instance.ChangeMusicVolume(ScbVoice.value, (int)TrackType.Voice);
+    }
 
     public override void OnClose()
     {

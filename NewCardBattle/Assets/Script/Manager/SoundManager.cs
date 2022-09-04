@@ -124,6 +124,29 @@ public class SoundManager : SingletonMonoBehaviour<SoundManager>
     {
         SoundRoot = GameObject.Find("SoundRoot").transform;
     }
+
+    /// <summary>
+    /// 变化当前背景音量大小
+    /// </summary>
+    /// <param name="vloume">音量大小</param>
+    /// <param name="track">声音轨道，可以播多个轨道的唯一声音</param>
+    public void ChangeMusicVolume(float vloume, int track = 1)
+    {
+        OnlyOneSound[track].ChangeVolume(vloume);
+    }
+
+    /// <summary>
+    /// 当前音量
+    /// </summary>
+    /// <param name="track">声音轨道，可以播多个轨道的唯一声音</param>
+    public float CurrentVolume(int track = 1)
+    {
+        if (!OnlyOneSound.ContainsKey(track))
+        {
+            OnlyOneSound[track] = CreateSoundItem();
+        }
+        return OnlyOneSound[track].GetCurrentVolume();
+    }
 }
 public enum TrackType
 {
