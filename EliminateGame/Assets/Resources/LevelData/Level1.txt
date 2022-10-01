@@ -1,0 +1,1 @@
+{"LevelNum":1,"Score":6,"LevelType":0,"Seeds":{"0":{"Num":3,"NumType":0,"NumLocation":1,"IsExit":true,"ExitLocation":1,"IsRole":false},"1":{"Num":2,"NumType":1,"NumLocation":2,"IsExit":false,"ExitLocation":0,"IsRole":false},"2":{"Num":5,"NumType":0,"NumLocation":3,"IsExit":false,"ExitLocation":0,"IsRole":true}}}
