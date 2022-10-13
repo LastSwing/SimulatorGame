@@ -102,6 +102,32 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
     private bool IsUp = true;
     private bool IsDown = true;
     private bool Goon = false;
+    private bool _IsProtect = false;
+    private bool _IsDevour = false;
+    /// <summary>
+    /// 是否保护
+    /// </summary>
+    private bool IsProtect
+    {
+        get { return _IsProtect; }
+        set
+        {
+            transform.Find("Protect").gameObject.SetActive(value);
+            _IsProtect = value;
+        }
+    }
+    /// <summary>
+    /// 是否吞噬
+    /// </summary>
+    private bool IsDevour
+    {
+        get { return _IsDevour; }
+        set
+        {
+            transform.Find("Devour").gameObject.SetActive(value);
+            _IsDevour = value;
+        }
+    }
 
     public void OnDrag(PointerEventData eventData)
     {
@@ -117,205 +143,24 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
         if (!IsDrop)
         {
             //向右
-            if (eventData.position.x - 3 > Vector.x && IsRight)
+            if (eventData.position.x - 5 > Vector.x && IsRight)
             {
-                foreach (var item in ExitLocation)
-                {
-                    if (item.Key == _location && item.Value == 3)
-                    {
-                        IsDrop = true;
-                        IsPass = true;
-                        return;
-                    }
-                }
-                IsLeft = IsUp = IsDown = false;
-                transform.localPosition = new Vector3(transform.localPosition.x - (SVector.x - eventData.position.x), transform.localPosition.y);
-                //找到向右的num
-                List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent, true, false, (_location + 1).ToString());
-                if (list.Count != 0)
-                {
-                    gameObject1 = list[0];
-                    gameObject1.transform.localPosition = new Vector3(gameObject1.transform.localPosition.x + (SVector.x - eventData.position.x), gameObject1.transform.localPosition.y);
-                }
-                else
-                    gameObject1 = null;
-                SVector = eventData.position;
-                //横向移动大于二百停止
-                if (SVector.x - 200 >= Vector.x)
-                {
-                    Debug.Log("完成右");
-                    IsDrop = true;
-                    transform.localPosition = new Vector2(RoleVector.x + 200, RoleVector.y);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location + 1;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
-                }
+                Move(3, eventData.position);
             }
             //向左
-            else if (eventData.position.x + 3 < Vector.x  && IsLeft)
+            else if (eventData.position.x + 5 < Vector.x  && IsLeft)
             {
-                //出去
-                foreach (var item in ExitLocation)
-                {
-                    if (item.Key == _location && item.Value == 2)
-                    {
-                        IsDrop = true;
-                        IsPass = true;
-                        return;
-                    }
-                }
-               IsRight = IsUp = IsDown = false;
-                transform.localPosition = new Vector3(transform.localPosition.x - (SVector.x - eventData.position.x), transform.localPosition.y);
-                //找到向左的num
-                List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent, true, false, (_location - 1).ToString());
-                if (list.Count != 0)
-                {
-                    gameObject1 = list[0];
-                    gameObject1.transform.localPosition = new Vector3(gameObject1.transform.localPosition.x + (SVector.x - eventData.position.x), gameObject1.transform.localPosition.y);
-                }
-                else
-                    gameObject1 = null;
-                SVector = eventData.position;
-                //横向移动大于二百停止
-                if (SVector.x + 200 <= Vector.x)
-                {
-                    Debug.Log("完成左");
-                    IsDrop = true;
-                    transform.localPosition = new Vector2(RoleVector.x - 200, RoleVector.y);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location - 1;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
-                }
+                Move(2, eventData.position);
             }
             //向上
-            else if (eventData.position.y - 3 > Vector.y  && IsUp)
+            else if (eventData.position.y - 5 > Vector.y  && IsUp)
             {
-                //出去
-                foreach (var item in ExitLocation)
-                {
-                    if (item.Key == _location && item.Value == 0)
-                    {
-                        IsDrop = true;
-                        IsPass = true;
-                        return;
-                    }
-                }
-                IsDown =  IsRight = IsLeft = false;
-                transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + (eventData.position.y - SVector.y));
-                //找到向上的num
-                List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent, true, false, (_location + Grid.x).ToString());
-                if (list.Count != 0)
-                {
-                    gameObject1 = list[0];
-                    gameObject1.transform.localPosition = new Vector3(gameObject1.transform.localPosition.x, gameObject1.transform.localPosition.y - (eventData.position.y - SVector.y));
-                }
-                else
-                    gameObject1 = null;
-                SVector = eventData.position;
-                if (SVector.y - 200 >= Vector.y)
-                {
-                    Debug.Log("完成上");
-                    IsDrop = true;
-                    transform.localPosition = new Vector2(RoleVector.x, RoleVector.y + 200);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location + (int)Grid.x;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
-                }
+                Move(0, eventData.position);
             }
             //向下
-            else if (eventData.position.y + 3 < Vector.y  && IsDown)
+            else if (eventData.position.y + 5 < Vector.y  && IsDown)
             {
-                //出去
-                foreach (var item in ExitLocation)
-                {
-                    if (item.Key == _location && item.Value == 1)
-                    {
-                        IsDrop = true;
-                        IsPass = true;
-                        return;
-                    }
-                }
-                IsUp =  IsRight = IsLeft = false;
-                transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + (eventData.position.y - SVector.y));
-                //找到向上的num
-                List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent, true, false, (_location - Grid.x).ToString());
-                if (list.Count != 0)
-                {
-                    gameObject1 = list[0];
-                    gameObject1.transform.localPosition = new Vector3(gameObject1.transform.localPosition.x, gameObject1.transform.localPosition.y - (eventData.position.y - SVector.y));
-                }
-                else
-                    gameObject1 = null;
-                SVector = eventData.position;
-                if (SVector.y + 200 <= Vector.y)
-                {
-                    Debug.Log("完成下");
-                    IsDrop = true;
-                    transform.localPosition = new Vector2(RoleVector.x, RoleVector.y - 200);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location - (int)Grid.x;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
-                }
+                Move(1, eventData.position);
             }
         }
     }
@@ -338,12 +183,12 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
                     if (gameObject1.name.Contains("ImgNum"))
                     {
                         int lo = Convert.ToInt32(gameObject1.GetComponent<ImgNum>().name.Replace("ImgNum", ""));
-                        gameObject1.transform.localPosition = transform.parent.GetComponent<BgScript>().vector2s[lo - 1];
+                        gameObject1.transform.localPosition = transform.parent.parent.GetComponent<BgScript>().vector2s[lo - 1];
                     }
                     else if(gameObject1.name.Contains("Role"))
                     {
                         int lo = Convert.ToInt32(gameObject1.GetComponent<Role>().Location);
-                        gameObject1.transform.localPosition = transform.parent.GetComponent<BgScript>().vector2s[lo - 1];
+                        gameObject1.transform.localPosition = transform.parent.parent.GetComponent<BgScript>().vector2s[lo - 1];
                     }
                 }
                 Location = Location;
@@ -353,12 +198,6 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
         else
             IsDrop = false;
     }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-    }
-
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -387,8 +226,12 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
             if (Convert.ToInt32(num.text) == StandardNum)
             {
                 List<GameObject> gameObjects = BaseHelper.GetAllSceneObjects(transform.parent,true,false,"Role");
-                if(gameObjects.Count == 0)
+                if (gameObjects.Count == 0)
+                {
                     VictoryObj.SetActive(true);
+                    transform.parent.parent.GetComponent<BgScript>().LevelNum = transform.parent.parent.GetComponent<BgScript>().LevelNum + 1;
+                    DataRead.SetLevel(transform.parent.parent.GetComponent<BgScript>().LevelNum);
+                }
             }
             //通关失败
             else
@@ -409,25 +252,7 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
                 }
                 if (transform.localPosition.y <= RoleVector.y - 200)
                 {
-                    transform.localPosition = new Vector2(transform.localPosition.x, RoleVector.y - 200);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location - (int)Grid.x;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
+                    EndMove(1, list, _location - (int)Grid.x);
                     IsDrop = false;
                     Goon = false;
                 }
@@ -443,25 +268,7 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
                 }
                 if (transform.localPosition.y >= RoleVector.y + 200)
                 {
-                    transform.localPosition = new Vector2(transform.localPosition.x, RoleVector.y + 200);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location + (int)Grid.x;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
+                    EndMove(0, list, _location + (int)Grid.x);
                     IsDrop = false;
                     Goon = false;
                 }
@@ -477,25 +284,7 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
                 }
                 if (transform.localPosition.x >= RoleVector.x + 200)
                 {
-                    transform.localPosition = new Vector2(RoleVector.x + 200, RoleVector.y);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location + 1;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
+                    EndMove(3, list, _location + 1);
                     IsDrop = false;
                     Goon = false;
                 }
@@ -511,30 +300,15 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
                 }
                 if (transform.localPosition.x <= RoleVector.x - 200)
                 {
-                    transform.localPosition = new Vector2(RoleVector.x - 200, RoleVector.y);
-                    if (list.Count > 0)
-                    {
-                        gameObject1.transform.localPosition = RoleVector;
-                        if (list[0].name.Contains("ImgNum"))
-                        {
-                            gameObject1.transform.name = "ImgNum" + _location;
-                            gameObject1.GetComponent<ImgNum>().Location = _location;
-                        }
-                        else
-                        {
-                            gameObject1.transform.name = "Role" + _location;
-                            gameObject1.GetComponent<Role>().Location = _location;
-                        }
-                    }
-                    Location = _location - 1;
-                    gameObject.name = "Role" + (_location);
-                    if (list.Count > 0 && list[0].name.Contains("ImgNum"))
-                        ChangeColor();
+                    EndMove(2, list, _location - 1);
                     IsDrop = false;
                     Goon = false;
                 }
             }
         }
+
+        if (IsDevour)
+            transform.Find("Devour").Rotate(Vector3.back);
     }
 
     /// <summary>
@@ -572,45 +346,190 @@ public class Role : MonoBehaviour, IDragHandler, IEndDragHandler
     /// </summary>
     void ChangeColor()
     {
+        if (IsProtect && gameObject1.GetComponent<ImgNum>().Color < 4) return;
         if (gameObject1.GetComponent<ImgNum>().Color == 0)
         {
-            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) + Convert.ToInt32(gameObject1.GetComponent<ImgNum>().num.text));
+            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) + gameObject1.GetComponent<ImgNum>().Num);
             if (numtext > 10000)
                 numtext = 10000;
             else if (numtext <= 0)
                 numtext = 1;
             num.text = numtext.ToString();
-            gameObject1.GetComponent<ImgNum>().Color = 1;
+            if (!_IsProtect)
+            {
+                gameObject1.GetComponent<ImgNum>().Color = 1;
+                gameObject1.GetComponent<ImgNum>().num.text = gameObject1.GetComponent<ImgNum>().Num.ToString();
+            }
+            else
+                gameObject1.SetActive(false);
         }
         else if (gameObject1.GetComponent<ImgNum>().Color == 1)
         {
-            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) - Convert.ToInt32(gameObject1.GetComponent<ImgNum>().num.text));
+            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) - gameObject1.GetComponent<ImgNum>().Num);
             if (numtext > 10000)
                 numtext = 10000;
             else if (numtext <= 0)
                 numtext = 1;
             num.text = numtext.ToString();
-            gameObject1.GetComponent<ImgNum>().Color = 0;
+            if (!_IsProtect)
+            {
+                gameObject1.GetComponent<ImgNum>().Color = 0;
+                gameObject1.GetComponent<ImgNum>().num.text = gameObject1.GetComponent<ImgNum>().Num.ToString();
+            }
+            else
+                gameObject1.SetActive(false);
         }
         else if (gameObject1.GetComponent<ImgNum>().Color == 2)
         {
-            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) * Convert.ToInt32(gameObject1.GetComponent<ImgNum>().num.text));
+            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) * gameObject1.GetComponent<ImgNum>().Num);
             if (numtext > 10000)
                 numtext = 10000;
             else if (numtext <= 0)
                 numtext = 1;
             num.text = numtext.ToString();
-            gameObject1.GetComponent<ImgNum>().Color = 3;
+            if (!_IsProtect)
+            {
+                gameObject1.GetComponent<ImgNum>().Color = 3;
+                gameObject1.GetComponent<ImgNum>().num.text = gameObject1.GetComponent<ImgNum>().Num.ToString();
+            }
+            else
+                gameObject1.SetActive(false);
         }
         else if (gameObject1.GetComponent<ImgNum>().Color == 3)
         {
-            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) / Convert.ToInt32(gameObject1.GetComponent<ImgNum>().num.text));
+            int numtext = (int)Math.Ceiling(Convert.ToDouble(num.text) / gameObject1.GetComponent<ImgNum>().Num);
             if (numtext > 10000)
                 numtext = 10000;
             else if (numtext <= 0)
                 numtext = 1;
             num.text = numtext.ToString();
-            gameObject1.GetComponent<ImgNum>().Color = 2;
+            if (!_IsProtect)
+            {
+                gameObject1.GetComponent<ImgNum>().Color = 2;
+                gameObject1.GetComponent<ImgNum>().num.text = gameObject1.GetComponent<ImgNum>().Num.ToString();
+            }
+            else
+                gameObject1.SetActive(false);
         }
+        else if (gameObject1.GetComponent<ImgNum>().Color == 4)
+        {
+            IsProtect = true;
+            if (IsDevour)
+                IsDevour = false;
+            gameObject1.SetActive(false);
+        }
+        else if(gameObject1.GetComponent<ImgNum>().Color == 5)
+        {
+            IsDevour = true;
+            if (IsProtect)
+                IsProtect = false;
+            gameObject1.SetActive(false);
+        }
+        if (IsDevour) gameObject1.SetActive(false);
+    }
+
+    /// <summary>
+    /// 移动
+    /// </summary>
+    /// <param name="Wz">方向 0Up1Down2Left3Rignt</param>
+    /// <param name="vector">相对拖拽位置</param>
+    void Move(int Wz,Vector2 vector)
+    {
+        //可否出去
+        foreach (var item in ExitLocation)
+        {
+            if (item.Key == _location && item.Value == Wz)
+            {
+                IsDrop = true;
+                IsPass = true;
+                return;
+            }
+        }
+        IsDown = IsRight = IsLeft = IsUp = false;
+        int itemLocition = 0;
+        switch (Wz)
+        {
+            case 0:
+                IsUp = true;
+                transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + (vector.y - SVector.y));
+                itemLocition = _location + (int)Grid.x;
+                break;
+            case 1: 
+                IsDown = true;
+                transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + (vector.y - SVector.y));
+                itemLocition = _location - (int)Grid.x;
+                break;
+            case 2: 
+                IsLeft = true;
+                transform.localPosition = new Vector3(transform.localPosition.x - (SVector.x - vector.x), transform.localPosition.y);
+                itemLocition = _location -1;
+                break;
+            case 3: 
+                IsRight = true;
+                transform.localPosition = new Vector3(transform.localPosition.x - (SVector.x - vector.x), transform.localPosition.y);
+                itemLocition = _location + 1;
+                break;
+        }
+
+        //找到对应切换的num
+        List<GameObject> list = BaseHelper.GetAllSceneObjects(transform.parent, true, false, (itemLocition).ToString());
+        bool numMove = true;//判断num是否需要移动
+        if (list.Count != 0)
+        {
+            gameObject1 = list[0];
+            if (gameObject1.name.Contains("ImgNum"))
+            {
+                if (gameObject1.GetComponent<ImgNum>().Color == 6)//为障碍物，不允许通过
+                {
+                    IsDrag = false;
+                    transform.localPosition = RoleVector;
+                    return;
+                }
+                if (IsDevour || gameObject1.GetComponent<ImgNum>().Color > 3)
+                    numMove = false;
+
+            }
+            if(numMove)
+                gameObject1.transform.localPosition = new Vector2(Wz > 1 ? gameObject1.transform.localPosition.x + (SVector.x - vector.x) : gameObject1.transform.localPosition.x,
+            Wz < 2 ? gameObject1.transform.localPosition.y - (vector.y - SVector.y) : gameObject1.transform.localPosition.y);
+        }
+        else
+            gameObject1 = null;
+        SVector = vector;
+
+        if ((SVector.y - 200 >= Vector.y && Wz == 0) || (SVector.y + 200 <= Vector.y && Wz == 1) || (SVector.x + 200 <= Vector.x && Wz == 2) || (SVector.x - 200 >= Vector.x && Wz == 3))
+        {
+            EndMove(Wz,list,itemLocition);
+        }
+    }
+    /// <summary>
+    /// 完成移动
+    /// </summary>
+    /// <param name="Wz">方向 0Up1Down2Left3Rignt</param>
+    /// <param name="list">移动方向game</param>
+    /// <param name="itemLocition">完成后的位置值</param>
+    void EndMove(int Wz,List<GameObject> list,int itemLocition)
+    {
+        IsDrop = true;
+        transform.localPosition = new Vector2(Wz > 1 ? Wz == 2 ? RoleVector.x - 200 : RoleVector.x + 200 : RoleVector.x,
+            Wz < 2 ? Wz == 1 ? RoleVector.y - 200 : RoleVector.y + 200 : RoleVector.y);
+        if (list.Count > 0)
+        {
+            gameObject1.transform.localPosition = RoleVector;
+            if (list[0].name.Contains("ImgNum"))
+            {
+                gameObject1.transform.name = "ImgNum" + _location;
+                gameObject1.GetComponent<ImgNum>().Location = _location;
+            }
+            else
+            {
+                gameObject1.transform.name = "Role" + _location;
+                gameObject1.GetComponent<Role>().Location = _location;
+            }
+        }
+        Location = itemLocition;
+        gameObject.name = "Role" + (itemLocition);
+        if (list.Count > 0 && list[0].name.Contains("ImgNum"))
+            ChangeColor();
     }
 }

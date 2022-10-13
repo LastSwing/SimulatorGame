@@ -17,11 +17,14 @@ public class Lose : MonoBehaviour
     {
         gameObject.SetActive(false);
         EmptySubclass(transform.parent.Find("Bg").gameObject);
-        transform.parent.Find("Bg").GetComponent<BgScript>().LoadLevel(transform.parent.Find("Bg").GetComponent<BgScript>().LevelNum);
+        transform.parent.GetComponent<BgScript>().LoadLevel(transform.parent.GetComponent<BgScript>().LevelNum);
     }
     void RbtnClick()
-    { 
-        
+    {
+        gameObject.SetActive(false);
+        EmptySubclass(transform.parent.Find("Bg").gameObject);
+        UIManager.instance.CloseView("GamePage");
+        UIManager.instance.OpenView("MainView");
     }
 
     void EmptySubclass(GameObject tempObj)

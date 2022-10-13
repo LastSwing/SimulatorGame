@@ -58,5 +58,19 @@ public static class BaseHelper
         }
         return location;
     }
+
+    //parent：父物体的Transform;prefab：要添加的控件
+    public static GameObject AddChild(Transform parent, GameObject prefab)
+    {
+        GameObject go = GameObject.Instantiate(prefab) as GameObject;
+
+        if (go != null && parent != null)
+        {
+            Transform t = go.transform;
+            t.SetParent(parent, false);
+            go.layer = parent.gameObject.layer;
+        }
+        return go;
+    }
 }
 

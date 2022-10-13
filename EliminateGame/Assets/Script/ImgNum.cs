@@ -10,6 +10,7 @@ public class ImgNum : MonoBehaviour
     public Text num;
     public Sprite[] sprites;
     private int _color;
+    public int Num;
     /// <summary>
     /// 0+,1-,2*,3/
     /// </summary>
@@ -32,6 +33,12 @@ public class ImgNum : MonoBehaviour
             Color = 2;
         else if (gameObject.GetComponent<Image>().sprite.name == "Red")
             Color = 3;
+        else if(gameObject.GetComponent<Image>().sprite.name == "Protect")
+            Color = 4;
+        else if (gameObject.GetComponent<Image>().sprite.name == "Devour")
+            Color = 5;
+        else if (gameObject.GetComponent<Image>().sprite.name == "Obstacle")
+            Color = 6;
     }
 
     // Update is called once per frame

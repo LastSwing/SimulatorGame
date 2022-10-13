@@ -78,7 +78,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 100
+  m_Text: 
 --- !u!1 &3151212610201816654
 GameObject:
   m_ObjectHideFlags: 0
@@ -175,3 +175,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 1a472968e8a3312488f55f6981913eab, type: 3}
   - {fileID: 21300000, guid: 964acc20c217e32488b04c72e578b344, type: 3}
   - {fileID: 21300000, guid: fdaf4d57bf868614498c2dc796815c46, type: 3}
+  - {fileID: 21300000, guid: e81fe5edd133e14449e7f1cf4e7a7d0c, type: 3}
+  - {fileID: 21300000, guid: 06e3cadc4ca3fdc40b453aee489b36ec, type: 3}
+  - {fileID: 21300000, guid: 68fd544fecd13124388eb802e7fb3d90, type: 3}

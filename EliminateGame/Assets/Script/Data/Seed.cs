@@ -6,7 +6,7 @@ public class Seed
     /// </summary>
     public int Num { get; set; }
     /// <summary>
-    /// 0+ 1- 2* 3/
+    /// 0+ 1- 2翻倍 3减倍 4保护Buff 5吞噬Buff 6障碍
     /// </summary>
     public int NumType { get; set; }
     /// <summary>

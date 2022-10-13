@@ -23,11 +23,14 @@ public class Victory : MonoBehaviour
     { 
         gameObject.SetActive(false);
         EmptySubclass(transform.parent.Find("Bg").gameObject);
-        transform.parent.Find("Bg").GetComponent<BgScript>().LoadLevel(transform.parent.Find("Bg").GetComponent<BgScript>().LevelNum + 1);
+        transform.parent.GetComponent<BgScript>().LoadLevel(transform.parent.GetComponent<BgScript>().LevelNum);
     }
     void RbtnClick()
-    { 
-        
+    {
+        gameObject.SetActive(false);
+        EmptySubclass(transform.parent.Find("Bg").gameObject);
+        UIManager.instance.CloseView("GamePage");
+        UIManager.instance.OpenView("MainView");
     }
     //tempObj：父物体
     void EmptySubclass(GameObject tempObj)

@@ -35,13 +35,36 @@ public static class DataRead
         level.Seeds = seeds;
         return level;
     }
+    /// <summary>
+    /// 返回当前关卡数
+    /// </summary>
+    /// <returns></returns>
+    public static int GetLevel()
+    {
+        TextAsset itemText = Resources.Load<TextAsset>("GameData/Level");
+        string result = itemText.text;
+        JsonData json = JsonMapper.ToObject(result);
+        return (int)json["Level"];
+    }
+
+    /// <summary>
+    /// 更新关卡数
+    /// </summary>
+    /// <param name="num"></param>
+    public static void SetLevel(int num)
+    {
+        string path = Application.dataPath + "/Resources/GameData/Level.txt";
+        if (File.Exists(path))
+            File.Delete(path);
+        string result = @"{""Level"":" + num + "}";
+        File.WriteAllText(path, result);
+    }
 
     /// <summary>
     /// 根据运行平台不同返回路径
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    [System.Obsolete]
     public static string ReturnPath(string path)
     {
         string to_path;
